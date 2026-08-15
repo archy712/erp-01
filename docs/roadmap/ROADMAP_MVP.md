@@ -570,7 +570,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ---
 
-### Phase 2-C: 관리자 전용 CRUD 화면
+### Phase 2-C: 관리자 전용 CRUD 화면 ✅
 
 #### Task 014: 관리자 영역 가드 및 접근 거부 화면 구현 ✅
 
@@ -655,80 +655,102 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ---
 
-#### Task 016: 메뉴 관리 화면 구현 (F006)
+#### Task 016: 메뉴 관리 화면 구현 (F006) ✅
 
 **목표**: 관리자가 대/중/소분류 메뉴 트리를 등록·수정·삭제·정렬할 수 있게 한다.
 
+**착수 전 확인**: 이 시점에서 상단 Menubar/좌측 트리(`erp-menubar.tsx`/`erp-menu-tree.tsx`)는 여전히 Task 004의 `MOCK_MENUS`를 쓰고 있고, 실 DB(`getVisibleMenuTree`)로 교체하는 것은 **Task 018 범위**다(의존관계 다이어그램에서도 016 → 018 순서). 즉 이 Task에서 등록한 메뉴는 DB에는 정상 반영되지만, Task 018 전까지는 Menubar/좌측 내비게이션에 실시간으로 나타나지 않는다 — 원래 로드맵 수락 기준의 "Menubar에 즉시 노출"은 Task 018 완료 후에만 성립하므로, 이번 Task에서는 **DB 반영 자체**(관리 화면 내 트리 갱신 + `execute_sql` 직접 확인)로 대체 검증한다.
+
 **관련 파일**
 
-- `app/erp/admin/menus/page.tsx` (신규)
+- `app/erp/admin/menus/page.tsx` (스텁 → 실 구현으로 교체)
 - `components/erp/admin/menu-manager.tsx`, `components/erp/admin/menu-form-dialog.tsx` (신규)
-- `lib/erp/actions.ts`
-- `components/ui/{tree-view,dialog,form,input,switch,select,alert-dialog}.tsx` (기존 재사용)
+- `lib/erp/actions.ts` — `createMenuAction`/`updateMenuAction`/`deleteMenuAction`/`setMenuActiveAction`/`moveMenuAction` 추가
+- `components/ui/{tree-view,dialog,input,switch,select,alert-dialog,label,badge}.tsx` (기존 재사용 — `form.tsx`는 react-hook-form 래퍼라 Task 015와 같은 이유로 사용하지 않고 일반 `useState` 제어 폼으로 구현, `data-table.tsx`는 트리 UI라 해당 없음)
 
 **구현 체크리스트**
 
-- [ ] 좌측에 편집용 메뉴 트리(전체 노드, 비활성 포함)를 표시한다.
-- [ ] 메뉴 등록 `Dialog` + `Form` 구현 — 필드: 상위 메뉴(선택, 없으면 대분류) / 레벨 / 메뉴명 / 정렬순서 / 사용여부.
-- [ ] **상위 메뉴를 비우고 대분류 단독 노드를 등록**할 수 있어야 한다 (PRD 7.2 필수 요구).
-- [ ] 상위 메뉴 선택 시 `level`이 자동 계산되고, 3레벨을 초과하는 등록은 막는다.
-- [ ] 메뉴 수정 / 삭제 Server Action 구현. 삭제 시 **하위 메뉴와 부여된 권한이 함께 사라진다**는 경고를 `AlertDialog`로 표시한다.
-- [ ] 정렬순서 변경 UI 구현 — 위/아래 버튼 방식(최소 구현) 또는 드래그 앤 드롭. **동일 부모 내 형제 노드끼리만** 순서가 유효하다.
-- [ ] 사용여부 `Switch` 토글 구현 — 비활성 메뉴는 내비게이션에서 제외되지만 관리 화면에서는 계속 보인다.
-- [ ] 모든 Server Action 첫 줄에서 `requireAdmin()` 호출.
-- [ ] 변경 시 `revalidatePath("/erp", "layout")`로 내비게이션 트리를 갱신한다.
+- [x] 좌측에 편집용 메뉴 트리(전체 노드, 비활성 포함 — `getAllMenus()`를 `activeOnly` 없이 호출)를 표시한다. 비활성 노드는 `Badge`로 표시.
+- [x] 메뉴 등록 `Dialog` 구현 — 필드: 상위 메뉴(`Select`, 없으면 "없음 (대분류)") / 레벨(자동 계산된 읽기 전용 텍스트) / 메뉴명 / 정렬순서 / 사용여부. `components/ui/form.tsx`(react-hook-form) 대신 일반 `useState` 제어 입력으로 구현(Task 015와 동일한 결정).
+- [x] **상위 메뉴를 비우고 대분류 단독 노드를 등록**할 수 있다 — Select의 "없음 (대분류)" 옵션으로 검증 완료.
+- [x] 상위 메뉴 선택 시 `level`이 자동 계산되고, `Select`의 상위 메뉴 후보 자체를 `level < 3`인 메뉴로만 제한해 **3레벨 초과 등록이 UI에서부터 불가능**하게 했다(소분류는 상위 메뉴 후보 목록에 노출되지 않음). 서버 액션(`createMenuAction`)에서도 `parent.level >= 3`이면 거부하는 이중 방어.
+- [x] 메뉴 수정 / 삭제 Server Action 구현. 삭제 시 **하위 메뉴와 부여된 권한이 함께 사라진다**는 경고를 `AlertDialog`로 표시(`menus.parent_id`/`user_menu_permissions.menu_id`가 이미 `on delete cascade`라 서버 액션은 단순 `delete`만 수행).
+- [x] 정렬순서 변경 UI — 위/아래 버튼 방식(최소 구현). `moveMenuAction`이 같은 `parent_id`를 가진 형제끼리만 조회해 인접 형제와 `sort_order`를 교환(`sort_order`에는 유니크 제약이 없어 병렬 갱신도 안전함을 SQL로 확인).
+- [x] 사용여부 `Switch` 토글 구현 — 비활성 메뉴도 관리 화면(좌측 트리 + 상세 패널)에서는 배지와 함께 계속 보인다.
+- [x] 모든 Server Action 첫 줄에서 `requireAdmin()` 호출.
+- [x] 변경 시 `revalidatePath("/erp", "layout")`로 내비게이션 트리를 갱신한다(현재는 Menubar/트리가 Mock을 쓰므로 체감 효과는 Task 018 이후부터).
+
+**(체크리스트에 없던 범위 결정)** 메뉴 **수정** 시 상위 메뉴 재배치(re-parenting)는 지원하지 않는다 — 하위 노드들의 `level`을 재귀적으로 재계산해야 해서 복잡도가 크고, 로드맵 체크리스트에도 명시되지 않았다. 수정 다이얼로그에서는 상위 메뉴를 읽기 전용으로만 표시하고, 메뉴를 다른 상위로 옮기려면 삭제 후 재등록하도록 안내(코드 주석)했다.
 
 **수락 기준**
 
-- 대분류만 단독으로 등록해도 정상 저장되고 Menubar에 즉시 노출된다.
-- 등록/수정/삭제/정렬/사용여부 5개 동작이 모두 동작하고 새로고침 후 유지된다.
+- [x] 대분류만 단독으로 등록해도 정상 저장된다(Menubar 즉시 노출은 위 "착수 전 확인" 참고 — Task 018 이후 성립).
+- [x] 등록/수정/삭제/정렬/사용여부 5개 동작이 모두 동작하고 새로고침(서버 컴포넌트 재조회) 후 유지된다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 테스트 계정 1개로 검증 후 계정과 테스트 메뉴 데이터 모두 삭제(`execute_sql`로 잔존 0건 확인)
 
-- [ ] 대분류 단독 등록 → Menubar 반영 확인
-- [ ] 중분류 → 소분류 순차 등록 후 좌측 트리 계층 확인
-- [ ] 정렬순서 변경 → 트리 순서 반영 확인
-- [ ] 사용여부 off → 일반 사용자 내비게이션에서 사라지는지 확인
-- [ ] 하위 노드가 있는 메뉴 삭제 → 경고 표시 및 cascade 결과 확인
-- [ ] 메뉴명 미입력 등 유효성 실패 시 폼 에러 메시지 확인 (엣지 케이스)
+- [x] 대분류 단독 등록("Task016 대분류") → 좌측 트리에 즉시 반영 확인 (Menubar는 Task 018 이후 확인 예정)
+- [x] 중분류("Task016 중분류") → 소분류 2개("소분류1", "소분류2") 순차 등록 → 좌측 트리에서 대분류 펼침 → 중분류 펼침 → 소분류 2개 확인, breadcrumb("대분류 > 중분류 > 상세")도 상세 패널에 정확히 표시
+- [x] 소분류1 "아래로" 클릭 → 소분류2/소분류1 순서로 트리 즉시 반영 확인, "수정" 다이얼로그의 정렬순서 필드도 갱신된 값(1) 반영 확인
+- [x] 소분류1 사용여부 off → 트리에 "비활성" 배지 즉시 표시, 상세 패널 배지·스위치도 동기화 확인
+- [x] "수정" 다이얼로그에서 이름 변경 + 사용여부 재활성화 동시 적용 → 트리/상세 패널 모두 반영 확인 (상위 메뉴는 읽기 전용으로 잠겨 있음을 확인)
+- [x] 하위 노드(중분류+소분류 2개)가 있는 "Task016 중분류" 삭제 → `AlertDialog` cascade 경고 문구 확인 → 확인 → 트리에서 3개 노드 모두 사라지고 대분류만 남는 것을 확인, `execute_sql`로 DB에도 실제로 1건만 남았음을 재확인
+- [x] 메뉴명 미입력 상태로 "등록" 클릭 → "메뉴명을 입력해주세요." 인라인 에러 + `aria-invalid` 확인 (요청 자체가 발생하지 않는 클라이언트 검증)
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인
+- [x] `npm run check-all` 통과 — 구현 중 `react-hooks/set-state-in-effect`(다이얼로그를 열 때마다 `useEffect`로 폼 상태를 초기화하려던 최초 구현)에 걸려, Dialog/DialogContent는 상시 마운트하되 실제 폼 필드 서브컴포넌트를 `open`일 때만 마운트해 초기 렌더 시점에 `useState` 초기값으로 계산하는 방식으로 재작성해 해소함(`components/erp/admin/menu-form-dialog.tsx`).
 
 ---
 
-#### Task 017: 사용자 권한 관리 화면 구현 (F007)
+#### Task 017: 사용자 권한 관리 화면 구현 (F007) ✅
 
 **목표**: 관리자가 사용자별로 접근 가능한 메뉴를 임의 레벨에서 부여/회수할 수 있게 한다.
 
+**착수 전 확인**: Task 016과 동일한 이유로, Menubar/좌측 트리는 여전히 `MOCK_MENUS`를 쓴다(Task 018에서 실 DB로 교체). 이 Task에서 부여한 권한은 `user_menu_permissions`에는 정확히 반영되지만, 실제 내비게이션 노출 확인은 Task 018 이후에나 가능하다 — 이번 Task는 DB 반영(`execute_sql` 직접 확인)과 `getVisibleMenuTree()`의 로직(Task013에서 이미 별도 검증 완료)이 그대로 소비할 수 있는 정확한 데이터를 만드는 것까지를 검증 범위로 한다.
+
 **관련 파일**
 
-- `app/erp/admin/permissions/page.tsx` (신규)
+- `app/erp/admin/permissions/page.tsx` (스텁 → 실 구현으로 교체)
 - `components/erp/admin/permission-editor.tsx` (신규)
-- `lib/erp/actions.ts`
-- `components/ui/{combobox,command,tree-view,checkbox,button}.tsx` (기존 재사용)
+- `lib/erp/actions.ts` — `getUserMenuPermissionIdsAction`/`setUserMenuPermissionsAction` 추가
+- `lib/erp/role-labels.ts` (신규 — 아래 참고)
+- `components/ui/checkbox.tsx` — indeterminate 상태 아이콘/스타일 추가 (기존엔 없었음)
+- `components/ui/{combobox,button,alert-dialog}.tsx` (기존 재사용). **`tree-view`/`command`는 사용하지 않음** — 아래 참고.
+- Supabase 마이그레이션 `create_set_user_menu_permissions_function` (신규 RPC) + `lib/supabase/database.types.ts` 재생성
 
 **구현 체크리스트**
 
-- [ ] 사용자 선택 UI 구현 — `Combobox`/`Command` 기반 검색 가능 드롭다운.
-- [ ] 선택한 사용자의 현재 권한을 반영한 **체크박스 트리**를 렌더링한다.
-- [ ] **임의 레벨(대/중/소) 어디에나 체크 가능**해야 한다 (대분류만 체크하는 케이스 포함).
-- [ ] 부모 체크 시 자식 일괄 체크 / 부분 선택(indeterminate) 표시 등 편의 동작을 정의하고 구현한다.
-- [ ] 일괄 저장 Server Action 구현 — 기존 권한과 비교해 **추가분 insert / 제거분 delete**로 처리하고, `granted_by`에 현재 관리자 id, `granted_at`에 현재 시각을 기록한다.
-- [ ] 저장은 단일 트랜잭션(또는 RPC)으로 처리해 부분 반영을 방지한다.
-- [ ] 관리자 계정 선택 시 "관리자는 모든 메뉴에 접근하므로 개별 권한 설정이 불필요합니다" 안내를 표시한다.
-- [ ] 저장하지 않고 사용자를 전환하려 할 때 변경사항 유실 경고를 표시한다.
-- [ ] 저장 후 `revalidatePath("/erp", "layout")`.
+- [x] 사용자 선택 UI 구현 — `Combobox`(base-ui) 기반 검색 가능 드롭다운. `command`는 별도로 필요하지 않아(Combobox가 이미 입력+필터+리스트를 자체 제공) 사용하지 않음.
+- [x] 선택한 사용자의 현재 권한을 반영한 **체크박스 트리**를 렌더링한다 — `getUserPermissions()`(Task013)를 `getUserMenuPermissionIdsAction()`으로 감싸 클라이언트에서 호출.
+- [x] **임의 레벨(대/중/소) 어디에나 체크 가능**하다 — 모든 노드가 독립적인 체크박스를 가지며, 체크된 id 전체 집합이 곧 저장될 권한 목록이다(대분류 단독 체크 케이스 포함).
+- [x] 부모 체크 시 자식 일괄 체크 / indeterminate 표시 — `checkStateOf`/`toggleNode`가 "노드+모든 후손"을 하나의 집합으로 다뤄, 부분 포함 시 indeterminate로 계산한다. `components/ui/checkbox.tsx`에 indeterminate 전용 아이콘(`Minus`)과 배경 스타일을 추가(기존엔 `data-state=checked`만 스타일링되어 있어 indeterminate가 checked와 시각적으로 구분되지 않았음 — 기존 갤러리 데모의 boolean 사용에는 영향 없는 additive 변경).
+- [x] 일괄 저장 Server Action(`setUserMenuPermissionsAction`) — 신규 Postgres 함수 `public.set_user_menu_permissions(p_user_id, p_menu_ids)` RPC 한 번 호출로 처리. 함수 내부에서 `delete ... where menu_id <> all(p_menu_ids)`(제거분) + `insert ... on conflict do nothing`(추가분, `granted_by`는 `auth.uid()`로 자동 기록, `granted_at`은 컬럼 기본값)를 수행.
+- [x] 저장은 단일 트랜잭션으로 처리해 부분 반영을 방지한다 — Postgres 함수 호출 전체가 하나의 암묵적 트랜잭션이라 별도 `BEGIN/COMMIT` 없이 원자성이 보장된다(RPC 방식 채택). 이 프로젝트의 기존 SECURITY DEFINER 함수 6종과 동일한 컨벤션(`security definer` + `set search_path = ''`)을 따르고, 함수 내부에서 `is_admin()`을 직접 재확인해 RLS 우회를 상쇄한다 — `get_advisors`가 이 함수에 대해 anon/authenticated 실행 가능 경고를 새로 띄우지만, 기존 6개 함수와 동일한 익숙한 패턴(내부 권한 재확인으로 상쇄)이라 손대지 않음.
+- [x] 관리자 계정 선택 시 "관리자는 모든 메뉴에 접근하므로 개별 권한 설정이 불필요합니다" 안내를 표시하고 트리 대신 노출, 저장 버튼도 비활성화.
+- [x] 저장하지 않고 사용자를 전환하려 할 때 `AlertDialog`로 변경사항 유실 경고를 표시 — 취소 시 원래 선택 유지, 확인 시 새 사용자로 전환.
+- [x] 저장 후 `revalidatePath("/erp", "layout")`.
+
+**(구현 중 발견해 설계를 바꾼 이슈)** 원래 계획대로 `components/ui/tree-view.tsx` + `renderItem`으로 체크박스를 넣어 구현했더니, TreeView가 그룹 노드를 Radix Accordion(`<button>`)으로 렌더링하는 구조라 그 안에 체크박스(Radix Checkbox도 `<button>`)를 두면 **`<button>` 안에 `<button>`이 중첩되는 무효 HTML**이 되어 hydration 에러가 발생했다(Playwright 콘솔에서 실제 재현·확인). 이 화면은 어차피 전체 트리를 항상 펼쳐서 보여줘야 해 접기/펼치기 기능 자체가 필요 없으므로, `TreeView`를 걷어내고 들여쓰기 기반의 단순 재귀 컴포넌트(`PermissionTreeRows`)로 직접 구현해 문제를 해소했다.
+
+**(계획에 없었으나 정리한 부수 작업)** `isAdminRole`/`ROLE_LABEL`/`ROLE_BADGE_VARIANT`가 Task 015(`user-table.tsx`)에 이어 이 화면에도 필요해지면서 동일 로직이 세 번째로 복제될 상황이었다 — `lib/erp/role-labels.ts`(서버 전용 코드를 임포트하지 않는 순수 모듈)로 추출해 `lib/erp/auth.ts`가 재수출(기존 `import { isAdminRole } from "./auth"` 호출부인 `queries.ts`는 무수정)하고, `user-table.tsx`/`permission-editor.tsx`가 여기서 직접 가져오도록 정리.
 
 **수락 기준**
 
-- 특정 사용자에게 소분류 1개만 부여하면, 그 사용자 내비게이션에 해당 소분류와 상위 경로만 노출된다.
-- 권한 회수 후 해당 메뉴가 즉시 사라진다.
+- [x] 특정 사용자에게 소분류 1개만 부여하면, `user_menu_permissions`에 해당 소분류 행만 저장된다(상위 경로 포함 노출은 Task 013에서 검증된 `getVisibleMenuTree()` 로직이 그대로 처리 — 실제 화면 노출 확인은 Task 018 이후).
+- [x] 권한 회수(전체 해제) 후 해당 사용자의 `user_menu_permissions` 행이 0건이 된다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 1 / 대상 사용자 1 테스트 계정 + 임시 메뉴 5개(대분류 단독 포함 3단계 트리)로 검증 후 전부 삭제(`execute_sql`로 잔존 0건 확인)
 
-- [ ] 사용자 검색 → 선택 → 기존 권한 체크 상태 반영 확인
-- [ ] 소분류 1개 체크 → 저장 → 해당 사용자로 로그인 → 상위 경로 포함 노출 확인
-- [ ] 대분류 단독 노드 체크 → 저장 → 해당 사용자 Menubar 노출 확인
-- [ ] 권한 전체 해제 → 저장 → 해당 사용자에게 메뉴가 하나도 안 보이는지 확인
-- [ ] 저장 중 네트워크 실패 시 롤백 및 에러 토스트 확인 (엣지 케이스)
+- [x] 사용자 검색("타깃유저") → 선택 → 기존 권한(최초 전부 미체크) 반영 확인
+- [x] 소분류 1개 체크 → 저장 → `execute_sql`로 해당 행 1건 + `granted_by`가 실제 로그인한 관리자 id인지 확인
+- [x] 같은 소분류의 상위 중분류 체크(들여쓰기 부모) → 자식 2개 일괄 체크 + 대분류는 indeterminate로 표시되는 것을 확인 → 저장 → `execute_sql`로 중분류+소분류 2개, 총 3건 확인(대분류 자체는 indeterminate라 저장 대상에서 제외됨을 확인 — 명시적으로 체크한 노드만 저장되는 설계 그대로 동작)
+- [x] 저장하지 않고 다른 사용자로 전환 시도 → 유실 경고 `AlertDialog` 노출, 취소 시 원래 선택·체크 상태 유지 확인 → 저장 후 재시도 → 정상 전환 확인
+- [x] 대분류 단독 노드("Task017 대분류D단독") 체크 → 저장 → `execute_sql`로 1건 저장 확인
+- [x] 소분류1 사용자 재선택 → 저장했던 상태(중분류+소분류 2개 체크, 대분류 indeterminate) 그대로 복원되는 것 확인 → 전체 해제 → 저장 → `execute_sql`로 0건 확인
+- [x] 관리자 역할 사용자 선택 → 안내 문구 노출 + 트리 숨김 + 저장 버튼 비활성 확인
+- [x] 일반 사용자 세션으로 `/erp/admin/permissions` 직접 접근 → `/erp/forbidden` 리다이렉트 확인 (Task 014 가드 회귀 없음)
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인 (TreeView 중첩 버튼 이슈 수정 후 재검증)
+- [x] `npm run check-all` 통과
+- [ ] **미검증**: "저장 중 네트워크 실패 시 롤백 및 에러 토스트 확인" — 네트워크 차단을 인위적으로 재현하지 않음. RPC 방식이라 서버 측 부분 반영은 구조적으로 불가능(단일 함수 호출의 트랜잭션 원자성)하고, 클라이언트는 `setUserMenuPermissionsAction`의 `{success:false}` 응답 시 `toast.error`로 안내하고 `checkedIds`/`savedIds`를 그대로 유지(낙관적 갱신을 하지 않으므로 실패해도 화면이 어긋나지 않음)하도록 코드로는 처리했으나, 실제 네트워크 단절 재현 테스트는 하지 않음.
 
 ---
 
@@ -945,12 +967,12 @@ Task 001 (Phase 0 전제 확인)
 
 ## 진행 현황
 
-| Phase                               | Task 범위    | 상태                                    |
-| ----------------------------------- | ------------ | --------------------------------------- |
-| Phase 0 — 전제 확인 ✅              | Task 001     | ☑ 완료                                  |
-| **Phase 1 — ERP 메인 화면 뼈대** ✅ | Task 002~007 | ☑ 완료                                  |
-| Phase 2-A — 인증 완성 / 공통 UI     | Task 008~010 | ☐ 진행중 (008 완료, 009~010 대기)       |
-| Phase 2-B — 데이터 모델 ✅          | Task 011~013 | ☑ 완료                                  |
-| Phase 2-C — 관리자 CRUD             | Task 014~017 | ☐ 진행중 (014~~015 완료, 016~~017 대기) |
-| Phase 2-D — 접근 제어 / 메뉴 등록   | Task 018~021 | ☐ 대기                                  |
-| Phase 2-E — 통합 검증               | Task 022     | ☐ 대기                                  |
+| Phase                               | Task 범위    | 상태                              |
+| ----------------------------------- | ------------ | --------------------------------- |
+| Phase 0 — 전제 확인 ✅              | Task 001     | ☑ 완료                            |
+| **Phase 1 — ERP 메인 화면 뼈대** ✅ | Task 002~007 | ☑ 완료                            |
+| Phase 2-A — 인증 완성 / 공통 UI     | Task 008~010 | ☐ 진행중 (008 완료, 009~010 대기) |
+| Phase 2-B — 데이터 모델 ✅          | Task 011~013 | ☑ 완료                            |
+| Phase 2-C — 관리자 CRUD ✅          | Task 014~017 | ☑ 완료                            |
+| Phase 2-D — 접근 제어 / 메뉴 등록   | Task 018~021 | ☐ 대기                            |
+| Phase 2-E — 통합 검증               | Task 022     | ☐ 대기                            |
