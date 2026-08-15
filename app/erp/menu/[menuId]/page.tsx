@@ -1,6 +1,10 @@
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-// Task 006에서 MenuPlaceholder(F010) 및 실제 메뉴 조회로 대체 예정.
+import { MenuPlaceholder } from "@/components/erp/menu-placeholder";
+import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
+import { MOCK_MENUS } from "@/lib/erp/mock-menus";
+
 export default function ErpMenuPage({
   params,
 }: {
@@ -13,6 +17,9 @@ export default function ErpMenuPage({
   );
 }
 
+// 마스터 관리 > 기본 관리 하위 3종(사용자/메뉴/권한 관리)도 실제 관리자
+// 화면(Task 014~017)이 생기기 전까지는 다른 메뉴와 동일하게 플레이스홀더로
+// 렌더링된다.
 async function ErpMenuContent({
   params,
 }: {
@@ -20,9 +27,19 @@ async function ErpMenuContent({
 }) {
   const { menuId } = await params;
 
+  const tree = buildMenuTree(MOCK_MENUS);
+  const path = getMenuBreadcrumb(tree, menuId);
+
+  if (!path) {
+    notFound();
+  }
+
+  const current = path[path.length - 1];
+
   return (
-    <div className="flex flex-1 items-center justify-center p-10">
-      <h1 className="text-2xl font-semibold">메뉴: {menuId}</h1>
-    </div>
+    <MenuPlaceholder
+      title={current.name}
+      breadcrumb={path.map((node) => node.name)}
+    />
   );
 }
