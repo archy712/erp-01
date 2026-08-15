@@ -21,20 +21,20 @@ async function IconsGalleryContent() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-16 w-full items-center justify-center border-b border-b-foreground/10">
-        <div className="flex w-full max-w-5xl items-center justify-between gap-4 px-5">
-          <div className="flex items-center gap-4">
+      <header className="flex min-h-16 w-full flex-wrap items-center justify-center gap-y-2 border-b border-b-foreground/10 py-2">
+        <div className="flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <Link
               href="/"
-              className="text-sm underline-offset-4 hover:underline"
+              className="shrink-0 text-sm underline-offset-4 hover:underline"
             >
               {dict.common.backToHome}
             </Link>
-            <span className="text-lg font-semibold tracking-tight">
+            <span className="truncate text-lg font-semibold tracking-tight">
               {dict.icons.headerTitle}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher locale={locale} />
             <ThemeSwitcher />
           </div>

@@ -111,8 +111,8 @@ export function MenuManager({ menus, dict }: MenuManagerProps) {
   const isSelectedPending = selected ? pendingId === selected.id : false;
 
   return (
-    <div className="flex flex-1 gap-4 p-6">
-      <div className="flex w-72 shrink-0 flex-col gap-3 rounded-md border p-3">
+    <div className="flex flex-1 flex-col gap-4 p-6 lg:flex-row">
+      <div className="flex w-full shrink-0 flex-col gap-3 rounded-md border p-3 lg:w-72">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium">{t.treeTitle}</h2>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -120,7 +120,7 @@ export function MenuManager({ menus, dict }: MenuManagerProps) {
             {t.addButton}
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="max-h-64 flex-1 overflow-y-auto lg:max-h-none">
           {treeData.length > 0 ? (
             <TreeView
               data={treeData}
@@ -144,7 +144,7 @@ export function MenuManager({ menus, dict }: MenuManagerProps) {
         </div>
       </div>
 
-      <div className="flex-1 rounded-md border p-4">
+      <div className="min-w-0 flex-1 rounded-md border p-4">
         {selected ? (
           <div className="flex flex-col gap-4">
             <div>

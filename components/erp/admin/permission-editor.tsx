@@ -212,7 +212,7 @@ export function PermissionEditor({
   return (
     <div className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="permission-user-search">{t.userLabel}</Label>
           <Combobox
             items={users}
@@ -224,7 +224,7 @@ export function PermissionEditor({
             <ComboboxInput
               id="permission-user-search"
               placeholder={t.searchPlaceholder}
-              className="w-80"
+              className="w-full sm:w-80"
             />
             <ComboboxContent>
               <ComboboxEmpty>{t.noSearchResults}</ComboboxEmpty>
@@ -255,6 +255,7 @@ export function PermissionEditor({
         <Button
           onClick={handleSave}
           disabled={!selectedUser || selectedIsAdmin || !isDirty || isPending}
+          className="w-full shrink-0 sm:w-auto"
         >
           {t.saveButton}
         </Button>

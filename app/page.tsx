@@ -46,12 +46,15 @@ async function HomeContent() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-16 w-full items-center justify-center border-b border-b-foreground/10">
-        <div className="flex w-full max-w-5xl items-center justify-between px-5">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+      <header className="flex min-h-16 w-full flex-wrap items-center justify-center gap-y-2 border-b border-b-foreground/10 py-2">
+        <div className="flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5">
+          <Link
+            href="/"
+            className="shrink-0 text-lg font-semibold tracking-tight"
+          >
             ERP v0.1
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
             <LanguageSwitcher locale={locale} />
             <ThemeSwitcher />
             {!hasEnvVars ? (

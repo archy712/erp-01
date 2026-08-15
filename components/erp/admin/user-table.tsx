@@ -264,14 +264,14 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Input
           placeholder={t.searchPlaceholder}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="max-w-xs"
+          className="w-full sm:max-w-xs"
         />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm whitespace-nowrap text-muted-foreground">
           {t.totalCount.replace("{count}", String(filtered.length))}
         </span>
       </div>
@@ -322,7 +322,7 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {table.getPageCount() === 0
             ? t.noPages
