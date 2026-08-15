@@ -6,6 +6,8 @@ import { MenuPlaceholder } from "@/components/erp/menu-placeholder";
 import { canAccessMenu, getCurrentErpUser } from "@/lib/erp/auth";
 import { getAdminRouteForMenuPath } from "@/lib/erp/menu-routes";
 import { getMenuBreadcrumb } from "@/lib/erp/queries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function ErpMenuPage({
   params,
@@ -48,9 +50,10 @@ async function ErpMenuContent({
   // getCurrentErpUser()는 react cache()로 감싸져 있어, 같은 요청 안에서
   // app/erp/layout.tsx가 이미 호출한 결과를 그대로 재사용한다(중복 조회 없음).
   const user = await getCurrentErpUser();
+  const dict = getDictionary(await getLocale());
 
   if (!(await canAccessMenu(user.id, menuId))) {
-    return <AccessDenied />;
+    return <AccessDenied dict={dict} />;
   }
 
   const adminRoute = getAdminRouteForMenuPath(path.map((node) => node.name));
@@ -64,6 +67,7 @@ async function ErpMenuContent({
     <MenuPlaceholder
       title={current.name}
       breadcrumb={path.map((node) => node.name)}
+      dict={dict}
     />
   );
 }

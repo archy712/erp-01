@@ -118,4 +118,42 @@ export const ja: Dictionary = {
     description:
       "このスターターキットを構成するフレームワーク、ライブラリ、開発ツールを分野別に整理しました。",
   },
+  erp: {
+    mobileNav: {
+      menuOpen: "メニューを開く",
+      menuTitle: "ERPメニュー",
+    },
+    tree: {
+      selectCategory: "上部で大分類を選択してください。",
+      categoryNotFound: "存在しない大分類です。",
+      noSubMenu: "下位メニューがありません。",
+    },
+    layout: {
+      menuLoadError: "メニューを読み込めませんでした",
+    },
+    placeholder: {
+      description: "この画面はMVP以降の段階で実際の機能が実装される予定です。",
+      badge: "実装予定",
+    },
+    accessDenied: {
+      title: "アクセス権限がありません",
+      description:
+        "この画面にアクセスする権限がありません。必要な場合は管理者にお問い合わせください。",
+      backToHome: "ホームに戻る",
+    },
+    notFound: {
+      title: "メニューが見つかりません",
+      description: "リクエストされたメニューが存在しないか削除されました。",
+      backToErpHome: "ERPメイン画面へ移動",
+    },
+    error: {
+      title: "問題が発生しました",
+      layoutDescription:
+        "メニュー情報の読み込み中にエラーが発生しました。もう一度お試しください。",
+      pageDescription:
+        "画面の読み込み中にエラーが発生しました。もう一度お試しください。",
+      retry: "再試行",
+      backToErpHome: "ERPメイン画面へ移動",
+    },
+  },
 };

@@ -15,18 +15,18 @@ import {
 // 실패(getVisibleMenuTree 등)는 이 컴포넌트를 layout.tsx에서 직접 렌더링해
 // 처리하고, 그 외 하위 페이지의 조회 실패는 기존 app/erp/error.tsx가 잡는다.
 export function ErpErrorEmpty({
+  title,
   description,
   retry,
 }: {
+  title: string;
   description: string;
   retry: ReactNode;
 }) {
   return (
     <Empty className="flex-1 border-0">
       <EmptyHeader>
-        <h1 className="text-lg font-medium tracking-tight">
-          문제가 발생했습니다
-        </h1>
+        <h1 className="text-lg font-medium tracking-tight">{title}</h1>
         <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

@@ -48,4 +48,39 @@ export interface Dictionary {
     heading: string;
     description: string;
   };
+  erp: {
+    mobileNav: {
+      menuOpen: string;
+      menuTitle: string;
+    };
+    tree: {
+      selectCategory: string;
+      categoryNotFound: string;
+      noSubMenu: string;
+    };
+    layout: {
+      menuLoadError: string;
+    };
+    placeholder: {
+      description: string;
+      badge: string;
+    };
+    accessDenied: {
+      title: string;
+      description: string;
+      backToHome: string;
+    };
+    notFound: {
+      title: string;
+      description: string;
+      backToErpHome: string;
+    };
+    error: {
+      title: string;
+      layoutDescription: string;
+      pageDescription: string;
+      retry: string;
+      backToErpHome: string;
+    };
+  };
 }

@@ -15,6 +15,7 @@ import {
 import { TreeView } from "@/components/ui/tree-view";
 import { getActiveMenuId, menuNodeToTreeItem } from "@/lib/erp/menu-tree";
 import type { MenuNode } from "@/lib/erp/types";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 // 모바일(md 미만) 전용 내비게이션. 상단 Menubar 대신 햄버거 버튼으로 여는
 // Sheet 안에 대분류~소분류 전체 트리를 하나로 통합해서 보여준다.
@@ -23,7 +24,15 @@ import type { MenuNode } from "@/lib/erp/types";
 //
 // `categories`는 서버(app/erp/layout.tsx)에서 `getVisibleMenuTree(userId)`로
 // 조회한 실 데이터를 그대로 내려받는다(Task 018 — 1차 방어: 노출 필터링).
-export function ErpMobileNav({ categories }: { categories: MenuNode[] }) {
+// `dict`도 같은 서버 컴포넌트에서 이미 조회한 것을 그대로 내려받는다(Task 010 —
+// 클라이언트 컴포넌트는 cookies()를 직접 못 쓰므로 prop으로 배선).
+export function ErpMobileNav({
+  categories,
+  dict,
+}: {
+  categories: MenuNode[];
+  dict: Dictionary;
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -38,13 +47,17 @@ export function ErpMobileNav({ categories }: { categories: MenuNode[] }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="메뉴 열기">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={dict.erp.mobileNav.menuOpen}
+        >
           <Menu className="size-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-72 p-0 sm:max-w-72">
         <SheetHeader className="border-b">
-          <SheetTitle>ERP 메뉴</SheetTitle>
+          <SheetTitle>{dict.erp.mobileNav.menuTitle}</SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
           <TreeView

@@ -53,20 +53,21 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
         dict={dict}
         menubar={
           <span className="text-sm text-muted-foreground">
-            메뉴를 불러오지 못했습니다
+            {dict.erp.layout.menuLoadError}
           </span>
         }
         tree={
           <p className="p-4 text-sm text-muted-foreground">
-            메뉴를 불러오지 못했습니다
+            {dict.erp.layout.menuLoadError}
           </p>
         }
       >
         <ErpErrorEmpty
-          description="메뉴 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요."
+          title={dict.erp.error.title}
+          description={dict.erp.error.layoutDescription}
           retry={
             <Button asChild>
-              <Link href="/erp">다시 시도</Link>
+              <Link href="/erp">{dict.erp.error.retry}</Link>
             </Button>
           }
         />
@@ -87,12 +88,12 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
       }
       mobileNav={
         <Suspense fallback={null}>
-          <ErpMobileNav categories={categories} />
+          <ErpMobileNav categories={categories} dict={dict} />
         </Suspense>
       }
       tree={
         <Suspense fallback={null}>
-          <ErpMenuTree categories={categories} />
+          <ErpMenuTree categories={categories} dict={dict} />
         </Suspense>
       }
     >

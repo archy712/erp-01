@@ -12,6 +12,7 @@ import {
 import { TreeView } from "@/components/ui/tree-view";
 import { getActiveMenuId, menuNodeToTreeItem } from "@/lib/erp/menu-tree";
 import type { MenuNode } from "@/lib/erp/types";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 // 데스크탑/태블릿(md 이상)에서 상시 노출되는 좌측 트리.
 // 선택된 대분류(`?cat=`)의 하위 노드만 보여준다. 모바일 전용 통합 트리는
@@ -19,7 +20,14 @@ import type { MenuNode } from "@/lib/erp/types";
 //
 // `categories`는 서버(app/erp/layout.tsx)에서 `getVisibleMenuTree(userId)`로
 // 조회한 실 데이터를 그대로 내려받는다(Task 018 — 1차 방어: 노출 필터링).
-export function ErpMenuTree({ categories }: { categories: MenuNode[] }) {
+// `dict`도 같은 서버 컴포넌트에서 이미 조회한 것을 그대로 내려받는다(Task 010).
+export function ErpMenuTree({
+  categories,
+  dict,
+}: {
+  categories: MenuNode[];
+  dict: Dictionary;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -28,7 +36,7 @@ export function ErpMenuTree({ categories }: { categories: MenuNode[] }) {
   if (!categoryId) {
     return (
       <p className="p-4 text-sm text-muted-foreground">
-        상단에서 대분류를 선택하세요.
+        {dict.erp.tree.selectCategory}
       </p>
     );
   }
@@ -38,7 +46,7 @@ export function ErpMenuTree({ categories }: { categories: MenuNode[] }) {
   if (!category) {
     return (
       <p className="p-4 text-sm text-muted-foreground">
-        존재하지 않는 대분류입니다.
+        {dict.erp.tree.categoryNotFound}
       </p>
     );
   }
@@ -50,7 +58,7 @@ export function ErpMenuTree({ categories }: { categories: MenuNode[] }) {
           <EmptyMedia variant="icon">
             <FolderTree />
           </EmptyMedia>
-          <EmptyDescription>하위 메뉴가 없습니다.</EmptyDescription>
+          <EmptyDescription>{dict.erp.tree.noSubMenu}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );

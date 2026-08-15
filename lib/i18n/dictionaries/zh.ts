@@ -115,4 +115,39 @@ export const zh: Dictionary = {
     heading: "技术栈",
     description: "按类别整理的构成本入门套件的框架、库和开发工具。",
   },
+  erp: {
+    mobileNav: {
+      menuOpen: "打开菜单",
+      menuTitle: "ERP 菜单",
+    },
+    tree: {
+      selectCategory: "请在上方选择大类。",
+      categoryNotFound: "该大类不存在。",
+      noSubMenu: "没有下级菜单。",
+    },
+    layout: {
+      menuLoadError: "菜单加载失败",
+    },
+    placeholder: {
+      description: "此画面将在 MVP 之后的阶段实现实际功能。",
+      badge: "即将实现",
+    },
+    accessDenied: {
+      title: "没有访问权限",
+      description: "您没有访问此画面的权限。如有需要，请联系管理员。",
+      backToHome: "返回首页",
+    },
+    notFound: {
+      title: "未找到菜单",
+      description: "请求的菜单不存在或已被删除。",
+      backToErpHome: "前往 ERP 主页",
+    },
+    error: {
+      title: "出现问题",
+      layoutDescription: "加载菜单信息时发生错误，请重试。",
+      pageDescription: "加载画面时发生错误，请重试。",
+      retry: "重试",
+      backToErpHome: "前往 ERP 主页",
+    },
+  },
 };

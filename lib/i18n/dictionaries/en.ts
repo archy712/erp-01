@@ -118,4 +118,42 @@ export const en: Dictionary = {
     description:
       "The frameworks, libraries, and dev tools that make up this starter kit, organized by category.",
   },
+  erp: {
+    mobileNav: {
+      menuOpen: "Open menu",
+      menuTitle: "ERP Menu",
+    },
+    tree: {
+      selectCategory: "Select a category above.",
+      categoryNotFound: "This category does not exist.",
+      noSubMenu: "No submenu items.",
+    },
+    layout: {
+      menuLoadError: "Failed to load the menu",
+    },
+    placeholder: {
+      description: "This screen will be implemented in a later MVP phase.",
+      badge: "Coming soon",
+    },
+    accessDenied: {
+      title: "Access denied",
+      description:
+        "You don't have permission to access this screen. Please contact an administrator if needed.",
+      backToHome: "Back to home",
+    },
+    notFound: {
+      title: "Menu not found",
+      description: "The requested menu doesn't exist or has been deleted.",
+      backToErpHome: "Go to ERP home",
+    },
+    error: {
+      title: "Something went wrong",
+      layoutDescription:
+        "An error occurred while loading menu information. Please try again.",
+      pageDescription:
+        "An error occurred while loading this screen. Please try again.",
+      retry: "Try again",
+      backToErpHome: "Go to ERP home",
+    },
+  },
 };

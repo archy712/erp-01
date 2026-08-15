@@ -118,4 +118,42 @@ export const ko: Dictionary = {
     description:
       "이 스타터킷을 구성하는 프레임워크, 라이브러리, 개발 도구를 분야별로 정리했습니다.",
   },
+  erp: {
+    mobileNav: {
+      menuOpen: "메뉴 열기",
+      menuTitle: "ERP 메뉴",
+    },
+    tree: {
+      selectCategory: "상단에서 대분류를 선택하세요.",
+      categoryNotFound: "존재하지 않는 대분류입니다.",
+      noSubMenu: "하위 메뉴가 없습니다.",
+    },
+    layout: {
+      menuLoadError: "메뉴를 불러오지 못했습니다",
+    },
+    placeholder: {
+      description: "이 화면은 MVP 이후 단계에서 실제 기능이 구현될 예정입니다.",
+      badge: "추후 구현 예정",
+    },
+    accessDenied: {
+      title: "접근 권한이 없습니다",
+      description:
+        "이 화면에 접근할 수 있는 권한이 없습니다. 필요한 경우 관리자에게 문의하세요.",
+      backToHome: "홈으로 돌아가기",
+    },
+    notFound: {
+      title: "메뉴를 찾을 수 없습니다",
+      description: "요청하신 메뉴가 존재하지 않거나 삭제되었습니다.",
+      backToErpHome: "ERP 메인 화면으로 이동",
+    },
+    error: {
+      title: "문제가 발생했습니다",
+      layoutDescription:
+        "메뉴 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.",
+      pageDescription:
+        "화면을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.",
+      retry: "다시 시도",
+      backToErpHome: "ERP 메인 화면으로 이동",
+    },
+  },
 };

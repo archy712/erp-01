@@ -9,10 +9,11 @@ import {
   EmptyHeader,
   EmptyMedia,
 } from "@/components/ui/empty";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 // app/erp/layout.tsx(ErpShell) 안에서 렌더링되므로 Header/Menubar/Footer는
 // 그대로 유지된 채 콘텐츠 영역만 이 화면으로 대체된다.
-export function AccessDenied() {
+export function AccessDenied({ dict }: { dict: Dictionary }) {
   return (
     <Empty className="flex-1 border-0">
       <EmptyHeader>
@@ -20,16 +21,13 @@ export function AccessDenied() {
           <ShieldAlert />
         </EmptyMedia>
         <h1 className="text-lg font-medium tracking-tight">
-          접근 권한이 없습니다
+          {dict.erp.accessDenied.title}
         </h1>
-        <EmptyDescription>
-          이 화면에 접근할 수 있는 권한이 없습니다. 필요한 경우 관리자에게
-          문의하세요.
-        </EmptyDescription>
+        <EmptyDescription>{dict.erp.accessDenied.description}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button asChild>
-          <Link href="/erp">홈으로 돌아가기</Link>
+          <Link href="/erp">{dict.erp.accessDenied.backToHome}</Link>
         </Button>
       </EmptyContent>
     </Empty>
