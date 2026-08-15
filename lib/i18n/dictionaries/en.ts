@@ -195,13 +195,63 @@ export const en: Dictionary = {
     sampleDataBadge: "Sample Data",
     sampleDataNote:
       "The figures and chart below are dummy data for layout preview only and are unrelated to real data.",
-    statRevenue: "Revenue This Month",
-    statActiveUsers: "Active Users",
-    statGrowthRate: "Growth vs. Last Month",
-    chartTitle: "Monthly Revenue Trend",
-    chartDescription:
-      "Sample data — live data integration is out of MVP scope.",
-    chartRevenueLabel: "Revenue (in millions)",
+    kpi: {
+      revenueToday: "Today's Revenue",
+      revenueMonth: "Revenue This Month",
+      customerCount: "Today's Transactions",
+      customerPrice: "Today's Avg. Order Value",
+      achievementRate: "Monthly Goal Achievement",
+      operatingMargin: "Operating Margin",
+      vsYesterday: "{value} vs. yesterday",
+      vsLastMonth: "{value} vs. last month",
+    },
+    revenueProfit: {
+      title: "Revenue & Profit Trend",
+      description:
+        "Revenue and net profit over the last 12 months (millions KRW)",
+      revenueLabel: "Revenue",
+      profitLabel: "Profit",
+    },
+    achievement: {
+      title: "Goal Achievement",
+      description: "Daily and monthly revenue goal achievement",
+      dailyLabel: "Daily Achievement",
+      monthlyLabel: "Monthly Achievement",
+      detail: "{actual} / {target}",
+    },
+    customerMetrics: {
+      title: "Transactions & Avg. Order Value",
+      description:
+        "Daily transaction count and average order value over the last 7 days",
+      countLabel: "Transactions",
+      priceLabel: "Avg. Order Value",
+    },
+    brandRevenue: {
+      title: "Revenue by Brand",
+      description: "This month's revenue ranking by brand (millions KRW)",
+      valueLabel: "Revenue",
+    },
+    channelRevenue: {
+      title: "Revenue by Channel",
+      description: "This month's revenue share by sales channel",
+      online: "Online",
+      offline: "Offline",
+      partner: "Partner",
+    },
+    categoryRevenue: {
+      title: "Top 5 Categories by Revenue",
+      description: "This month's top 5 revenue-generating categories",
+      apparel: "Apparel",
+      beauty: "Beauty",
+      electronics: "Electronics",
+      food: "Food",
+      lifestyle: "Lifestyle",
+    },
+    weeklyRevenue: {
+      title: "Last 7 Days Revenue Trend",
+      description: "Daily revenue flow (millions KRW)",
+      valueLabel: "Revenue",
+    },
   },
   roles: {
     user: "User",

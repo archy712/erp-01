@@ -113,12 +113,64 @@ export interface Dictionary {
     description: string;
     sampleDataBadge: string;
     sampleDataNote: string;
-    statRevenue: string;
-    statActiveUsers: string;
-    statGrowthRate: string;
-    chartTitle: string;
-    chartDescription: string;
-    chartRevenueLabel: string;
+    kpi: {
+      revenueToday: string;
+      revenueMonth: string;
+      customerCount: string;
+      customerPrice: string;
+      achievementRate: string;
+      operatingMargin: string;
+      /** {value} 자리표시자, 예: "+3.2%" */
+      vsYesterday: string;
+      /** {value} 자리표시자 */
+      vsLastMonth: string;
+    };
+    revenueProfit: {
+      title: string;
+      description: string;
+      revenueLabel: string;
+      profitLabel: string;
+    };
+    achievement: {
+      title: string;
+      description: string;
+      dailyLabel: string;
+      monthlyLabel: string;
+      /** {actual}, {target} 자리표시자 */
+      detail: string;
+    };
+    customerMetrics: {
+      title: string;
+      description: string;
+      countLabel: string;
+      priceLabel: string;
+    };
+    brandRevenue: {
+      title: string;
+      description: string;
+      valueLabel: string;
+    };
+    channelRevenue: {
+      title: string;
+      description: string;
+      online: string;
+      offline: string;
+      partner: string;
+    };
+    categoryRevenue: {
+      title: string;
+      description: string;
+      apparel: string;
+      beauty: string;
+      electronics: string;
+      food: string;
+      lifestyle: string;
+    };
+    weeklyRevenue: {
+      title: string;
+      description: string;
+      valueLabel: string;
+    };
   };
   roles: {
     user: string;
