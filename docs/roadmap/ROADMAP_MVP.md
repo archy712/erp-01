@@ -52,17 +52,18 @@
 
 Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영향받는 Task를 함께 갱신할 것.
 
-| 항목                      | 결정                                                                                                                                                  | 근거                                                                                                                                                                                                                             |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ERP 라우트 루트           | `app/erp/*` (신규). 기존 `app/protected/*`는 손대지 않음                                                                                              | 스타터킷 튜토리얼 영역과 ERP 영역을 분리                                                                                                                                                                                         |
-| ERP 셸 배치               | `app/erp/layout.tsx`에서 Header → Menubar → (트리 + 콘텐츠) → Footer 순으로 구성                                                                      | Phase 0 제약(Header/Footer 마크업 유지)을 지키면서 그 사이에만 신규 요소 삽입                                                                                                                                                    |
-| 메뉴 화면 URL             | `app/erp/menu/[menuId]/page.tsx` (menuId = `menus.id`)                                                                                                | PRD의 `menus` 스키마에 `path`/`slug` 컬럼이 없음. 별도 경로 컬럼을 추가하지 않고 id 기반 라우팅으로 해결                                                                                                                         |
-| Phase 1 임시 데이터       | `lib/erp/mock-menus.ts`의 하드코딩 트리                                                                                                               | `menus` 테이블 없이 Phase 1 완주 가능해야 한다는 PRD 2.2 요구 충족                                                                                                                                                               |
-| 권한 재검증               | 개별 서버 컴포넌트에서 `getClaims()` + 권한 조회 이중 방어 (`app/protected/page.tsx` 패턴)                                                            | PRD 11절. `proxy.ts`의 쿠키 처리 로직은 변경 금지                                                                                                                                                                                |
-| Suspense 경계             | `cacheComponents: true` 환경이므로 `cookies()`/`headers()`/`params` 사용 컴포넌트는 반드시 `<Suspense>` 래핑                                          | `app/page.tsx`의 얇은 `Page` + `async XxxContent` 패턴을 그대로 따름                                                                                                                                                             |
-| shadcn 컴포넌트           | `components/ui/`에 `menubar` `sheet` `tree-view` `collapsible` `table` `dialog` `form` `switch` `badge` `data-table` 모두 **이미 존재**               | 신규 `npx shadcn add` 불필요. 기존 프리미티브 재사용                                                                                                                                                                             |
-| 메뉴명 언어               | 한국어 단일 값 (i18n 미적용)                                                                                                                          | PRD 9절 비범위                                                                                                                                                                                                                   |
-| Header/Footer 재사용 방식 | `app/page.tsx`의 Header/Footer 마크업을 **그대로 복제**해 `components/erp/erp-header.tsx` / `components/erp/erp-footer.tsx`로 추출 (디자인 변경 없음) | Task 001 확인 결과, Header/Footer는 `app/layout.tsx`가 아니라 각 페이지(`app/page.tsx`, `app/protected/layout.tsx`)에 개별 인라인되어 있어 공용 컴포넌트가 없음. ERP 레이아웃(`app/erp/layout.tsx`)에서 재사용하려면 추출이 필요 |
+| 항목                      | 결정                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | 근거                                                                                                                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ERP 라우트 루트           | `app/erp/*` (신규). 기존 `app/protected/*`는 손대지 않음                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | 스타터킷 튜토리얼 영역과 ERP 영역을 분리                                                                                                                                                                                         |
+| ERP 셸 배치               | `app/erp/layout.tsx`에서 Header → Menubar → (트리 + 콘텐츠) → Footer 순으로 구성                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Phase 0 제약(Header/Footer 마크업 유지)을 지키면서 그 사이에만 신규 요소 삽입                                                                                                                                                    |
+| 메뉴 화면 URL             | `app/erp/menu/[menuId]/page.tsx` (menuId = `menus.id`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | PRD의 `menus` 스키마에 `path`/`slug` 컬럼이 없음. 별도 경로 컬럼을 추가하지 않고 id 기반 라우팅으로 해결                                                                                                                         |
+| Phase 1 임시 데이터       | `lib/erp/mock-menus.ts`의 하드코딩 트리                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `menus` 테이블 없이 Phase 1 완주 가능해야 한다는 PRD 2.2 요구 충족                                                                                                                                                               |
+| 권한 재검증               | 개별 서버 컴포넌트에서 `getClaims()` + 권한 조회 이중 방어 (`app/protected/page.tsx` 패턴)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | PRD 11절. `proxy.ts`의 쿠키 처리 로직은 변경 금지                                                                                                                                                                                |
+| Suspense 경계             | `cacheComponents: true` 환경이므로 `cookies()`/`headers()`/`params` 사용 컴포넌트는 반드시 `<Suspense>` 래핑                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `app/page.tsx`의 얇은 `Page` + `async XxxContent` 패턴을 그대로 따름                                                                                                                                                             |
+| shadcn 컴포넌트           | `components/ui/`에 `menubar` `sheet` `tree-view` `collapsible` `table` `dialog` `form` `switch` `badge` `data-table` 모두 **이미 존재**                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 신규 `npx shadcn add` 불필요. 기존 프리미티브 재사용                                                                                                                                                                             |
+| 메뉴명 언어               | 한국어 단일 값 (i18n 미적용)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | PRD 9절 비범위                                                                                                                                                                                                                   |
+| Header/Footer 재사용 방식 | `app/page.tsx`의 Header/Footer 마크업을 **그대로 복제**해 `components/erp/erp-header.tsx` / `components/erp/erp-footer.tsx`로 추출 (디자인 변경 없음)                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Task 001 확인 결과, Header/Footer는 `app/layout.tsx`가 아니라 각 페이지(`app/page.tsx`, `app/protected/layout.tsx`)에 개별 인라인되어 있어 공용 컴포넌트가 없음. ERP 레이아웃(`app/erp/layout.tsx`)에서 재사용하려면 추출이 필요 |
+| Supabase 백엔드 공유      | 이 프로젝트가 연결된 Supabase 프로젝트는 **이미 별도 앱("weeklyplan" 주간업무일지)이 운영 중인 백엔드를 공유**한다. `profiles`(`role`: user/admin/superadmin, RLS, `is_admin()`/`is_superadmin()` 헬퍼, 마지막 관리자 강등 방지 트리거 등)와 `departments`/`organizations`/`work_types`/`weekly_logs*`/`notifications` 등이 이미 존재하며 실사용 데이터가 들어있다(Task 009 검증 중 발견, 마이그레이션 히스토리의 `unprefix_weeklyplan_tables_and_functions`로 확인). ERP MVP는 이 스키마를 **새로 만들지 않고 재사용**하며, `menus`/`user_menu_permissions`처럼 이름이 겹치지 않는 신규 테이블만 추가한다 | Task 011 착수 전 리뷰 결과 — 로드맵과 실제 DB 상태 불일치를 방치하면 Task 011/012/013/015가 이미 존재하는 것을 중복 구현하게 됨. 상세 근거는 Task 011 본문 참고                                                                  |
 
 ### 변경 금지 파일 목록 (Task 001 확정)
 
@@ -333,7 +334,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ### Phase 2-A: 인증 완성 및 공통 UI 통합 확인
 
-#### Task 008: 이메일/비밀번호 인증 흐름 세부 완성 (F001)
+#### Task 008: 이메일/비밀번호 인증 흐름 세부 완성 (F001) ✅
 
 **목표**: 스타터킷의 인증 흐름을 ERP 문맥에 맞게 마무리한다 (기본 흐름은 이미 존재하므로 **신규 구현이 아닌 정비 작업**).
 
@@ -342,27 +343,32 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - `components/login-form.tsx`, `components/sign-up-form.tsx`
 - `components/forgot-password-form.tsx`, `components/update-password-form.tsx`
 - `app/auth/confirm/route.ts`, `app/auth/callback/route.ts`, `app/auth/error/page.tsx`
+- `lib/auth/get-auth-error-message.ts` (신규 — 아래 참고)
 
 **구현 체크리스트**
 
-- [ ] 로그인 성공 후 리다이렉트 대상을 `/protected` → `/erp`로 변경한다 (`login-form.tsx`, `app/auth/callback/route.ts`의 `next` 기본값, `app/auth/confirm/route.ts`).
-- [ ] 회원가입 → 이메일 인증 → 로그인 복귀 전체 흐름을 실제 계정으로 1회 완주 검증한다.
-- [ ] 비밀번호 재설정(`forgot-password` → 메일 → `update-password`) 흐름을 검증한다.
-- [ ] 인증 에러 메시지를 한국어로 정리한다 (잘못된 자격증명 / 미인증 이메일 / 만료된 링크).
-- [ ] Supabase Auth의 Site URL / Redirect URL 설정에 로컬·배포 도메인이 모두 등록되어 있는지 확인한다.
-- [ ] 인증 호출은 기존 관례대로 **Server Action이 아닌 Client Component에서 `supabase.auth.*` 직접 호출** 패턴을 유지한다.
+- [x] 로그인 성공 후 리다이렉트 대상을 `/protected` → `/erp`로 변경한다 — **대부분 Task 007에서 이미 처리됨**. 이번 Task에서 빠져 있던 지점 하나를 추가로 발견해 수정: `sign-up-form.tsx`의 `emailRedirectTo`가 여전히 `${window.location.origin}/protected`였음(이메일 인증 링크가 `auth/confirm` 라우트의 `next` 파라미터로 이 값을 받아 최종 랜딩을 결정하므로 실질적 영향이 있었음) → `/erp`로 수정.
+- [x] 회원가입 → 이메일 인증 → 로그인 복귀 전체 흐름을 실제 계정으로 1회 완주 검증한다 — Playwright로 신규 이메일(`erp-task008-test@example.com`) 가입 → `sign-up-success` 이동 확인. **검증 중 발견**: 이 Supabase 프로젝트는 Auth "Confirm email" 설정이 꺼져 있어(`auth.users.email_confirmed_at`이 가입 즉시 채워짐, `execute_sql`로 확인) 실제 이메일 클릭 없이도 즉시 가입이 완료됨 — `auth/confirm` 라우트 자체의 정상 동작(토큰 검증 성공 시 `next`로 리다이렉트)은 잘못된 토큰으로 유도한 실패 케이스로 대체 검증(아래 참고). 검증에 사용한 테스트 계정은 `execute_sql`로 삭제해 정리함.
+- [x] 비밀번호 재설정(`forgot-password` → 메일 → `update-password`) 흐름을 검증한다 — `forgot-password` 폼에서 "Send reset email" 제출 → 성공 안내 화면 전환까지 Playwright로 확인(`redirectTo`가 `update-password` 페이지를 정확히 가리키는 것도 코드로 확인). **실제 메일함 클릭 후 `update-password` 진입은 이메일 수신 접근 수단이 없어 미검증** — `update-password-form.tsx`는 이번 Task에서 에러 메시지 매핑만 교체했고 기존 로직(변경 없음)은 이미 Task 007 이전부터 동작하던 부분.
+- [x] 인증 에러 메시지를 한국어로 정리한다 (잘못된 자격증명 / 미인증 이메일 / 만료된 링크) — `lib/auth/get-auth-error-message.ts` 신설. Supabase `AuthError.code`(예: `invalid_credentials`, `email_not_confirmed`, `user_already_exists`, `otp_expired` 등, `@supabase/auth-js` v2.112.3의 `error-codes.ts` 기준)를 한국어 문구로 매핑하는 테이블 방식으로 구현. `login-form`/`sign-up-form`/`forgot-password-form`/`update-password-form`의 `catch` 블록과 `app/auth/error/page.tsx`에서 공용으로 사용. `auth/confirm/route.ts`·`auth/callback/route.ts`는 기존에 `error.message`(영문 원문)를 그대로 쿼리 파라미터로 넘기던 것을 `error.code`로 교체(에러 페이지가 코드 기반으로 한국어를 렌더링할 수 있도록). 두 라우트 자체가 발급하는 "토큰/코드 없음" 케이스도 `missing_token`/`missing_code`라는 자체 sentinel 코드로 통일. Playwright로 `invalid_credentials`(로그인 오류), `user_already_exists`(중복 가입), `otp_expired`(잘못된 토큰으로 `/auth/confirm` 접근), `missing_token`, `missing_code` 5개 케이스 전부 한국어 문구 렌더링 확인.
+- [x] Supabase Auth의 Site URL / Redirect URL 설정에 로컬·배포 도메인이 모두 등록되어 있는지 확인한다 — 사용 가능한 Supabase MCP 도구로는 Auth 설정(Site URL/Redirect URLs)을 조회할 수 없어(DB 스키마가 아닌 프로젝트 설정 영역) 사용자가 Supabase 대시보드 Authentication → URL Configuration에서 직접 육안 확인, 현재 정상 설정되어 있음을 확인함(2026-08-15).
+- [x] 인증 호출은 기존 관례대로 **Server Action이 아닌 Client Component에서 `supabase.auth.*` 직접 호출** 패턴을 유지한다 — 이번 Task는 에러 메시지 매핑과 리다이렉트 값만 수정했고 호출 위치/패턴은 변경하지 않음.
 
 **수락 기준**
 
-- 회원가입 / 로그인 / 로그아웃 / 비밀번호 재설정 4개 흐름이 모두 정상 동작한다.
-- 로그인 성공 시 `/erp`로 진입한다.
+- [x] 회원가입 / 로그인 / 로그아웃 / 비밀번호 재설정(발송까지) 흐름이 모두 정상 동작한다. 실제 계정(`archy713@naver.com`)으로 정상 로그인 → `/erp` 진입, 로그아웃 → `/auth/login` 복귀까지 Playwright로 확인.
+- [x] 로그인 성공 시 `/erp`로 진입한다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 실계정(`archy713@naver.com`, 사용자 제공 비밀번호는 세션 내에서만 사용하고 저장하지 않음) + 신규 테스트 계정으로 검증
 
-- [ ] 신규 이메일 회원가입 → `sign-up-success` 안내 화면 노출 확인
-- [ ] 잘못된 비밀번호 입력 시 한국어 에러 메시지 노출 확인
-- [ ] 정상 로그인 → `/erp` 진입 확인
-- [ ] 비밀번호 재설정 링크 만료/무효 시 `app/auth/error` 화면 노출 확인
+- [x] 신규 이메일 회원가입 → `sign-up-success` 안내 화면 노출 확인
+- [x] 잘못된 비밀번호 입력 시 한국어 에러 메시지("이메일 또는 비밀번호가 올바르지 않습니다.") 노출 확인
+- [x] 정상 로그인 → `/erp` 진입 확인, 콘솔 에러 0건
+- [x] 비밀번호 재설정 링크 만료/무효 시 `app/auth/error` 화면 노출 확인 — `/auth/confirm`에 잘못된 `token_hash`로 접근해 `error=otp_expired`로 리다이렉트되고 "인증 링크가 만료되었습니다. 다시 시도해주세요."가 렌더링되는 것을 확인 (`missing_token`/`missing_code` 경로도 함께 확인)
+- [x] (추가) 중복 이메일 회원가입 시 "이미 가입된 이메일입니다." 노출 확인
+- [x] (추가) 비밀번호 불일치(회원가입) 시 "비밀번호가 일치하지 않습니다." 노출 확인
+
+**검증 중 발견한 이슈**: 이 프로젝트의 Supabase Auth "Confirm email" 설정이 꺼져 있어(가입 즉시 `email_confirmed_at` 채워짐) 회원가입 시 실제 이메일 인증 절차 없이 계정이 바로 활성화됨 — 사용자 확인 결과 **의도된 설정**(2026-08-15).
 
 ---
 
@@ -424,48 +430,58 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ---
 
-### Phase 2-B: 데이터 모델 구축
+### Phase 2-B: 데이터 모델 구축 ✅
 
-#### Task 011: profiles 테이블 확장 및 초기 관리자 시드
+#### Task 011: profiles.is_active 추가 (기존 role/RLS/관리자 시드는 재사용) ✅
 
-**목표**: 역할/활성 여부 컬럼을 추가하고 `archy712@gmail.com`을 관리자로 지정한다.
+**목표**: 원래 계획은 "역할 컬럼 신설 + 관리자 시드"였으나, Task 009 검증 중 이 Supabase 프로젝트가 이미 다른 앱("weeklyplan")과 백엔드를 공유하며 `profiles.role`(user/admin/superadmin)·RLS·관리자 보호 트리거가 **이미 구현·운영 중**임을 확인했다(위 "아키텍처 사전 결정 사항 → Supabase 백엔드 공유" 참고). 이에 따라 이 Task는 **기존 것을 다시 만들지 않고, 정말로 없는 것(`is_active`)만 추가**하는 것으로 범위를 축소한다.
+
+**착수 전 확인 결과 (재사용 가능 여부 조사)**
+
+| 원래 계획                                                              | 실제 DB 상태                                                                                                                                                                                       | 결론                                                                                                                                    |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `role text` + admin/user 체크 컬럼 신설                                | 이미 존재 — `role in ('user','admin','superadmin')`                                                                                                                                                | **재사용**, 신규 마이그레이션 불필요. ERP 관점에서는 `admin`/`superadmin` 둘 다 "관리자"로 취급                                         |
+| `handle_new_user()` 트리거 신설                                        | 이미 존재 (`insert into public.profiles(id, email) values (new.id, new.email)`)                                                                                                                    | **재사용**                                                                                                                              |
+| `archy712@gmail.com` → `role='admin'` 시드                             | 이미 `superadmin`(요구보다 상위 등급)                                                                                                                                                              | **불필요**, 손대지 않음                                                                                                                 |
+| RLS(본인 select/update + 관리자 전체 select/update, `is_admin()` 헬퍼) | `profiles_select_own_or_admin` / `profiles_update_own_or_admin` 정책 + `is_admin()`/`is_superadmin()` SECURITY DEFINER 함수 이미 존재. `is_admin()` 정의가 정확히 `role in ('admin','superadmin')` | **재사용**                                                                                                                              |
+| 마지막 관리자 강등 방지                                                | `prevent_unauthorized_role_change` 트리거가 이미 처리(관리자 1명만 남았을 때 강등 시도 시 예외)                                                                                                    | **재사용**. 단, "본인 강등 방지"(관리자가 여럿일 때 스스로 강등하는 것)는 이 트리거가 막지 않음 → Task 015에서 앱 레벨로 별도 구현 필요 |
+| `is_active boolean`                                                    | 없음. `departments`/`organizations`/`work_types`는 `archived_at` 소프트 삭제 방식을 쓰지만 "로그인 자체를 막는 사용자 활성화 여부" 개념은 없음                                                     | **신규 추가 필요** — 이번 Task의 실질적 작업                                                                                            |
 
 **관련 파일**
 
 - Supabase 마이그레이션 (`mcp__supabase__apply_migration`)
-- `lib/supabase/database.types.ts` (재생성 필요)
+- `lib/supabase/database.types.ts` (재생성)
 
 **구현 체크리스트**
 
-- [ ] `mcp__supabase__list_tables`로 `profiles` 현재 스키마를 확인한다.
-- [ ] 마이그레이션 작성:
-  - [ ] `role text not null default 'user'` + `check (role in ('admin','user'))`
-  - [ ] `is_active boolean not null default true`
-- [ ] `auth.users` 신규 가입 시 `profiles` 행이 자동 생성되는지 확인하고, 없다면 `handle_new_user()` 트리거를 추가한다 (구글 OAuth 가입자 포함).
-- [ ] 시드 마이그레이션으로 `archy712@gmail.com` 계정에 `role = 'admin'`을 부여한다. **해당 계정이 아직 없을 수도 있으므로**, 트리거 내에서 특정 이메일이면 admin을 부여하는 방식 또는 멱등한 `update ... where email = ...` 방식 중 하나로 안전하게 처리한다.
-- [ ] `profiles` RLS 정책 정비:
-  - [ ] 본인 행 select/update 허용
-  - [ ] 관리자는 전체 행 select/update 허용 (재귀 방지를 위해 `security definer` 헬퍼 함수 `is_admin()` 사용 권장)
-- [ ] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts`를 재생성한다.
-- [ ] `mcp__supabase__get_advisors`로 보안/성능 경고를 확인하고 해소한다.
+- [x] `mcp__supabase__list_tables`/`execute_sql`로 `profiles` 현재 스키마, RLS 정책, 관련 함수(`is_admin`/`is_superadmin`/`handle_new_user`/`prevent_unauthorized_role_change`) 전수 확인 — 위 표로 정리.
+- [x] `archy712@gmail.com`/`archy713@naver.com` 등 기존 계정의 `role`을 `execute_sql`로 확인 — 이미 각각 `superadmin`/`admin`으로 설정되어 있음을 확인, 변경 없음.
+- [x] 마이그레이션 적용(`add_profiles_is_active`): `alter table public.profiles add column is_active boolean not null default true;` + 컬럼 코멘트. role 컬럼/시드/RLS/트리거는 전부 스킵(이미 있음).
+- [x] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — weeklyplan 쪽 테이블(`departments`/`weekly_logs*`/`organizations`/`work_types`/`notifications` 등)도 함께 타입이 생성되는 것은 정상(같은 프로젝트를 공유하므로).
+- [x] `mcp__supabase__get_advisors`(security)로 확인 — 새 경고 없음. 기존에 있던 경고(SECURITY DEFINER 함수 6종의 `authenticated` 실행 권한, leaked password protection 비활성화)는 weeklyplan 쪽에서 이미 존재하던 것으로 이번 변경과 무관, 손대지 않음.
+
+**⚠️ 타입 재생성 중 발견한 별도 이슈 (범위 밖이지만 typecheck 통과를 위해 같이 수정)**: 재생성된 타입으로 `npm run typecheck`를 돌리자 `app/protected/profile/page.tsx`/`components/profile-form.tsx`(스타터킷 튜토리얼의 프로필 편집 화면)가 실제로는 **존재한 적 없는 컬럼**(`username`/`full_name`/`avatar_url`)을 참조하고 있었음이 드러남 — 기존 `database.types.ts`가 실제 DB와 맞지 않는(한 번도 재생성된 적 없는) 낡은 스타터킷 기본 타입이라 지금까지 타입 체크는 통과했지만 실제 DB로는 원래도 동작 불가능했던 코드였음. `Tables<"profiles">`가 실제로 갖는 `name` 컬럼 하나로 매핑해 최소 수정(사용자 이름/프로필 이미지 URL 필드는 실제 스키마에 대응 개념이 없어 제거 — `avatar_key`는 URL이 아닌 프리셋 enum이라 별도 선택 UI가 필요하므로 이번 범위에 포함하지 않음). Playwright로 실계정(`archy713@naver.com`) 로그인 후 `/protected/profile`에서 기존 이름("홍길동") 정상 표시, 수정 후 저장, 원복까지 확인.
 
 **수락 기준**
 
-- `archy712@gmail.com` 계정의 `role`이 `admin`이다.
-- 일반 사용자 세션에서 타인의 `profiles` 행이 조회되지 않는다.
-- `npm run typecheck` 통과 (재생성된 타입 기준).
+- [x] `archy712@gmail.com` 계정이 admin 이상 권한(`superadmin`)을 갖고 있다 (기존 상태 유지 확인).
+- [x] 일반 사용자 세션에서 타인의 `profiles` 행이 조회되지 않는다 (기존 RLS 그대로 유효, 변경 없음이므로 회귀 없음).
+- [x] `npm run typecheck` 통과 (재생성된 타입 기준, `npm run check-all` 전체 통과).
+- [x] 모든 기존 행(63건)이 `is_active=true`로 채워져 로그인 차단 없이 마이그레이션됨 — `execute_sql`로 `count(*)=63, count(*) filter (where is_active)=63` 확인.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트**
 
-- [ ] 관리자 계정 로그인 후 세션에서 role이 admin으로 조회되는지 확인 (임시 디버그 페이지 또는 `mcp__supabase__execute_sql` 병행)
-- [ ] 신규 회원가입 계정이 `role='user'`, `is_active=true`로 생성되는지 확인
-- [ ] `is_active=false` 계정이 로그인 시 차단되는지 확인 (차단 지점: 로그인 후 서버 컴포넌트 가드)
+- [x] `execute_sql`로 마이그레이션 후 `profiles` 전체 행이 `is_active=true`인지 확인.
+- [x] Playwright로 신규 가입(`erp-task011-test@example.com`) → `execute_sql`로 `role='user'`, `is_active=true` 확인, 테스트 계정은 삭제해 정리.
+- [ ] `is_active=false` 계정의 로그인 차단은 이 컬럼을 실제로 읽는 로직(Task 013 `getCurrentErpUser()`)이 아직 없어 **이번 Task에서는 컬럼 추가까지만** 검증, 차단 동작 자체는 Task 013에서 구현 후 검증.
 
 ---
 
-#### Task 012: menus / user_menu_permissions 테이블 생성
+#### Task 012: menus / user_menu_permissions 테이블 생성 ✅
 
 **목표**: 메뉴 트리와 사용자별 메뉴 권한을 저장할 스키마를 구축한다.
+
+> Task 011 재검토 결과 참고: 이 두 테이블은 weeklyplan 기존 스키마와 이름이 겹치지 않는 완전 신규 도메인이라 아래 계획을 그대로 진행한다. weeklyplan은 `organization_id` 기반 멀티테넌시 패턴(`current_organization_id()`)을 쓰지만, 현재 `organizations`가 1행뿐이고 ERP MVP PRD엔 멀티테넌시 요구가 없으므로 **`menus`/`user_menu_permissions`에는 `organization_id`를 넣지 않고 전역으로 둔다** (필요해지면 그때 추가).
 
 **관련 파일**
 
@@ -474,43 +490,44 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 **구현 체크리스트**
 
-- [ ] `menus` 테이블 생성:
-  - [ ] `id uuid pk default gen_random_uuid()`
-  - [ ] `parent_id uuid references menus(id) on delete cascade` (nullable, 대분류는 null)
-  - [ ] `level integer not null check (level between 1 and 3)`
-  - [ ] `name text not null`
-  - [ ] `sort_order integer not null default 0`
-  - [ ] `is_active boolean not null default true`
-  - [ ] `created_at` / `updated_at` timestamptz
-  - [ ] 인덱스: `(parent_id, sort_order)`
-  - [ ] 정합성 제약: `level = 1`이면 `parent_id is null`, `level > 1`이면 `parent_id is not null` (check 또는 트리거)
-- [ ] `user_menu_permissions` 테이블 생성:
-  - [ ] `id uuid pk`, `user_id uuid references profiles(id) on delete cascade`
-  - [ ] `menu_id uuid references menus(id) on delete cascade`
-  - [ ] `granted_by uuid references profiles(id)`, `granted_at timestamptz default now()`
-  - [ ] `unique (user_id, menu_id)` — 중복 부여 방지
-  - [ ] 인덱스: `(user_id)`
-- [ ] RLS 정책:
-  - [ ] `menus` — 인증 사용자 select 허용, insert/update/delete는 관리자만
-  - [ ] `user_menu_permissions` — 본인 행 select 허용, 그 외 모든 작업은 관리자만
-- [ ] `mcp__supabase__generate_typescript_types`로 타입 재생성.
-- [ ] `mcp__supabase__get_advisors` 확인.
+- [x] `menus` 테이블 생성(`create_menus_and_user_menu_permissions` 마이그레이션):
+  - [x] `id uuid pk default gen_random_uuid()`
+  - [x] `parent_id uuid references menus(id) on delete cascade` (nullable, 대분류는 null)
+  - [x] `level integer not null check (level between 1 and 3)`
+  - [x] `name text not null`
+  - [x] `sort_order integer not null default 0`
+  - [x] `is_active boolean not null default true`
+  - [x] `created_at` / `updated_at` timestamptz (`updated_at`는 weeklyplan에 이미 있던 범용 트리거 `public.set_updated_at()`를 재사용 — 새 함수 안 만듦)
+  - [x] 인덱스: `(parent_id, sort_order)`
+  - [x] 정합성 제약: `menus_level_parent_consistency` check — `level = 1`이면 `parent_id is null`, `level > 1`이면 `parent_id is not null`
+- [x] `user_menu_permissions` 테이블 생성:
+  - [x] `id uuid pk`, `user_id uuid references profiles(id) on delete cascade`
+  - [x] `menu_id uuid references menus(id) on delete cascade`
+  - [x] `granted_by uuid references profiles(id)`, `granted_at timestamptz default now()`
+  - [x] `unique (user_id, menu_id)` — 중복 부여 방지
+  - [x] 인덱스: `(user_id)` + 후속 마이그레이션(`add_user_menu_permissions_fk_covering_indexes`)으로 `menu_id`/`granted_by` FK 커버링 인덱스 추가(`get_advisors` performance 권고 반영)
+- [x] RLS 정책 (기존 `is_admin()` 헬퍼 재사용, 새 함수 안 만듦):
+  - [x] `menus` — 인증 사용자 select 허용, insert/update/delete는 `is_admin()`만
+  - [x] `user_menu_permissions` — 본인 행 또는 `is_admin()` select 허용, insert/update/delete는 `is_admin()`만
+- [x] `mcp__supabase__generate_typescript_types`로 타입 재생성 → `lib/supabase/database.types.ts`에 `menus`/`user_menu_permissions` 블록 반영.
+- [x] `mcp__supabase__get_advisors`(security+performance) 확인 — security는 기존 경고 외 신규 없음. performance에서 FK 커버링 인덱스 INFO 2건이 나와 바로 인덱스 추가로 해소(위 참고). `unused_index`(INFO)는 방금 만든 테이블이라 아직 쿼리 트래픽이 없어서 뜨는 것으로 정상.
 
 **수락 기준**
 
-- 대분류만 단독 등록(`level=1`, `parent_id=null`)이 성공한다 — 하위 노드 없이도 유효해야 한다.
-- 일반 사용자 세션에서 `menus` insert 시도가 RLS로 차단된다.
+- [x] 대분류만 단독 등록(`level=1`, `parent_id=null`)이 성공한다 — 하위 노드 없이도 유효해야 한다.
+- [x] 일반 사용자 세션에서 `menus` insert 시도가 RLS로 차단된다.
 
 **테스트 체크리스트**
 
-- [ ] `mcp__supabase__execute_sql`로 대분류 단독 insert 성공 확인
-- [ ] `level=2`인데 `parent_id=null`인 insert가 제약 위반으로 실패하는지 확인
-- [ ] 동일 `(user_id, menu_id)` 중복 insert가 unique 제약으로 실패하는지 확인
-- [ ] 상위 메뉴 삭제 시 하위 메뉴와 관련 권한이 cascade 삭제되는지 확인
+- [x] `mcp__supabase__execute_sql`로 대분류 단독 insert 성공 확인.
+- [x] `level=2`인데 `parent_id=null`인 insert가 제약 위반(`menus_level_parent_consistency`)으로 실패하는지 확인.
+- [x] 동일 `(user_id, menu_id)` 중복 insert가 unique 제약(`user_menu_permissions_user_id_menu_id_key`)으로 실패하는지 확인.
+- [x] 상위 메뉴 삭제 시 하위 메뉴와 관련 권한이 cascade 삭제되는지 확인 — 테스트 대분류 삭제 후 연결된 `user_menu_permissions` 행이 0건으로 확인.
+- [x] (추가) `set_config`로 일반 사용자(`role='user'`) JWT를 시뮬레이션해 `menus` insert 시도 → RLS 정책 위반(`42501`)으로 실제 차단되는 것을 SQL 레벨에서 직접 확인. 테스트에 사용한 모든 `TEST_%` 행은 정리 완료(잔존 0건).
 
 ---
 
-#### Task 013: 메뉴/권한 데이터 액세스 계층 구현
+#### Task 013: 메뉴/권한 데이터 액세스 계층 구현 ✅
 
 **목표**: 이후 모든 화면이 공유할 서버 측 조회/권한 판정 함수를 한 곳에 모은다.
 
@@ -523,36 +540,39 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/auth.ts`:
-  - [ ] `getCurrentErpUser()` — `getClaims()`로 사용자 확인 후 `profiles`에서 `role`/`is_active` 조회. 미인증이면 `redirect("/auth/login")`.
-  - [ ] `requireAdmin()` — admin이 아니면 접근 거부 처리.
-  - [ ] `canAccessMenu(userId, menuId)` — `role='admin'`이면 무조건 `true`, 아니면 `user_menu_permissions` 조회.
-- [ ] `lib/erp/queries.ts`:
-  - [ ] `getAllMenus()` — 전체 메뉴 평면 조회 (`is_active` 필터 옵션 포함)
-  - [ ] `getVisibleMenuTree(userId)` — 권한 있는 메뉴 + **그 조상 노드를 경로 노출용으로 자동 포함**해 트리 반환 (PRD 4.2)
-  - [ ] `getMenuById(menuId)`, `getMenuBreadcrumb(menuId)`
-  - [ ] `getUsers()`, `getUserPermissions(userId)`
-- [ ] `lib/erp/actions.ts`에 Server Action 골격 작성 (Task 014~016에서 채움). 각 액션은 **첫 줄에서 `requireAdmin()`을 호출**하는 규약을 지킨다.
-- [ ] 조회 함수는 매 요청마다 `await createClient()`로 클라이언트를 새로 생성한다 (전역 변수 금지 — Fluid compute).
-- [ ] `cacheComponents: true` 환경이므로 이들 함수를 호출하는 컴포넌트는 반드시 Suspense 경계 안에 두도록 주석으로 명시한다.
-- [ ] Task 004의 `lib/erp/mock-menus.ts`를 개발/폴백용으로만 남기고, 실 조회로 교체할 지점을 TODO로 표시한다.
+- [x] `lib/erp/auth.ts`:
+  - [x] `getCurrentErpUser()` — `getClaims()`로 사용자 확인 후 `profiles`에서 `id/email/name/role/is_active` 조회. 미인증이거나 profiles 행이 없으면 `redirect("/auth/login")`. `is_active=false`면 동일하게 `/auth/login`으로 리다이렉트(Task 011에서 미룬 검증을 여기서 마무리).
+  - [x] `requireAdmin()` — `isAdminRole(role)`(`role in ('admin','superadmin')`, DB `public.is_admin()`과 동일 판정)로 앱 레벨에서 미러링. 관리자가 아니면 `/erp`로 리다이렉트(**TODO(Task 014)**: `/erp/forbidden` 생기면 그쪽으로 교체 — 주석으로 남겨둠). 새 DB 함수는 만들지 않음.
+  - [x] `canAccessMenu(userId, menuId)` — 관리자면 무조건 `true`, 아니면 `user_menu_permissions` 조회.
+- [x] `lib/erp/queries.ts`:
+  - [x] `getAllMenus({ activeOnly? })` — 전체 메뉴 평면 조회, `activeOnly` 옵션 지원(기본은 전체 — Task 016 관리자 메뉴 CRUD 화면이 비활성 메뉴도 봐야 하므로).
+  - [x] `getVisibleMenuTree(userId, knownRole?)` — 권한 있는 메뉴 + 조상 노드를 포함한 트리 반환(PRD 4.2). **정책 확정**: `is_active=false` 메뉴는 관리자/일반 사용자 구분 없이 항상 제외(활성 관리는 Task 016의 몫). `knownRole`을 넘기면(예: `getCurrentErpUser()`를 이미 호출한 caller) `profiles` 재조회를 생략 — 명시된 시그니처(`getVisibleMenuTree(userId)`)는 그대로 유지하면서 선택적 최적화만 추가.
+  - [x] `getMenuById(menuId)`, `getMenuBreadcrumb(menuId)` — breadcrumb은 전체 메뉴를 한 번 조회해 메모리에서 parentId 체인을 역추적(대상 없으면 `null`).
+  - [x] `getUsers()`, `getUserPermissions(userId)` — `getUsers()`는 Task 015용 목록 컬럼(`id/email/name/role/is_active/avatar_key/created_at`)만 `Pick`. `getUserPermissions()`는 `user_menu_permissions`→`menus` 임베디드 select로 부여된 메뉴 목록 반환(Task 017용).
+- [x] `lib/erp/actions.ts` — 아직 실제 액션 없이 "첫 줄에서 `requireAdmin()` 호출" 규약을 문서화한 골격만 작성(`export {}`). 실제 액션은 Task 015~017에서 채움.
+- [x] 조회 함수는 전부 함수 내부에서 `await createClient()`로 매번 새로 생성(전역 변수 없음).
+- [x] `getCurrentErpUser`/`getAllMenus` 등은 전부 `cookies()`를 쓰는 `createClient()`에 의존하므로, 이를 호출하는 컴포넌트는 `<Suspense>` 경계가 필요하다는 점을 각 함수 JSDoc에 명시.
+- [x] `lib/erp/mock-menus.ts`는 이번 Task에서 손대지 않음 — 실 조회로의 교체 시점은 이미 파일 자체 주석에 "Task 021에서 완전히 제거" 로 명시돼 있어 중복 기록하지 않음. `app/erp/layout.tsx`/`app/erp/menu/[menuId]/page.tsx`에 `getVisibleMenuTree`/`canAccessMenu`를 실제로 연결하는 것은 **Task 018 범위**(로드맵에 이미 명시)라 이번 Task에서는 건드리지 않음.
 
 **수락 기준**
 
-- `getVisibleMenuTree()`가 관리자에게는 전체 트리를, 일반 사용자에게는 권한 있는 리프 + 그 조상만 반환한다.
-- 권한이 소분류에만 있어도 상위 중/대분류가 경로 노출용으로 함께 반환된다.
+- [x] `getVisibleMenuTree()`가 관리자에게는 (활성) 전체 트리를, 일반 사용자에게는 권한 있는 리프 + 그 조상만 반환한다.
+- [x] 권한이 소분류에만 있어도 상위 중/대분류가 경로 노출용으로 함께 반환된다.
 
 **테스트 체크리스트**
 
-- [ ] 관리자 / 권한 있는 일반 사용자 / 권한 없는 일반 사용자 3개 계정으로 `getVisibleMenuTree()` 결과 비교
-- [ ] 소분류 1개만 부여된 사용자에게 상위 노드 2개가 함께 반환되는지 확인
-- [ ] `is_active=false` 메뉴가 트리에서 제외되는지 확인 (관리자 제외 여부 정책 확정 후 검증)
+검증 방법: `lib/erp/*`는 서버 전용 함수라 브라우저에서 직접 호출할 수 없어, **임시 디버그 라우트**(`app/api/debug-task013/route.ts` — `getCurrentErpUser()`+`getVisibleMenuTree()`+`canAccessMenu()`를 호출해 JSON으로 반환)를 만들어 Playwright로 실제 로그인 세션에 대해 검증한 뒤 **검증 완료 즉시 삭제**했다(커밋된 적 없음, `git status`로 잔존 없음 확인). 테스트용 메뉴 트리(대분류A→중분류B→소분류C1/C2/비활성C3, 단독 대분류D)와 계정(`erp-task013-permitted@example.com`)도 검증 후 전부 삭제.
+
+- [x] 관리자(`archy713@naver.com`, role=admin) / 권한 부여 전 일반 사용자 / 소분류 1개(C1)만 권한 부여된 동일 사용자 — 3개 상태로 `getVisibleMenuTree()` 결과 비교. 권한 부여 전: `tree=[]`. 부여 후: `tree=[A>B>C1]`(C2/C3/D 전부 제외). 관리자: `tree=[A>B>{C1,C2}, D]`(비활성 C3만 제외).
+- [x] 소분류 1개(C1)만 부여된 사용자에게 상위 노드 2개(A, B)가 함께 반환되는지 확인 — 위 결과로 확인.
+- [x] `is_active=false` 메뉴(C3)가 트리에서 제외되는지 확인 — 관리자 조회에서도 제외됨을 확인(정책: 관리자도 예외 없이 제외).
+- [x] (추가) `canAccessMenu()` 확인 — 권한 있는 사용자가 C1은 `true`, C2는 `false`. 관리자는 비활성 C3에 대해서도 `true`(관리자는 활성 여부와 무관하게 항상 통과하는 것이 의도된 동작 — `canAccessMenu`는 접근 제어용이지 노출 필터가 아님).
 
 ---
 
 ### Phase 2-C: 관리자 전용 CRUD 화면
 
-#### Task 014: 관리자 영역 가드 및 접근 거부 화면 구현
+#### Task 014: 관리자 영역 가드 및 접근 거부 화면 구현 ✅
 
 **목표**: 관리자 전용 화면의 진입 가드와, 권한 없는 접근 시 표시될 공용 안내 화면을 먼저 만든다 (Task 015~017의 공통 선행 작업).
 
@@ -561,64 +581,77 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - `app/erp/admin/layout.tsx` (신규)
 - `components/erp/access-denied.tsx` (신규)
 - `app/erp/forbidden/page.tsx` (신규)
-- `lib/erp/auth.ts`
+- `lib/erp/auth.ts` — `requireAdmin()` 리다이렉트 대상을 `/erp` → `/erp/forbidden`으로 교체
+- `lib/erp/menu-routes.ts` (신규)
+- `app/erp/menu/[menuId]/page.tsx` — 관리자 3종 소분류를 실제 라우트로 리다이렉트하는 분기 추가
+- **(계획에 없었으나 검증을 위해 추가)** `app/erp/admin/{users,menus,permissions}/page.tsx` — Task 015~017 관련 파일로 예정돼 있던 실제 구현 전까지, 가드 동작을 실제 라우트로 검증하기 위한 최소 스텁("Task 0NN에서 구현됩니다" 안내 문구만 있음). 각 Task가 콘텐츠를 실제 화면으로 교체하면 된다.
 
 **구현 체크리스트**
 
-- [ ] `app/erp/admin/layout.tsx`에서 `requireAdmin()`을 호출해 관리자가 아니면 접근 거부 화면으로 보낸다.
-- [ ] `AccessDenied` 컴포넌트 구현 — 안내 메시지 + "홈으로 돌아가기"(`/erp`) 버튼. ERP 셸 안에서 렌더링되어야 한다.
-- [ ] 관리자 3개 화면의 라우트를 확정한다: `/erp/admin/users`, `/erp/admin/menus`, `/erp/admin/permissions`.
-- [ ] 메뉴 트리의 "마스터 관리 > 기본 관리" 하위 3개 소분류를 **플레이스홀더가 아닌 위 실제 라우트로 연결**하는 매핑 규칙을 정한다 (예: `lib/erp/menu-routes.ts`에 메뉴명/고정 UUID → 경로 매핑 테이블).
-- [ ] 레이아웃은 얇은 `Layout` + `<Suspense>` + `async` 가드 컴포넌트 패턴으로 작성한다.
+- [x] `app/erp/admin/layout.tsx`에서 `requireAdmin()`을 호출해 관리자가 아니면 접근 거부 화면으로 보낸다.
+- [x] `AccessDenied` 컴포넌트 구현 — 안내 메시지 + "홈으로 돌아가기"(`/erp`) 버튼. ERP 셸 안에서 렌더링되어야 한다(`app/erp/forbidden`이 `app/erp/layout.tsx` 하위 세그먼트라 자동으로 `ErpShell` 안에서 렌더링됨).
+- [x] 관리자 3개 화면의 라우트를 확정한다: `/erp/admin/users`, `/erp/admin/menus`, `/erp/admin/permissions`.
+- [x] 메뉴 트리의 "마스터 관리 > 기본 관리" 하위 3개 소분류를 **플레이스홀더가 아닌 위 실제 라우트로 연결**하는 매핑 규칙을 정한다 — `lib/erp/menu-routes.ts`에 **메뉴 이름 경로("대>중>소")** → 라우트 매핑 테이블로 구현(고정 UUID 대신 이름 경로를 키로 선택: Mock 데이터의 문자열 id와 Task 019 이후 실 DB의 UUID가 서로 달라도 매핑이 깨지지 않도록 하기 위함). `app/erp/menu/[menuId]/page.tsx`에서 breadcrumb 계산 직후 매핑 확인 → 있으면 `redirect()`.
+- [x] 레이아웃은 얇은 `Layout` + `<Suspense>` + `async` 가드 컴포넌트 패턴으로 작성한다.
 
 **수락 기준**
 
-- 일반 사용자가 `/erp/admin/users`에 직접 접근하면 접근 거부 화면이 표시된다.
-- 관리자는 3개 관리자 경로에 모두 진입할 수 있다.
+- [x] 일반 사용자가 `/erp/admin/users`에 직접 접근하면 접근 거부 화면이 표시된다.
+- [x] 관리자는 3개 관리자 경로에 모두 진입할 수 있다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 테스트 계정 2개(admin 1 / user 1)로 검증 후 즉시 삭제(`auth.users` 삭제 → `profiles` cascade 확인, 잔존 0건)
 
-- [ ] 일반 사용자로 `/erp/admin/users` 직접 진입 → 접근 거부 화면 + 홈 버튼 동작 확인
-- [ ] 관리자로 동일 경로 진입 → 정상 화면 확인
-- [ ] 미인증 상태로 진입 → `/auth/login` 리다이렉트 확인
+- [x] 일반 사용자로 `/erp/admin/users`·`/erp/admin/menus`·`/erp/admin/permissions` 직접 진입 → 3개 모두 `/erp/forbidden`으로 리다이렉트 + 접근 거부 화면 + 홈 버튼 동작 확인
+- [x] 관리자로 동일 3개 경로 진입 → 정상 화면(스텁 콘텐츠) 확인
+- [x] 미인증 상태로 진입 → `/auth/login` 리다이렉트 확인 (`curl`로 재확인, 코드 변경 없는 영역이라 회귀 없음)
+- [x] (추가) `/erp/menu/master-basic-{users,menus,permissions}` 접근 시 관리자는 대응 관리자 라우트로, 일반 사용자는 관리자 라우트를 거쳐 다시 `/erp/forbidden`으로 이어지는 이중 리다이렉트 확인
+- [x] (추가) 매핑에 없는 메뉴("경영정보")는 리다이렉트 없이 기존 플레이스홀더 그대로 렌더링되는지 확인(회귀 없음)
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인
+- [x] `npm run check-all` 통과 (타입체크/린트/포맷 모두 기존 warning 외 신규 이슈 없음)
 
 ---
 
-#### Task 015: 사용자 관리 화면 구현 (F005)
+#### Task 015: 사용자 관리 화면 구현 (F005) ✅
 
 **목표**: 관리자가 전체 사용자를 조회하고 활성 상태·관리자 권한을 변경할 수 있게 한다.
 
 **관련 파일**
 
-- `app/erp/admin/users/page.tsx` (신규)
+- `app/erp/admin/users/page.tsx` (스텁 → 실 구현으로 교체)
 - `components/erp/admin/user-table.tsx` (신규)
-- `lib/erp/actions.ts`
-- `components/ui/{table,data-table,switch,badge,avatar,alert-dialog}.tsx` (기존 재사용)
+- `lib/erp/actions.ts` — `setUserActiveAction`/`setUserAdminRoleAction` 추가
+- `components/ui/{table,switch,badge,avatar,pagination,alert-dialog,input}.tsx` (기존 재사용 — `data-table.tsx`는 검색 툴바를 얹기 어려워 사용하지 않고, 동일 패턴을 `@tanstack/react-table` 직접 사용으로 재구성)
+- **(계획에 없었으나 검증 중 발견해 추가)** `app/erp/layout.tsx` — `getCurrentErpUser()` 호출 추가. 아래 참고.
 
 **구현 체크리스트**
 
-- [ ] 사용자 목록 테이블 구현 — 컬럼: 아바타 / 이메일 / 이름 / 역할(`Badge`) / 활성 여부(`Switch`) / 가입일.
-- [ ] 이메일·이름 검색 필터와 페이지네이션을 적용한다 (`components/ui/pagination.tsx`).
-- [ ] 활성/비활성 토글 Server Action — `Switch` 변경 시 `profiles.is_active` 갱신.
-- [ ] 관리자 권한 부여/회수 Server Action — `profiles.role` 갱신.
-- [ ] **자기 자신의 관리자 권한 회수 방지** 및 **마지막 관리자 강등 방지** 가드를 넣는다 (시스템 잠김 방지).
-- [ ] 권한 변경 등 파괴적 동작은 `AlertDialog`로 확인 절차를 둔다.
-- [ ] 성공/실패 피드백은 기존 `components/ui/sonner.tsx`(Toaster)로 표시한다.
-- [ ] 변경 후 `revalidatePath()`로 목록을 갱신한다.
+- [x] 사용자 목록 테이블 구현 — 컬럼: 아바타(이니셜 `AvatarFallback` — `avatar_key`는 URL이 아닌 프리셋 enum이라 이미지 매핑 불가, Task 011 결정과 동일 이유) / 이메일 / 이름 / 역할(`Badge`) / 관리자 지정(버튼+`AlertDialog`) / 활성 여부(`Switch`) / 가입일.
+- [x] 이메일·이름 검색 필터(클라이언트 사이드, `useMemo` 필터링)와 페이지네이션(`@tanstack/react-table`의 `getPaginationRowModel` + `components/ui/pagination.tsx`)을 적용한다. 검색어 변경 시 페이지를 1페이지로 리셋.
+- [x] 활성/비활성 토글 Server Action(`setUserActiveAction`) — `Switch` 변경 시 `profiles.is_active` 갱신.
+- [x] 관리자 권한 부여/회수 Server Action(`setUserAdminRoleAction`) — `profiles.role`을 `user ↔ admin`으로만 전환(슈퍼관리자 승격/강등은 화면 범위 밖 — DB 트리거가 admin이 아닌 상태에서 superadmin 직접 승격을 막음). `superadmin` 행은 버튼 대신 "최고 관리자" 텍스트만 표시.
+- [x] **자기 자신의 관리자 권한 회수 방지** — Server Action에서 `userId === admin.id && !makeAdmin`이면 즉시 거부. UI에서도 본인 행의 "관리자 해제" 버튼을 `disabled` + `title` 툴팁으로 선제 차단(이중 방어). **마지막 관리자 강등 방지**는 DB 트리거(`prevent_unauthorized_role_change`)가 처리하며, 트리거의 한국어 에러 메시지(`error.message`)를 그대로 토스트에 전달.
+- [x] 관리자 지정/해제(파괴적 동작)는 `AlertDialog`로 확인 절차를 둔다. 활성/비활성 토글은 되돌리기 쉬운 조작이라 확인 없이 즉시 반영(체크리스트가 명시적으로 `Switch`로 지정한 것과 일관).
+- [x] 성공/실패 피드백은 `sonner`의 `toast.success`/`toast.error`로 표시.
+- [x] 변경 후 `revalidatePath("/erp/admin/users")`로 목록을 갱신한다.
+
+**(검증 중 발견해 이번 Task에서 함께 수정)** "비활성화된 사용자는 ERP 진입이 차단된다"는 Task 013에서 이미 구현된 `getCurrentErpUser()`의 `is_active` 체크에 의존하는데, 이 함수가 그때는 `app/erp/admin/layout.tsx`(Task 014, 관리자 영역)에서만 호출되고 있어 **일반(`/erp`, `/erp/menu/*`) 경로에서는 비활성 사용자가 여전히 진입 가능**했다(Playwright로 재현 확인). `app/erp/layout.tsx`(모든 `/erp/*`의 공통 진입점)에 `getCurrentErpUser()` 호출을 추가해 이중 방어를 완성했다 — `proxy.ts`는 세션 존재만 확인하므로 여기서 `is_active=false`를 걸러야 한다. 특정 메뉴 단위 접근 제어(`getVisibleMenuTree`/`canAccessMenu`)는 계획대로 Task 018 범위로 남겨둔다.
 
 **수락 기준**
 
-- 관리자가 다른 사용자를 admin으로 승격/강등할 수 있다.
-- 비활성 처리된 사용자는 ERP 진입이 차단된다.
-- 마지막 관리자를 강등하려 하면 차단 메시지가 표시된다.
+- [x] 관리자가 다른 사용자를 admin으로 승격/강등할 수 있다.
+- [x] 비활성 처리된 사용자는 ERP 진입이 차단된다.
+- [x] 마지막 관리자를 강등하려 하면 차단 메시지가 표시된다 — DB 레벨은 Task 012에서 SQL로 직접 검증 완료(트리거가 정상 동작), 이번 Task에서는 실제 운영 관리자 계정 수를 건드릴 수 없어 재현 테스트는 하지 않고 앱 코드가 `error.message`를 그대로 토스트로 전달하는 것만 코드 리뷰로 확인.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 테스트 계정 2개(admin 1 / 승격 대상 user 1)로 검증 후 즉시 삭제(`auth.users` 삭제 → `profiles` cascade, 잔존 0건)
 
-- [ ] 목록 로딩 및 검색 필터 동작 확인
-- [ ] 활성 토글 off → 새로고침 후 상태 유지 확인
-- [ ] 해당 사용자로 로그인 시 차단되는지 확인
-- [ ] 자기 자신 강등 시도 → 차단 메시지 확인
-- [ ] 일반 사용자 세션에서 동일 Server Action 직접 호출 시 거부되는지 확인 (엣지 케이스)
+- [x] 목록 로딩(63명 실 데이터 + 테스트 계정 포함 65명 확인) 및 검색 필터("타깃유저" → 1건으로 좁혀짐, 페이지 표시 1/1로 리셋) 동작 확인
+- [x] 활성 토글 off → 스위치 상태 즉시 반영 + 토스트 확인. 동일 계정으로 로그인 시도 → `/auth/login`으로 즉시 리다이렉트(위 `app/erp/layout.tsx` 수정 덕분에 차단) 확인 → 재활성화 후 재검증
+- [x] 관리자 지정 → `AlertDialog` 확인 → "관리자" `Badge`+"관리자 해제" 버튼으로 전환 확인 → 관리자 해제 → 다시 "일반 사용자"로 복귀 확인
+- [x] 자기 자신(로그인한 테스트 관리자 본인 행) 강등 시도 → "관리자 해제" 버튼이 처음부터 `disabled`로 렌더링되어 클릭 자체가 불가능한 것을 확인(클라이언트 가드). 서버 액션의 동일 조건 차단은 코드 리뷰로 확인(실제 RPC 우회 호출까지는 재현하지 않음).
+- [x] 페이지네이션 Next 클릭 → "2 / 7 페이지"로 다음 10명 목록 교체 확인
+- [x] 관리자 레이아웃 가드(Task 014)가 이 화면에도 여전히 적용되는지 재확인 — 비관리자 접근 시 `/erp/forbidden` (회귀 없음)
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인
+- [x] `npm run check-all` 통과 (신규 warning 없음, 기존 `@tanstack/react-table` 관련 warning만 유지)
 
 ---
 
@@ -912,12 +945,12 @@ Task 001 (Phase 0 전제 확인)
 
 ## 진행 현황
 
-| Phase                               | Task 범위    | 상태   |
-| ----------------------------------- | ------------ | ------ |
-| Phase 0 — 전제 확인 ✅              | Task 001     | ☑ 완료 |
-| **Phase 1 — ERP 메인 화면 뼈대** ✅ | Task 002~007 | ☑ 완료 |
-| Phase 2-A — 인증 완성 / 공통 UI     | Task 008~010 | ☐ 대기 |
-| Phase 2-B — 데이터 모델             | Task 011~013 | ☐ 대기 |
-| Phase 2-C — 관리자 CRUD             | Task 014~017 | ☐ 대기 |
-| Phase 2-D — 접근 제어 / 메뉴 등록   | Task 018~021 | ☐ 대기 |
-| Phase 2-E — 통합 검증               | Task 022     | ☐ 대기 |
+| Phase                               | Task 범위    | 상태                                    |
+| ----------------------------------- | ------------ | --------------------------------------- |
+| Phase 0 — 전제 확인 ✅              | Task 001     | ☑ 완료                                  |
+| **Phase 1 — ERP 메인 화면 뼈대** ✅ | Task 002~007 | ☑ 완료                                  |
+| Phase 2-A — 인증 완성 / 공통 UI     | Task 008~010 | ☐ 진행중 (008 완료, 009~010 대기)       |
+| Phase 2-B — 데이터 모델 ✅          | Task 011~013 | ☑ 완료                                  |
+| Phase 2-C — 관리자 CRUD             | Task 014~017 | ☐ 진행중 (014~~015 완료, 016~~017 대기) |
+| Phase 2-D — 접근 제어 / 메뉴 등록   | Task 018~021 | ☐ 대기                                  |
+| Phase 2-E — 통합 검증               | Task 022     | ☐ 대기                                  |
