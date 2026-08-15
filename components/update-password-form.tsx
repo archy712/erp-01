@@ -13,13 +13,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function UpdatePasswordForm({
   className,
+  dict,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { dict: Dictionary }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,7 @@ export function UpdatePasswordForm({
       if (error) throw error;
       router.push("/erp");
     } catch (error: unknown) {
-      setError(getAuthErrorMessage(error));
+      setError(getAuthErrorMessage(error, dict));
     } finally {
       setIsLoading(false);
     }
@@ -46,20 +48,22 @@ export function UpdatePasswordForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-          <CardDescription>
-            Please enter your new password below.
-          </CardDescription>
+          <CardTitle className="text-2xl">
+            {dict.updatePassword.title}
+          </CardTitle>
+          <CardDescription>{dict.updatePassword.description}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleForgotPassword}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="password">New password</Label>
+                <Label htmlFor="password">
+                  {dict.updatePassword.newPasswordLabel}
+                </Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="New password"
+                  placeholder={dict.updatePassword.newPasswordLabel}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -67,7 +71,9 @@ export function UpdatePasswordForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save new password"}
+                {isLoading
+                  ? dict.updatePassword.saving
+                  : dict.updatePassword.saveButton}
               </Button>
             </div>
           </form>

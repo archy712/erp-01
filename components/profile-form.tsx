@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Tables } from "@/lib/supabase/database.types";
@@ -20,9 +21,13 @@ type Profile = Pick<Tables<"profiles">, "id" | "email" | "name">;
 
 export function ProfileForm({
   profile,
+  dict,
   className,
   ...props
-}: { profile: Profile } & React.ComponentPropsWithoutRef<"div">) {
+}: {
+  profile: Profile;
+  dict: Dictionary;
+} & React.ComponentPropsWithoutRef<"div">) {
   const [name, setName] = useState(profile.name ?? "");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -47,7 +52,9 @@ export function ProfileForm({
       setSuccess(true);
       router.refresh();
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(
+        error instanceof Error ? error.message : dict.profile.errorFallback,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -57,14 +64,14 @@ export function ProfileForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">프로필 수정</CardTitle>
-          <CardDescription>회원 프로필 정보를 수정합니다.</CardDescription>
+          <CardTitle className="text-2xl">{dict.profile.title}</CardTitle>
+          <CardDescription>{dict.profile.description}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">이메일</Label>
+                <Label htmlFor="email">{dict.profile.emailLabel}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -73,7 +80,7 @@ export function ProfileForm({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="name">이름</Label>
+                <Label htmlFor="name">{dict.profile.nameLabel}</Label>
                 <Input
                   id="name"
                   type="text"
@@ -85,11 +92,11 @@ export function ProfileForm({
               {error && <p className="text-sm text-red-500">{error}</p>}
               {success && (
                 <p className="text-sm text-green-600">
-                  프로필이 저장되었습니다.
+                  {dict.profile.saveSuccess}
                 </p>
               )}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "저장 중..." : "저장"}
+                {isLoading ? dict.profile.saving : dict.profile.saveButton}
               </Button>
             </div>
           </form>

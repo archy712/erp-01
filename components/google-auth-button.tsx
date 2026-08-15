@@ -2,9 +2,10 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { useState } from "react";
 
-export function GoogleAuthButton() {
+export function GoogleAuthButton({ dict }: { dict?: Dictionary }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +55,9 @@ export function GoogleAuthButton() {
             fill="#EA4335"
           />
         </svg>
-        {isLoading ? "연결하는 중..." : "Google로 계속하기"}
+        {isLoading
+          ? (dict?.login.googleConnecting ?? "연결하는 중...")
+          : (dict?.login.googleContinue ?? "Google로 계속하기")}
       </Button>
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>

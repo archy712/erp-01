@@ -7,7 +7,13 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -45,14 +51,16 @@ import { setUserActiveAction, setUserAdminRoleAction } from "@/lib/erp/actions";
 import type { ErpUserListItem } from "@/lib/erp/queries";
 import {
   ROLE_BADGE_VARIANT,
-  ROLE_LABEL,
+  getRoleLabel,
   isAdminRole,
 } from "@/lib/erp/role-labels";
 import type { UserRole } from "@/lib/erp/types";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 type UserTableProps = {
   users: ErpUserListItem[];
   currentUserId: string;
+  dict: Dictionary;
 };
 
 function formatDate(iso: string): string {
@@ -68,7 +76,8 @@ function initialsOf(name: string | null, email: string | null): string {
   return source.slice(0, 1).toUpperCase();
 }
 
-export function UserTable({ users, currentUserId }: UserTableProps) {
+export function UserTable({ users, currentUserId, dict }: UserTableProps) {
+  const t = dict.admin.users;
   const [search, setSearch] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -89,41 +98,43 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [search]);
 
-  function handleActiveToggle(user: ErpUserListItem, next: boolean) {
-    setPendingId(user.id);
-    startTransition(async () => {
-      const result = await setUserActiveAction(user.id, next);
-      if (!result.success) {
-        toast.error(result.message);
-      } else {
-        toast.success(
-          next ? "사용자를 활성화했습니다." : "사용자를 비활성화했습니다.",
-        );
-      }
-      setPendingId(null);
-    });
-  }
+  const handleActiveToggle = useCallback(
+    (user: ErpUserListItem, next: boolean) => {
+      setPendingId(user.id);
+      startTransition(async () => {
+        const result = await setUserActiveAction(user.id, next);
+        if (!result.success) {
+          toast.error(result.message);
+        } else {
+          toast.success(next ? t.activateToast : t.deactivateToast);
+        }
+        setPendingId(null);
+      });
+    },
+    [t],
+  );
 
-  function handleRoleChange(user: ErpUserListItem, makeAdmin: boolean) {
-    setPendingId(user.id);
-    startTransition(async () => {
-      const result = await setUserAdminRoleAction(user.id, makeAdmin);
-      if (!result.success) {
-        toast.error(result.message);
-      } else {
-        toast.success(
-          makeAdmin ? "관리자로 지정했습니다." : "관리자 권한을 회수했습니다.",
-        );
-      }
-      setPendingId(null);
-    });
-  }
+  const handleRoleChange = useCallback(
+    (user: ErpUserListItem, makeAdmin: boolean) => {
+      setPendingId(user.id);
+      startTransition(async () => {
+        const result = await setUserAdminRoleAction(user.id, makeAdmin);
+        if (!result.success) {
+          toast.error(result.message);
+        } else {
+          toast.success(makeAdmin ? t.promoteToast : t.demoteToast);
+        }
+        setPendingId(null);
+      });
+    },
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<ErpUserListItem>[]>(
     () => [
       {
         id: "avatar",
-        header: "아바타",
+        header: t.columnAvatar,
         cell: ({ row }) => (
           <Avatar size="sm">
             <AvatarFallback>
@@ -134,27 +145,29 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
       },
       {
         accessorKey: "email",
-        header: "이메일",
+        header: t.columnEmail,
         cell: ({ row }) => row.original.email ?? "-",
       },
       {
         accessorKey: "name",
-        header: "이름",
+        header: t.columnName,
         cell: ({ row }) => row.original.name ?? "-",
       },
       {
         accessorKey: "role",
-        header: "역할",
+        header: t.columnRole,
         cell: ({ row }) => {
           const role = row.original.role as UserRole;
           return (
-            <Badge variant={ROLE_BADGE_VARIANT[role]}>{ROLE_LABEL[role]}</Badge>
+            <Badge variant={ROLE_BADGE_VARIANT[role]}>
+              {getRoleLabel(role, dict)}
+            </Badge>
           );
         },
       },
       {
         id: "adminToggle",
-        header: "관리자 지정",
+        header: t.columnAdminToggle,
         cell: ({ row }) => {
           const user = row.original;
           const role = user.role as UserRole;
@@ -166,7 +179,9 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
           // superadmin 직접 승격을 막고, 강등은 별도 관리 정책이 필요) — 배지만 표시.
           if (role === "superadmin") {
             return (
-              <span className="text-xs text-muted-foreground">최고 관리자</span>
+              <span className="text-xs text-muted-foreground">
+                {t.superAdminLabel}
+              </span>
             );
           }
 
@@ -179,34 +194,31 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                   variant={currentlyAdmin ? "destructive" : "secondary"}
                   size="sm"
                   disabled={isRowPending || disableDemote}
-                  title={
-                    disableDemote
-                      ? "자기 자신의 관리자 권한은 회수할 수 없습니다."
-                      : undefined
-                  }
+                  title={disableDemote ? t.selfDemoteBlocked : undefined}
                 >
-                  {currentlyAdmin ? "관리자 해제" : "관리자 지정"}
+                  {currentlyAdmin ? t.demoteButton : t.promoteButton}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {currentlyAdmin
-                      ? "관리자 권한을 회수할까요?"
-                      : "관리자로 지정할까요?"}
+                      ? t.demoteConfirmTitle
+                      : t.promoteConfirmTitle}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    {currentlyAdmin
-                      ? `${user.email} 사용자의 관리자 권한을 회수합니다. 이 사용자는 더 이상 관리자 화면에 접근할 수 없습니다.`
-                      : `${user.email} 사용자에게 관리자 권한을 부여합니다. 모든 메뉴에 접근할 수 있게 됩니다.`}
+                    {(currentlyAdmin
+                      ? t.demoteConfirmDescription
+                      : t.promoteConfirmDescription
+                    ).replace("{email}", user.email ?? "")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => handleRoleChange(user, !currentlyAdmin)}
                   >
-                    확인
+                    {t.confirm}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -216,7 +228,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
       },
       {
         id: "isActive",
-        header: "활성 여부",
+        header: t.columnIsActive,
         cell: ({ row }) => {
           const user = row.original;
           const isRowPending = pendingId === user.id;
@@ -225,18 +237,20 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
               checked={user.is_active}
               disabled={isRowPending}
               onCheckedChange={(checked) => handleActiveToggle(user, checked)}
-              aria-label={user.is_active ? "비활성화" : "활성화"}
+              aria-label={
+                user.is_active ? t.deactivateAriaLabel : t.activateAriaLabel
+              }
             />
           );
         },
       },
       {
         accessorKey: "created_at",
-        header: "가입일",
+        header: t.columnCreatedAt,
         cell: ({ row }) => formatDate(row.original.created_at),
       },
     ],
-    [currentUserId, pendingId],
+    [currentUserId, pendingId, t, dict, handleActiveToggle, handleRoleChange],
   );
 
   const table = useReactTable({
@@ -252,13 +266,13 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
     <div className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex items-center justify-between gap-2">
         <Input
-          placeholder="이메일 또는 이름으로 검색"
+          placeholder={t.searchPlaceholder}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           className="max-w-xs"
         />
         <span className="text-sm text-muted-foreground">
-          총 {filtered.length}명
+          {t.totalCount.replace("{count}", String(filtered.length))}
         </span>
       </div>
 
@@ -300,7 +314,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  검색 결과가 없습니다.
+                  {t.noResults}
                 </TableCell>
               </TableRow>
             )}
@@ -311,8 +325,10 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {table.getPageCount() === 0
-            ? "0 / 0 페이지"
-            : `${pagination.pageIndex + 1} / ${table.getPageCount()} 페이지`}
+            ? t.noPages
+            : t.pageIndicator
+                .replace("{current}", String(pagination.pageIndex + 1))
+                .replace("{total}", String(table.getPageCount()))}
         </p>
         <Pagination className="mx-0 w-auto">
           <PaginationContent>

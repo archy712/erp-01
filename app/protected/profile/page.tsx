@@ -3,6 +3,8 @@ import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/profile-form";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 async function ProfileContent() {
   const supabase = await createClient();
@@ -14,18 +16,24 @@ async function ProfileContent() {
 
   const userId = data.claims.sub;
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, email, name")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: profile, error: profileError }, locale] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, email, name")
+      .eq("id", userId)
+      .maybeSingle(),
+    getLocale(),
+  ]);
 
   if (profileError) {
     throw profileError;
   }
 
+  const dict = getDictionary(locale);
+
   return (
     <ProfileForm
+      dict={dict}
       profile={
         profile ?? {
           id: userId,

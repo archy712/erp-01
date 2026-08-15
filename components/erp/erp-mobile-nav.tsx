@@ -64,7 +64,7 @@ export function ErpMobileNav({
             key={pathname}
             data={items}
             initialSelectedItemId={getActiveMenuId(pathname)}
-            aria-label="전체 메뉴 트리"
+            aria-label={dict.erp.mobileNav.treeAriaLabel}
           />
         </div>
       </SheetContent>

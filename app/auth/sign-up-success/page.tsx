@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import {
   Card,
   CardContent,
@@ -5,8 +7,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpSuccessContent />
+    </Suspense>
+  );
+}
+
+async function SignUpSuccessContent() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -14,14 +29,15 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Thank you for signing up!
+                {dict.signUpSuccess.title}
               </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardDescription>
+                {dict.signUpSuccess.description}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
+                {dict.signUpSuccess.message}
               </p>
             </CardContent>
           </Card>

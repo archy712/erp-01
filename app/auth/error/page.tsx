@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAuthErrorMessageByCode } from "@/lib/auth/get-auth-error-message";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { Suspense } from "react";
 
 async function ErrorContent({
@@ -8,12 +10,21 @@ async function ErrorContent({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
 
   return (
     <p className="text-sm text-muted-foreground">
-      {getAuthErrorMessageByCode(params?.error)}
+      {getAuthErrorMessageByCode(params?.error, dict)}
     </p>
   );
+}
+
+async function ErrorPageTitle() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
+  return <CardTitle className="text-2xl">{dict.authError.pageTitle}</CardTitle>;
 }
 
 export default function Page({
@@ -27,10 +38,12 @@ export default function Page({
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">문제가 발생했습니다.</CardTitle>
+              <Suspense fallback={null}>
+                <ErrorPageTitle />
+              </Suspense>
             </CardHeader>
             <CardContent>
-              <Suspense>
+              <Suspense fallback={null}>
                 <ErrorContent searchParams={searchParams} />
               </Suspense>
             </CardContent>

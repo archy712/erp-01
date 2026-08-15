@@ -3,9 +3,16 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { requireAdmin } from "./auth";
 import { getUserPermissions } from "./queries";
 import type { MenuLevel } from "./types";
+
+async function getActionMessages() {
+  const dict = getDictionary(await getLocale());
+  return dict.admin.actions;
+}
 
 // 관리자 전용 Server Action 공용 규약.
 //
@@ -30,7 +37,8 @@ export async function setUserActiveAction(
     .eq("id", userId);
 
   if (error) {
-    return { success: false, message: "활성 상태 변경에 실패했습니다." };
+    const messages = await getActionMessages();
+    return { success: false, message: messages.activeStatusUpdateFailed };
   }
 
   revalidatePath("/erp/admin/users");
@@ -53,9 +61,10 @@ export async function setUserAdminRoleAction(
   const admin = await requireAdmin();
 
   if (!makeAdmin && userId === admin.id) {
+    const messages = await getActionMessages();
     return {
       success: false,
-      message: "자기 자신의 관리자 권한은 회수할 수 없습니다.",
+      message: messages.selfDemoteBlocked,
     };
   }
 
@@ -91,10 +100,11 @@ export async function createMenuAction(
   input: MenuFormInput,
 ): Promise<ActionResult> {
   await requireAdmin();
+  const messages = await getActionMessages();
 
   const name = input.name.trim();
   if (!name) {
-    return { success: false, message: "메뉴명을 입력해주세요." };
+    return { success: false, message: messages.nameRequired };
   }
 
   const supabase = await createClient();
@@ -108,12 +118,12 @@ export async function createMenuAction(
       .maybeSingle();
 
     if (parentError || !parent) {
-      return { success: false, message: "상위 메뉴를 찾을 수 없습니다." };
+      return { success: false, message: messages.parentNotFound };
     }
     if (parent.level >= MAX_MENU_LEVEL) {
       return {
         success: false,
-        message: "메뉴는 최대 3단계(소분류)까지만 등록할 수 있습니다.",
+        message: messages.maxLevelExceeded,
       };
     }
     level = (parent.level + 1) as MenuLevel;
@@ -128,7 +138,7 @@ export async function createMenuAction(
   });
 
   if (error) {
-    return { success: false, message: "메뉴 등록에 실패했습니다." };
+    return { success: false, message: messages.menuCreateFailed };
   }
 
   revalidatePath("/erp", "layout");
@@ -145,10 +155,11 @@ export async function updateMenuAction(
   input: Pick<MenuFormInput, "name" | "sortOrder" | "isActive">,
 ): Promise<ActionResult> {
   await requireAdmin();
+  const messages = await getActionMessages();
 
   const name = input.name.trim();
   if (!name) {
-    return { success: false, message: "메뉴명을 입력해주세요." };
+    return { success: false, message: messages.nameRequired };
   }
 
   const supabase = await createClient();
@@ -158,7 +169,7 @@ export async function updateMenuAction(
     .eq("id", menuId);
 
   if (error) {
-    return { success: false, message: "메뉴 수정에 실패했습니다." };
+    return { success: false, message: messages.menuUpdateFailed };
   }
 
   revalidatePath("/erp", "layout");
@@ -179,7 +190,8 @@ export async function setMenuActiveAction(
     .eq("id", menuId);
 
   if (error) {
-    return { success: false, message: "사용 여부 변경에 실패했습니다." };
+    const messages = await getActionMessages();
+    return { success: false, message: messages.menuActiveUpdateFailed };
   }
 
   revalidatePath("/erp", "layout");
@@ -197,7 +209,8 @@ export async function deleteMenuAction(menuId: string): Promise<ActionResult> {
   const { error } = await supabase.from("menus").delete().eq("id", menuId);
 
   if (error) {
-    return { success: false, message: "메뉴 삭제에 실패했습니다." };
+    const messages = await getActionMessages();
+    return { success: false, message: messages.menuDeleteFailed };
   }
 
   revalidatePath("/erp", "layout");
@@ -214,6 +227,7 @@ export async function moveMenuAction(
   direction: "up" | "down",
 ): Promise<ActionResult> {
   await requireAdmin();
+  const messages = await getActionMessages();
 
   const supabase = await createClient();
 
@@ -224,7 +238,7 @@ export async function moveMenuAction(
     .maybeSingle();
 
   if (targetError || !target) {
-    return { success: false, message: "메뉴를 찾을 수 없습니다." };
+    return { success: false, message: messages.menuNotFound };
   }
 
   const siblingsQuery = supabase
@@ -237,14 +251,14 @@ export async function moveMenuAction(
     : await siblingsQuery.is("parent_id", null);
 
   if (siblingsError || !siblings) {
-    return { success: false, message: "형제 메뉴 조회에 실패했습니다." };
+    return { success: false, message: messages.siblingQueryFailed };
   }
 
   const index = siblings.findIndex((sibling) => sibling.id === menuId);
   const swapIndex = direction === "up" ? index - 1 : index + 1;
 
   if (index === -1 || swapIndex < 0 || swapIndex >= siblings.length) {
-    return { success: false, message: "더 이상 이동할 수 없습니다." };
+    return { success: false, message: messages.cannotMoveFurther };
   }
 
   const current = siblings[index];
@@ -262,7 +276,7 @@ export async function moveMenuAction(
   ]);
 
   if (currentError || swapError) {
-    return { success: false, message: "정렬 순서 변경에 실패했습니다." };
+    return { success: false, message: messages.sortOrderUpdateFailed };
   }
 
   revalidatePath("/erp", "layout");
@@ -304,7 +318,8 @@ export async function setUserMenuPermissionsAction(
   });
 
   if (error) {
-    return { success: false, message: "권한 저장에 실패했습니다." };
+    const messages = await getActionMessages();
+    return { success: false, message: messages.permissionSaveFailed };
   }
 
   revalidatePath("/erp", "layout");

@@ -28,18 +28,14 @@ import {
 } from "@/lib/erp/actions";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import type { MenuFlat, MenuLevel, MenuNode } from "@/lib/erp/types";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { MenuFormDialog } from "./menu-form-dialog";
-
-const LEVEL_LABEL: Record<MenuLevel, string> = {
-  1: "대분류",
-  2: "중분류",
-  3: "소분류",
-};
 
 const MAX_MENU_LEVEL = 3;
 
 type MenuManagerProps = {
   menus: MenuFlat[];
+  dict: Dictionary;
 };
 
 function toTreeItems(
@@ -57,7 +53,14 @@ function toTreeItems(
   }));
 }
 
-export function MenuManager({ menus }: MenuManagerProps) {
+export function MenuManager({ menus, dict }: MenuManagerProps) {
+  const t = dict.admin.menus;
+  const levelLabel: Record<MenuLevel, string> = {
+    1: t.level1,
+    2: t.level2,
+    3: t.level3,
+  };
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -111,10 +114,10 @@ export function MenuManager({ menus }: MenuManagerProps) {
     <div className="flex flex-1 gap-4 p-6">
       <div className="flex w-72 shrink-0 flex-col gap-3 rounded-md border p-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">메뉴 트리</h2>
+          <h2 className="text-sm font-medium">{t.treeTitle}</h2>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus />
-            메뉴 등록
+            {t.addButton}
           </Button>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -128,7 +131,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
                     <span className="truncate text-sm">{item.name}</span>
                     {node && !node.isActive ? (
                       <Badge variant="outline" className="shrink-0 text-[10px]">
-                        비활성
+                        {t.inactiveBadge}
                       </Badge>
                     ) : null}
                   </div>
@@ -136,9 +139,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
               }}
             />
           ) : (
-            <p className="p-4 text-sm text-muted-foreground">
-              등록된 메뉴가 없습니다.
-            </p>
+            <p className="p-4 text-sm text-muted-foreground">{t.noMenus}</p>
           )}
         </div>
       </div>
@@ -154,9 +155,9 @@ export function MenuManager({ menus }: MenuManagerProps) {
                 <h2 className="text-lg font-medium tracking-tight">
                   {selected.name}
                 </h2>
-                <Badge variant="secondary">{LEVEL_LABEL[selected.level]}</Badge>
+                <Badge variant="secondary">{levelLabel[selected.level]}</Badge>
                 {!selected.isActive ? (
-                  <Badge variant="outline">비활성</Badge>
+                  <Badge variant="outline">{t.inactiveBadge}</Badge>
                 ) : null}
               </div>
             </div>
@@ -170,12 +171,12 @@ export function MenuManager({ menus }: MenuManagerProps) {
                   runAction(
                     selected.id,
                     () => moveMenuAction(selected.id, "up"),
-                    "정렬순서를 위로 이동했습니다.",
+                    t.moveUpToast,
                   )
                 }
               >
                 <ArrowUp />
-                위로
+                {t.moveUp}
               </Button>
               <Button
                 variant="outline"
@@ -187,19 +188,19 @@ export function MenuManager({ menus }: MenuManagerProps) {
                   runAction(
                     selected.id,
                     () => moveMenuAction(selected.id, "down"),
-                    "정렬순서를 아래로 이동했습니다.",
+                    t.moveDownToast,
                   )
                 }
               >
                 <ArrowDown />
-                아래로
+                {t.moveDown}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setEditOpen(true)}
               >
-                수정
+                {t.edit}
               </Button>
               {selected.level < MAX_MENU_LEVEL ? (
                 <Button
@@ -208,7 +209,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
                   onClick={() => setCreateOpen(true)}
                 >
                   <Plus />
-                  하위 메뉴 추가
+                  {t.addChild}
                 </Button>
               ) : null}
 
@@ -219,31 +220,32 @@ export function MenuManager({ menus }: MenuManagerProps) {
                     size="sm"
                     disabled={isSelectedPending}
                   >
-                    삭제
+                    {t.delete}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>메뉴를 삭제할까요?</AlertDialogTitle>
+                    <AlertDialogTitle>{t.deleteConfirmTitle}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      &ldquo;{selected.name}&rdquo; 메뉴를 삭제합니다. 하위
-                      메뉴가 있다면 함께 삭제되고, 이 메뉴들에 부여된 사용자
-                      권한도 모두 사라집니다. 이 작업은 되돌릴 수 없습니다.
+                      {t.deleteConfirmDescription.replace(
+                        "{name}",
+                        selected.name,
+                      )}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() =>
                         runAction(
                           selected.id,
                           () => deleteMenuAction(selected.id),
-                          "메뉴를 삭제했습니다.",
+                          t.deleteToast,
                           () => setSelectedId(null),
                         )
                       }
                     >
-                      삭제
+                      {t.delete}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -251,7 +253,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
             </div>
 
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
-              <span className="text-sm">사용 여부</span>
+              <span className="text-sm">{t.useStatus}</span>
               <Switch
                 checked={selected.isActive}
                 disabled={isSelectedPending}
@@ -259,22 +261,21 @@ export function MenuManager({ menus }: MenuManagerProps) {
                   runAction(
                     selected.id,
                     () => setMenuActiveAction(selected.id, checked),
-                    checked
-                      ? "메뉴를 활성화했습니다."
-                      : "메뉴를 비활성화했습니다.",
+                    checked ? t.activateToast : t.deactivateToast,
                   )
                 }
-                aria-label={selected.isActive ? "비활성화" : "활성화"}
+                aria-label={
+                  selected.isActive
+                    ? dict.admin.users.deactivateAriaLabel
+                    : dict.admin.users.activateAriaLabel
+                }
               />
             </div>
           </div>
         ) : (
           <Empty className="flex-1 border-0">
             <EmptyHeader>
-              <EmptyDescription>
-                좌측 트리에서 메뉴를 선택하면 상세 정보와 편집 도구가
-                표시됩니다.
-              </EmptyDescription>
+              <EmptyDescription>{t.emptyStateDescription}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         )}
@@ -285,6 +286,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
         open={createOpen}
         onOpenChange={setCreateOpen}
         menus={menus}
+        dict={dict}
         defaultParentId={
           selected && selected.level < MAX_MENU_LEVEL ? selected.id : null
         }
@@ -295,6 +297,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
           open={editOpen}
           onOpenChange={setEditOpen}
           menus={menus}
+          dict={dict}
           menu={selected}
         />
       ) : null}

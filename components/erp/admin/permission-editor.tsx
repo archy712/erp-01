@@ -34,14 +34,16 @@ import { buildMenuTree } from "@/lib/erp/menu-tree";
 import type { ErpUserListItem } from "@/lib/erp/queries";
 import {
   ROLE_BADGE_VARIANT,
-  ROLE_LABEL,
+  getRoleLabel,
   isAdminRole,
 } from "@/lib/erp/role-labels";
 import type { MenuFlat, MenuNode, UserRole } from "@/lib/erp/types";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 type PermissionEditorProps = {
   users: ErpUserListItem[];
   activeMenus: MenuFlat[];
+  dict: Dictionary;
 };
 
 function collectIds(node: MenuNode): string[] {
@@ -72,8 +74,8 @@ function toggleNode(
   return next;
 }
 
-function userLabel(user: ErpUserListItem): string {
-  return `${user.name ?? "(이름 없음)"} · ${user.email ?? ""}`;
+function userLabel(user: ErpUserListItem, noNameLabel: string): string {
+  return `${user.name ?? noNameLabel} · ${user.email ?? ""}`;
 }
 
 type PermissionTreeRowsProps = {
@@ -128,7 +130,9 @@ function PermissionTreeRows({
 export function PermissionEditor({
   users,
   activeMenus,
+  dict,
 }: PermissionEditorProps) {
+  const t = dict.admin.permissions;
   const [selectedUser, setSelectedUser] = useState<ErpUserListItem | null>(
     null,
   );
@@ -171,7 +175,7 @@ export function PermissionEditor({
         setCheckedIds(new Set(ids));
         setSavedIds(new Set(ids));
       } catch {
-        toast.error("권한 정보를 불러오지 못했습니다.");
+        toast.error(t.loadFailedToast);
       } finally {
         setIsLoadingPermissions(false);
       }
@@ -201,7 +205,7 @@ export function PermissionEditor({
       }
 
       setSavedIds(new Set(checkedIds));
-      toast.success("권한을 저장했습니다.");
+      toast.success(t.saveSuccessToast);
     });
   }
 
@@ -209,32 +213,32 @@ export function PermissionEditor({
     <div className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="permission-user-search">사용자</Label>
+          <Label htmlFor="permission-user-search">{t.userLabel}</Label>
           <Combobox
             items={users}
             value={selectedUser}
             onValueChange={handleUserChange}
-            itemToStringLabel={userLabel}
+            itemToStringLabel={(user) => userLabel(user, t.noNameLabel)}
             isItemEqualToValue={(a, b) => a.id === b.id}
           >
             <ComboboxInput
               id="permission-user-search"
-              placeholder="이메일 또는 이름으로 검색"
+              placeholder={t.searchPlaceholder}
               className="w-80"
             />
             <ComboboxContent>
-              <ComboboxEmpty>검색 결과가 없습니다.</ComboboxEmpty>
+              <ComboboxEmpty>{t.noSearchResults}</ComboboxEmpty>
               <ComboboxList>
                 {(user: ErpUserListItem) => (
                   <ComboboxItem key={user.id} value={user}>
                     <div className="flex min-w-0 flex-col">
                       <span className="flex items-center gap-1.5 truncate">
-                        {user.name ?? "(이름 없음)"}
+                        {user.name ?? t.noNameLabel}
                         <Badge
                           variant={ROLE_BADGE_VARIANT[user.role as UserRole]}
                           className="text-[10px]"
                         >
-                          {ROLE_LABEL[user.role as UserRole]}
+                          {getRoleLabel(user.role as UserRole, dict)}
                         </Badge>
                       </span>
                       <span className="truncate text-xs text-muted-foreground">
@@ -252,33 +256,28 @@ export function PermissionEditor({
           onClick={handleSave}
           disabled={!selectedUser || selectedIsAdmin || !isDirty || isPending}
         >
-          저장
+          {t.saveButton}
         </Button>
       </div>
 
       {!selectedUser ? (
         <Empty className="flex-1 border-0">
           <EmptyHeader>
-            <EmptyDescription>
-              위에서 사용자를 검색해 선택하면 현재 권한을 조회하고 편집할 수
-              있습니다.
-            </EmptyDescription>
+            <EmptyDescription>{t.noUserSelectedDescription}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : selectedIsAdmin ? (
         <Empty className="flex-1 border-0">
           <EmptyHeader>
             <EmptyDescription>
-              관리자는 모든 메뉴에 접근하므로 개별 권한 설정이 불필요합니다.
+              {t.adminNoPermissionDescription}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : isLoadingPermissions ? (
-        <p className="p-4 text-sm text-muted-foreground">불러오는 중...</p>
+        <p className="p-4 text-sm text-muted-foreground">{t.loading}</p>
       ) : tree.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">
-          등록된 메뉴가 없습니다.
-        </p>
+        <p className="p-4 text-sm text-muted-foreground">{t.noMenus}</p>
       ) : (
         <div className="flex-1 overflow-y-auto rounded-md border p-2">
           <PermissionTreeRows
@@ -300,17 +299,14 @@ export function PermissionEditor({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              저장하지 않은 변경사항이 있습니다
-            </AlertDialogTitle>
+            <AlertDialogTitle>{t.unsavedTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              사용자를 전환하면 저장하지 않은 권한 변경사항이 사라집니다.
-              계속할까요?
+              {t.unsavedDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPendingUser(undefined)}>
-              취소
+              {t.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -318,7 +314,7 @@ export function PermissionEditor({
                 setPendingUser(undefined);
               }}
             >
-              전환
+              {t.switchConfirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

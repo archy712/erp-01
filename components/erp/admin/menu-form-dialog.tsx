@@ -29,12 +29,7 @@ import {
 } from "@/lib/erp/actions";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import type { MenuFlat, MenuLevel } from "@/lib/erp/types";
-
-const LEVEL_LABEL: Record<MenuLevel, string> = {
-  1: "대분류",
-  2: "중분류",
-  3: "소분류",
-};
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 const ROOT_VALUE = "__root__";
 const MAX_MENU_LEVEL = 3;
@@ -43,6 +38,7 @@ type MenuFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   menus: MenuFlat[];
+  dict: Dictionary;
 } & (
   | { mode: "create"; menu?: undefined; defaultParentId?: string | null }
   | { mode: "edit"; menu: MenuFlat; defaultParentId?: undefined }
@@ -62,22 +58,25 @@ function pathLabel(menus: MenuFlat[], id: string): string {
 export function MenuFormDialog({
   open,
   onOpenChange,
+  dict,
   ...rest
 }: MenuFormDialogProps) {
+  const t = dict.admin.menus;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {rest.mode === "edit" ? "메뉴 수정" : "메뉴 등록"}
+            {rest.mode === "edit" ? t.editTitle : t.createTitle}
           </DialogTitle>
           <DialogDescription>
-            {rest.mode === "edit"
-              ? "메뉴명·정렬순서·사용여부를 수정합니다. 상위 메뉴는 변경할 수 없습니다."
-              : "상위 메뉴를 비워두면 대분류로 등록됩니다."}
+            {rest.mode === "edit" ? t.editDescription : t.createDescription}
           </DialogDescription>
         </DialogHeader>
-        {open ? <MenuFormFields {...rest} onOpenChange={onOpenChange} /> : null}
+        {open ? (
+          <MenuFormFields {...rest} dict={dict} onOpenChange={onOpenChange} />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -85,6 +84,7 @@ export function MenuFormDialog({
 
 type MenuFormFieldsProps = {
   menus: MenuFlat[];
+  dict: Dictionary;
   onOpenChange: (open: boolean) => void;
 } & (
   | { mode: "create"; menu?: undefined; defaultParentId?: string | null }
@@ -93,11 +93,19 @@ type MenuFormFieldsProps = {
 
 function MenuFormFields({
   menus,
+  dict,
   mode,
   menu,
   defaultParentId,
   onOpenChange,
 }: MenuFormFieldsProps) {
+  const t = dict.admin.menus;
+  const levelLabel: Record<MenuLevel, string> = {
+    1: t.level1,
+    2: t.level2,
+    3: t.level3,
+  };
+
   const initialParentId =
     mode === "edit" ? menu.parentId : (defaultParentId ?? null);
 
@@ -135,7 +143,7 @@ function MenuFormFields({
   function handleSubmit() {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setNameError("메뉴명을 입력해주세요.");
+      setNameError(t.nameRequired);
       return;
     }
     setNameError(null);
@@ -162,9 +170,7 @@ function MenuFormFields({
         return;
       }
 
-      toast.success(
-        mode === "edit" ? "메뉴를 수정했습니다." : "메뉴를 등록했습니다.",
-      );
+      toast.success(mode === "edit" ? t.editToast : t.createToast);
       onOpenChange(false);
     });
   }
@@ -173,15 +179,13 @@ function MenuFormFields({
     <>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="menu-parent">상위 메뉴</Label>
+          <Label htmlFor="menu-parent">{t.parentLabel}</Label>
           {mode === "edit" ? (
             <p
               id="menu-parent"
               className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
             >
-              {menu.parentId
-                ? pathLabel(menus, menu.parentId)
-                : "없음 (대분류)"}
+              {menu.parentId ? pathLabel(menus, menu.parentId) : t.noneRoot}
             </p>
           ) : (
             <Select
@@ -192,7 +196,7 @@ function MenuFormFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ROOT_VALUE}>없음 (대분류)</SelectItem>
+                <SelectItem value={ROOT_VALUE}>{t.noneRoot}</SelectItem>
                 {parentOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {pathLabel(menus, option.id)}
@@ -204,14 +208,14 @@ function MenuFormFields({
         </div>
 
         <p className="text-sm text-muted-foreground">
-          레벨:{" "}
+          {t.levelLabel}:{" "}
           <span className="font-medium text-foreground">
-            {LEVEL_LABEL[level]}
+            {levelLabel[level]}
           </span>
         </p>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="menu-name">메뉴명</Label>
+          <Label htmlFor="menu-name">{t.nameLabel}</Label>
           <Input
             id="menu-name"
             value={name}
@@ -227,7 +231,7 @@ function MenuFormFields({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="menu-sort-order">정렬순서</Label>
+          <Label htmlFor="menu-sort-order">{t.sortOrderLabel}</Label>
           <Input
             id="menu-sort-order"
             type="number"
@@ -237,7 +241,7 @@ function MenuFormFields({
         </div>
 
         <div className="flex items-center justify-between rounded-md border px-3 py-2">
-          <Label htmlFor="menu-is-active">사용 여부</Label>
+          <Label htmlFor="menu-is-active">{t.useStatusLabel}</Label>
           <Switch
             id="menu-is-active"
             checked={isActive}
@@ -252,10 +256,10 @@ function MenuFormFields({
           onClick={() => onOpenChange(false)}
           disabled={isPending}
         >
-          취소
+          {t.cancelBtn}
         </Button>
         <Button onClick={handleSubmit} disabled={isPending}>
-          {mode === "edit" ? "수정" : "등록"}
+          {mode === "edit" ? t.submitEdit : t.submitCreate}
         </Button>
       </DialogFooter>
     </>

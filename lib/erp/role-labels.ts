@@ -1,3 +1,4 @@
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import type { UserRole } from "./types";
 
 // 서버 전용 코드(next/headers 등)를 전혀 임포트하지 않는 순수 모듈이라
@@ -12,11 +13,10 @@ export function isAdminRole(role: UserRole): boolean {
   return ADMIN_ROLES.includes(role);
 }
 
-export const ROLE_LABEL: Record<UserRole, string> = {
-  user: "일반 사용자",
-  admin: "관리자",
-  superadmin: "최고 관리자",
-};
+/** 역할 배지/셀렉트 등에 쓰는 다국어 라벨. dict.roles(4개 언어)를 그대로 매핑한다. */
+export function getRoleLabel(role: UserRole, dict: Dictionary): string {
+  return dict.roles[role];
+}
 
 export const ROLE_BADGE_VARIANT: Record<
   UserRole,

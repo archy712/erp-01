@@ -78,7 +78,7 @@ export function ErpMenuTree({
       key={pathname}
       data={items}
       initialSelectedItemId={getActiveMenuId(pathname)}
-      aria-label="메뉴 트리"
+      aria-label={dict.erp.tree.ariaLabel}
     />
   );
 }

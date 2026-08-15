@@ -3,9 +3,94 @@ import type { Dictionary } from "./types";
 export const en: Dictionary = {
   common: {
     backToHome: "← Home",
+    signIn: "Sign in",
+    signUp: "Sign up",
+    signOut: "Sign out",
+    profile: "Profile",
+    greeting: "Hey, {email}!",
   },
   home: {
-    heading: "Next.js Starter Kit 3",
+    heading: "Welcome to the ERP System",
+    description:
+      "From master data to sales, logistics, and accounting — manage every part of your business on one platform.",
+    loginCta: "Log in to get started",
+    categoriesHeading: "Key Features",
+    categoriesDescription:
+      "Explore the core capabilities available in each top-level menu category.",
+    categories: [
+      {
+        title: "Master Data Management",
+        description:
+          "Manage core reference data such as users, menus, and permissions for system operations.",
+      },
+      {
+        title: "Management Info",
+        description:
+          "View key business metrics such as sales and profit through dashboards and reports.",
+      },
+      {
+        title: "HR & Payroll",
+        description:
+          "Handle employee records, attendance, and payroll settlement.",
+      },
+      {
+        title: "Web Accounting",
+        description:
+          "Process accounting tasks online, from journal entries to financial statements.",
+      },
+      {
+        title: "Planning",
+        description:
+          "Support business planning, budgeting, and performance analysis.",
+      },
+      {
+        title: "Sourcing",
+        description:
+          "Manage material ordering and supplier sourcing processes.",
+      },
+      {
+        title: "Logistics",
+        description:
+          "Manage the full logistics flow, including inbound/outbound and inventory.",
+      },
+      {
+        title: "Partners",
+        description:
+          "Manage partner information, transaction history, and evaluations.",
+      },
+      {
+        title: "Sales",
+        description:
+          "Manage the full sales cycle, from order intake to revenue settlement.",
+      },
+      {
+        title: "Sales Management",
+        description:
+          "Track sales performance, receivables, and revenue status.",
+      },
+      {
+        title: "Sales Planning",
+        description: "Plan sales targets and channel-specific strategies.",
+      },
+      {
+        title: "Customer Management",
+        description:
+          "Manage customer information and consultation history in one place.",
+      },
+      {
+        title: "Web POS",
+        description: "Manage in-store point-of-sale data in real time.",
+      },
+      {
+        title: "C&F",
+        description:
+          "Manage customs clearance and freight (Customs & Freight) operations.",
+      },
+      {
+        title: "Board",
+        description: "Post and share notices and internal news.",
+      },
+    ],
     footer: {
       about: "About next.js starter-kit3",
       techStack: "Tech Stack",
@@ -13,6 +98,234 @@ export const en: Dictionary = {
       iconGallery: "Icon Gallery",
       chartGallery: "Chart Gallery",
       avatarGallery: "Avatar Gallery",
+      developedBy: "Developed by",
+    },
+  },
+  login: {
+    title: "Login",
+    description: "Enter your email below to login to your account",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    forgotPassword: "Forgot your password?",
+    loginButton: "Login",
+    loggingIn: "Logging in...",
+    noAccount: "Don't have an account?",
+    orSeparator: "or",
+    googleContinue: "Continue with Google",
+    googleConnecting: "Connecting...",
+  },
+  signUp: {
+    title: "Sign up",
+    description: "Create a new account",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    repeatPasswordLabel: "Repeat Password",
+    passwordMismatch: "Passwords do not match.",
+    creatingAccount: "Creating an account...",
+    submitButton: "Sign up",
+    haveAccount: "Already have an account?",
+  },
+  signUpSuccess: {
+    title: "Thank you for signing up!",
+    description: "Check your email to confirm",
+    message:
+      "You've successfully signed up. Please check your email to confirm your account before signing in.",
+  },
+  forgotPassword: {
+    title: "Reset Your Password",
+    description:
+      "Type in your email and we'll send you a link to reset your password",
+    emailLabel: "Email",
+    sendButton: "Send reset email",
+    sending: "Sending...",
+    haveAccount: "Already have an account?",
+    successTitle: "Check Your Email",
+    successDescription: "Password reset instructions sent",
+    successMessage:
+      "If you registered using your email and password, you will receive a password reset email.",
+  },
+  updatePassword: {
+    title: "Reset Your Password",
+    description: "Please enter your new password below.",
+    newPasswordLabel: "New password",
+    saveButton: "Save new password",
+    saving: "Saving...",
+  },
+  authError: {
+    pageTitle: "Sorry, something went wrong.",
+    codes: {
+      invalid_credentials: "Incorrect email or password.",
+      email_not_confirmed:
+        "Your email hasn't been verified yet. Please check your inbox.",
+      user_already_exists: "This email is already registered.",
+      email_exists: "This email is already registered.",
+      identity_already_exists: "This email is already registered.",
+      weak_password: "This password is too weak. Please use a stronger one.",
+      same_password: "The new password matches your current password.",
+      user_banned: "This account has been banned. Please contact an admin.",
+      session_expired: "Your session has expired. Please log in again.",
+      otp_expired: "This link has expired. Please try again.",
+      over_email_send_rate_limit:
+        "Too many email requests. Please try again later.",
+      over_request_rate_limit: "Too many requests. Please try again later.",
+      validation_failed: "Please check your input.",
+      email_address_invalid: "Please enter a valid email address.",
+      signup_disabled: "Sign-ups are currently disabled.",
+      missing_token: "This link has expired or is invalid. Please try again.",
+      missing_code: "Missing verification code. Please try again.",
+      default: "Something went wrong. Please try again later.",
+    },
+  },
+  profile: {
+    title: "Edit Profile",
+    description: "Update your account profile information.",
+    emailLabel: "Email",
+    nameLabel: "Name",
+    saveButton: "Save",
+    saving: "Saving...",
+    saveSuccess: "Profile saved.",
+    errorFallback: "An error occurred.",
+  },
+  erpHome: {
+    title: "ERP Home",
+    description: "Select a menu from the top bar or the left tree to begin.",
+    sampleDataBadge: "Sample Data",
+    sampleDataNote:
+      "The figures and chart below are dummy data for layout preview only and are unrelated to real data.",
+    statRevenue: "Revenue This Month",
+    statActiveUsers: "Active Users",
+    statGrowthRate: "Growth vs. Last Month",
+    chartTitle: "Monthly Revenue Trend",
+    chartDescription:
+      "Sample data — live data integration is out of MVP scope.",
+    chartRevenueLabel: "Revenue (in millions)",
+  },
+  roles: {
+    user: "User",
+    admin: "Admin",
+    superadmin: "Super Admin",
+  },
+  admin: {
+    users: {
+      pageTitle: "User Management",
+      pageDescription:
+        "View all users and manage their active status and admin permissions.",
+      searchPlaceholder: "Search by email or name",
+      totalCount: "{count} total",
+      columnAvatar: "Avatar",
+      columnEmail: "Email",
+      columnName: "Name",
+      columnRole: "Role",
+      columnAdminToggle: "Admin",
+      columnIsActive: "Active",
+      columnCreatedAt: "Joined",
+      superAdminLabel: "Super Admin",
+      promoteButton: "Make Admin",
+      demoteButton: "Remove Admin",
+      selfDemoteBlocked: "You cannot remove your own admin permission.",
+      promoteConfirmTitle: "Make this user an admin?",
+      demoteConfirmTitle: "Remove admin permission?",
+      promoteConfirmDescription:
+        "This grants {email} admin permission. They will be able to access every menu.",
+      demoteConfirmDescription:
+        "This removes {email}'s admin permission. They will no longer be able to access admin screens.",
+      cancel: "Cancel",
+      confirm: "Confirm",
+      activateAriaLabel: "Activate",
+      deactivateAriaLabel: "Deactivate",
+      noResults: "No results found.",
+      pageIndicator: "Page {current} of {total}",
+      noPages: "Page 0 of 0",
+      activateToast: "User activated.",
+      deactivateToast: "User deactivated.",
+      promoteToast: "Granted admin permission.",
+      demoteToast: "Removed admin permission.",
+    },
+    menus: {
+      pageTitle: "Menu Management",
+      pageDescription:
+        "Create, edit, delete, and reorder the top/mid/sub-category menu tree.",
+      treeTitle: "Menu Tree",
+      addButton: "Add Menu",
+      inactiveBadge: "Inactive",
+      noMenus: "No menus registered.",
+      level1: "Top Category",
+      level2: "Mid Category",
+      level3: "Sub Category",
+      moveUp: "Move Up",
+      moveDown: "Move Down",
+      edit: "Edit",
+      addChild: "Add Submenu",
+      delete: "Delete",
+      deleteConfirmTitle: "Delete this menu?",
+      deleteConfirmDescription:
+        'This deletes the menu "{name}". Any submenus and user permissions granted on them will be deleted as well. This action cannot be undone.',
+      cancel: "Cancel",
+      useStatus: "Active",
+      emptyStateDescription:
+        "Select a menu from the tree on the left to view its details and edit it.",
+      moveUpToast: "Moved up in sort order.",
+      moveDownToast: "Moved down in sort order.",
+      deleteToast: "Menu deleted.",
+      activateToast: "Menu activated.",
+      deactivateToast: "Menu deactivated.",
+      createTitle: "Add Menu",
+      editTitle: "Edit Menu",
+      createDescription:
+        "Leave the parent menu empty to register a top category.",
+      editDescription:
+        "Edit the menu name, sort order, and active status. The parent menu cannot be changed.",
+      parentLabel: "Parent Menu",
+      noneRoot: "None (Top Category)",
+      levelLabel: "Level",
+      nameLabel: "Menu Name",
+      nameRequired: "Please enter a menu name.",
+      sortOrderLabel: "Sort Order",
+      useStatusLabel: "Active",
+      cancelBtn: "Cancel",
+      submitCreate: "Create",
+      submitEdit: "Save",
+      createToast: "Menu created.",
+      editToast: "Menu updated.",
+    },
+    permissions: {
+      pageTitle: "User Permission Management",
+      pageDescription:
+        "Select a user to grant or revoke access to menus at any level.",
+      userLabel: "User",
+      searchPlaceholder: "Search by email or name",
+      noSearchResults: "No results found.",
+      saveButton: "Save",
+      noUserSelectedDescription:
+        "Search for and select a user above to view and edit their current permissions.",
+      adminNoPermissionDescription:
+        "Admins can access every menu, so individual permissions don't apply.",
+      loading: "Loading...",
+      noMenus: "No menus registered.",
+      unsavedTitle: "You have unsaved changes",
+      unsavedDescription:
+        "Switching users will discard your unsaved permission changes. Continue?",
+      cancel: "Cancel",
+      switchConfirm: "Switch",
+      loadFailedToast: "Failed to load permission data.",
+      saveSuccessToast: "Permissions saved.",
+      noNameLabel: "(No name)",
+    },
+    actions: {
+      activeStatusUpdateFailed: "Failed to update active status.",
+      selfDemoteBlocked: "You cannot remove your own admin permission.",
+      parentNotFound: "Parent menu not found.",
+      maxLevelExceeded: "Menus can only be registered up to 3 levels deep.",
+      nameRequired: "Please enter a menu name.",
+      menuCreateFailed: "Failed to create menu.",
+      menuUpdateFailed: "Failed to update menu.",
+      menuNotFound: "Menu not found.",
+      siblingQueryFailed: "Failed to look up sibling menus.",
+      cannotMoveFurther: "Cannot move any further.",
+      sortOrderUpdateFailed: "Failed to update sort order.",
+      menuDeleteFailed: "Failed to delete menu.",
+      menuActiveUpdateFailed: "Failed to update active status.",
+      permissionSaveFailed: "Failed to save permissions.",
     },
   },
   about: {
@@ -122,11 +435,13 @@ export const en: Dictionary = {
     mobileNav: {
       menuOpen: "Open menu",
       menuTitle: "ERP Menu",
+      treeAriaLabel: "Full menu tree",
     },
     tree: {
       selectCategory: "Select a category above.",
       categoryNotFound: "This category does not exist.",
       noSubMenu: "No submenu items.",
+      ariaLabel: "Menu tree",
     },
     layout: {
       menuLoadError: "Failed to load the menu",

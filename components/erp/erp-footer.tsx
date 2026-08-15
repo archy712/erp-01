@@ -28,7 +28,7 @@ export function ErpFooter({ dict }: { dict: Dictionary }) {
         ))}
       </nav>
       <p>
-        Developed by{" "}
+        {dict.home.footer.developedBy}{" "}
         <a
           href="mailto:archy712@gmail.com"
           className="font-medium underline-offset-4 hover:underline"

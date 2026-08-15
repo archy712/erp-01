@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { UserTable } from "@/components/erp/admin/user-table";
 import { getCurrentErpUser } from "@/lib/erp/auth";
 import { getUsers } from "@/lib/erp/queries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function AdminUsersPage() {
   return (
@@ -19,20 +21,24 @@ export default function AdminUsersPage() {
 // getCurrentErpUser()는 react의 cache()로 감싸져 있어(lib/erp/auth.ts, Task 018),
 // requireAdmin() 내부 호출과 이 호출이 같은 요청 안에서 실제로는 한 번만 실행된다.
 async function AdminUsersContent() {
-  const [currentUser, users] = await Promise.all([
+  const [currentUser, users, locale] = await Promise.all([
     getCurrentErpUser(),
     getUsers(),
+    getLocale(),
   ]);
+  const dict = getDictionary(locale);
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="px-6 pt-6">
-        <h1 className="text-lg font-medium tracking-tight">사용자 관리</h1>
+        <h1 className="text-lg font-medium tracking-tight">
+          {dict.admin.users.pageTitle}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          전체 사용자를 조회하고 활성 상태·관리자 권한을 관리합니다.
+          {dict.admin.users.pageDescription}
         </p>
       </div>
-      <UserTable users={users} currentUserId={currentUser.id} />
+      <UserTable users={users} currentUserId={currentUser.id} dict={dict} />
     </div>
   );
 }

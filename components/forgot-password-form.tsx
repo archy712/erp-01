@@ -13,13 +13,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import Link from "next/link";
 import { useState } from "react";
 
 export function ForgotPasswordForm({
   className,
+  dict,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { dict: Dictionary }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -39,7 +41,7 @@ export function ForgotPasswordForm({
       if (error) throw error;
       setSuccess(true);
     } catch (error: unknown) {
-      setError(getAuthErrorMessage(error));
+      setError(getAuthErrorMessage(error, dict));
     } finally {
       setIsLoading(false);
     }
@@ -50,30 +52,34 @@ export function ForgotPasswordForm({
       {success ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl">
+              {dict.forgotPassword.successTitle}
+            </CardTitle>
+            <CardDescription>
+              {dict.forgotPassword.successDescription}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
+              {dict.forgotPassword.successMessage}
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
-            </CardDescription>
+            <CardTitle className="text-2xl">
+              {dict.forgotPassword.title}
+            </CardTitle>
+            <CardDescription>{dict.forgotPassword.description}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleForgotPassword}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">
+                    {dict.forgotPassword.emailLabel}
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -85,16 +91,18 @@ export function ForgotPasswordForm({
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
+                  {isLoading
+                    ? dict.forgotPassword.sending
+                    : dict.forgotPassword.sendButton}
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
+                {dict.forgotPassword.haveAccount}{" "}
                 <Link
                   href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Login
+                  {dict.common.signIn}
                 </Link>
               </div>
             </form>

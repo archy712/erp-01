@@ -2,6 +2,8 @@ import { Suspense } from "react";
 
 import { PermissionEditor } from "@/components/erp/admin/permission-editor";
 import { getAllMenus, getUsers } from "@/lib/erp/queries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function AdminPermissionsPage() {
   return (
@@ -17,20 +19,24 @@ export default function AdminPermissionsPage() {
 // 관리자/일반 사용자 구분 없이 항상 제외하므로, 여기서 권한을 부여해도 실제
 // 내비게이션에는 아무 효과가 없어 혼란만 준다.
 async function AdminPermissionsContent() {
-  const [users, activeMenus] = await Promise.all([
+  const [users, activeMenus, locale] = await Promise.all([
     getUsers(),
     getAllMenus({ activeOnly: true }),
+    getLocale(),
   ]);
+  const dict = getDictionary(locale);
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="px-6 pt-6">
-        <h1 className="text-lg font-medium tracking-tight">사용자 권한 관리</h1>
+        <h1 className="text-lg font-medium tracking-tight">
+          {dict.admin.permissions.pageTitle}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          사용자를 선택해 접근 가능한 메뉴를 임의 레벨에서 부여·회수합니다.
+          {dict.admin.permissions.pageDescription}
         </p>
       </div>
-      <PermissionEditor users={users} activeMenus={activeMenus} />
+      <PermissionEditor users={users} activeMenus={activeMenus} dict={dict} />
     </div>
   );
 }
