@@ -43,33 +43,16 @@ import {
 } from "@/components/ui/table";
 import { setUserActiveAction, setUserAdminRoleAction } from "@/lib/erp/actions";
 import type { ErpUserListItem } from "@/lib/erp/queries";
+import {
+  ROLE_BADGE_VARIANT,
+  ROLE_LABEL,
+  isAdminRole,
+} from "@/lib/erp/role-labels";
 import type { UserRole } from "@/lib/erp/types";
 
 type UserTableProps = {
   users: ErpUserListItem[];
   currentUserId: string;
-};
-
-// lib/erp/auth.ts의 isAdminRole()과 동일한 판정이지만, 그 파일은 next/headers를
-// 쓰는 lib/supabase/server.ts를 함께 임포트하므로 클라이언트 컴포넌트에서 직접
-// 가져올 수 없다(서버 전용 코드가 클라이언트 번들에 섞임) — 순수 판정만 로컬로 복제.
-function isAdminRole(role: UserRole): boolean {
-  return role === "admin" || role === "superadmin";
-}
-
-const ROLE_LABEL: Record<UserRole, string> = {
-  user: "일반 사용자",
-  admin: "관리자",
-  superadmin: "최고 관리자",
-};
-
-const ROLE_BADGE_VARIANT: Record<
-  UserRole,
-  "outline" | "secondary" | "default"
-> = {
-  user: "outline",
-  admin: "secondary",
-  superadmin: "default",
 };
 
 function formatDate(iso: string): string {

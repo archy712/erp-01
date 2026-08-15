@@ -1,14 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { isAdminRole } from "./role-labels";
 import type { ErpUser, UserRole } from "./types";
 
-const ADMIN_ROLES: readonly UserRole[] = ["admin", "superadmin"];
-
-/** DB의 public.is_admin()(role in ('admin','superadmin'))과 동일한 판정을 앱 레벨에서 미러링한다. */
-export function isAdminRole(role: UserRole): boolean {
-  return ADMIN_ROLES.includes(role);
-}
+export { isAdminRole };
 
 /**
  * 현재 로그인 사용자를 확인하고 profiles에서 role/is_active를 조회한다.
