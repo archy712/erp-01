@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { GoogleAuthButton } from "@/components/google-auth-button";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -79,13 +80,14 @@ export function LoginForm({
                 <Label htmlFor="password" className="col-start-1 row-start-1">
                   {dict.login.passwordLabel}
                 </Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="col-span-2 row-start-2"
+                  showLabel={dict.common.showPassword}
+                  hideLabel={dict.common.hidePassword}
                 />
                 <Link
                   href="/auth/forgot-password"

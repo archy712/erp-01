@@ -8,6 +8,8 @@ export const ko: Dictionary = {
     signOut: "로그아웃",
     profile: "프로필",
     greeting: "{email}님, 안녕하세요!",
+    showPassword: "비밀번호 표시",
+    hidePassword: "비밀번호 숨기기",
   },
   home: {
     heading: "ERP 시스템에 오신 것을 환영합니다",

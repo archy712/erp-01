@@ -8,6 +8,8 @@ export const en: Dictionary = {
     signOut: "Sign out",
     profile: "Profile",
     greeting: "Hey, {email}!",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
   },
   home: {
     heading: "Welcome to the ERP System",

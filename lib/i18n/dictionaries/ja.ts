@@ -8,6 +8,8 @@ export const ja: Dictionary = {
     signOut: "ログアウト",
     profile: "プロフィール",
     greeting: "{email}さん、こんにちは!",
+    showPassword: "パスワードを表示",
+    hidePassword: "パスワードを隠す",
   },
   home: {
     heading: "ERPシステムへようこそ",

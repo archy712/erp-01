@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { GoogleAuthButton } from "@/components/google-auth-button";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -86,12 +87,13 @@ export function SignUpForm({
                 <div className="flex items-center">
                   <Label htmlFor="password">{dict.signUp.passwordLabel}</Label>
                 </div>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  showLabel={dict.common.showPassword}
+                  hideLabel={dict.common.hidePassword}
                 />
               </div>
               <div className="grid gap-2">
@@ -100,12 +102,13 @@ export function SignUpForm({
                     {dict.signUp.repeatPasswordLabel}
                   </Label>
                 </div>
-                <Input
+                <PasswordInput
                   id="repeat-password"
-                  type="password"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
+                  showLabel={dict.common.showPassword}
+                  hideLabel={dict.common.hidePassword}
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

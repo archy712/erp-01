@@ -7,6 +7,8 @@ export interface Dictionary {
     profile: string;
     /** {email} 자리표시자를 실제 이메일로 치환해서 사용 */
     greeting: string;
+    showPassword: string;
+    hidePassword: string;
   };
   home: {
     heading: string;

@@ -8,6 +8,8 @@ export const zh: Dictionary = {
     signOut: "退出登录",
     profile: "个人资料",
     greeting: "你好，{email}！",
+    showPassword: "显示密码",
+    hidePassword: "隐藏密码",
   },
   home: {
     heading: "欢迎使用 ERP 系统",
