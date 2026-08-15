@@ -582,6 +582,10 @@ export type Database = {
           name: string;
         }[];
       };
+      set_user_menu_permissions: {
+        Args: { p_menu_ids: string[]; p_user_id: string };
+        Returns: undefined;
+      };
       stats_logs_by_department: {
         Args: { from_date?: string; org_id?: string; to_date?: string };
         Returns: {
