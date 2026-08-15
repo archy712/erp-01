@@ -72,23 +72,27 @@ export function LoginForm({
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">{dict.login.passwordLabel}</Label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    {dict.login.forgotPassword}
-                  </Link>
-                </div>
+              <div className="grid grid-cols-2 items-center gap-x-2 gap-y-2">
+                {/* Tab 순서상 비밀번호 입력이 이 링크보다 먼저 오도록, DOM 순서(Label →
+                    Input → Link)와 시각적 위치(Label/Link 한 줄, Input 아래)를 grid
+                    배치 유틸리티로 분리했다. */}
+                <Label htmlFor="password" className="col-start-1 row-start-1">
+                  {dict.login.passwordLabel}
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="col-span-2 row-start-2"
                 />
+                <Link
+                  href="/auth/forgot-password"
+                  className="col-start-2 row-start-1 justify-self-end text-sm underline-offset-4 hover:underline"
+                >
+                  {dict.login.forgotPassword}
+                </Link>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
