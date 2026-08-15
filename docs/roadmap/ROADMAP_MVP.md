@@ -52,16 +52,16 @@
 
 Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영향받는 Task를 함께 갱신할 것.
 
-| 항목 | 결정 | 근거 |
-|---|---|---|
-| ERP 라우트 루트 | `app/erp/*` (신규). 기존 `app/protected/*`는 손대지 않음 | 스타터킷 튜토리얼 영역과 ERP 영역을 분리 |
-| ERP 셸 배치 | `app/erp/layout.tsx`에서 Header → Menubar → (트리 + 콘텐츠) → Footer 순으로 구성 | Phase 0 제약(Header/Footer 마크업 유지)을 지키면서 그 사이에만 신규 요소 삽입 |
-| 메뉴 화면 URL | `app/erp/menu/[menuId]/page.tsx` (menuId = `menus.id`) | PRD의 `menus` 스키마에 `path`/`slug` 컬럼이 없음. 별도 경로 컬럼을 추가하지 않고 id 기반 라우팅으로 해결 |
-| Phase 1 임시 데이터 | `lib/erp/mock-menus.ts`의 하드코딩 트리 | `menus` 테이블 없이 Phase 1 완주 가능해야 한다는 PRD 2.2 요구 충족 |
-| 권한 재검증 | 개별 서버 컴포넌트에서 `getClaims()` + 권한 조회 이중 방어 (`app/protected/page.tsx` 패턴) | PRD 11절. `proxy.ts`의 쿠키 처리 로직은 변경 금지 |
-| Suspense 경계 | `cacheComponents: true` 환경이므로 `cookies()`/`headers()`/`params` 사용 컴포넌트는 반드시 `<Suspense>` 래핑 | `app/page.tsx`의 얇은 `Page` + `async XxxContent` 패턴을 그대로 따름 |
-| shadcn 컴포넌트 | `components/ui/`에 `menubar` `sheet` `tree-view` `collapsible` `table` `dialog` `form` `switch` `badge` `data-table` 모두 **이미 존재** | 신규 `npx shadcn add` 불필요. 기존 프리미티브 재사용 |
-| 메뉴명 언어 | 한국어 단일 값 (i18n 미적용) | PRD 9절 비범위 |
+| 항목                      | 결정                                                                                                                                                  | 근거                                                                                                                                                                                                                             |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ERP 라우트 루트           | `app/erp/*` (신규). 기존 `app/protected/*`는 손대지 않음                                                                                              | 스타터킷 튜토리얼 영역과 ERP 영역을 분리                                                                                                                                                                                         |
+| ERP 셸 배치               | `app/erp/layout.tsx`에서 Header → Menubar → (트리 + 콘텐츠) → Footer 순으로 구성                                                                      | Phase 0 제약(Header/Footer 마크업 유지)을 지키면서 그 사이에만 신규 요소 삽입                                                                                                                                                    |
+| 메뉴 화면 URL             | `app/erp/menu/[menuId]/page.tsx` (menuId = `menus.id`)                                                                                                | PRD의 `menus` 스키마에 `path`/`slug` 컬럼이 없음. 별도 경로 컬럼을 추가하지 않고 id 기반 라우팅으로 해결                                                                                                                         |
+| Phase 1 임시 데이터       | `lib/erp/mock-menus.ts`의 하드코딩 트리                                                                                                               | `menus` 테이블 없이 Phase 1 완주 가능해야 한다는 PRD 2.2 요구 충족                                                                                                                                                               |
+| 권한 재검증               | 개별 서버 컴포넌트에서 `getClaims()` + 권한 조회 이중 방어 (`app/protected/page.tsx` 패턴)                                                            | PRD 11절. `proxy.ts`의 쿠키 처리 로직은 변경 금지                                                                                                                                                                                |
+| Suspense 경계             | `cacheComponents: true` 환경이므로 `cookies()`/`headers()`/`params` 사용 컴포넌트는 반드시 `<Suspense>` 래핑                                          | `app/page.tsx`의 얇은 `Page` + `async XxxContent` 패턴을 그대로 따름                                                                                                                                                             |
+| shadcn 컴포넌트           | `components/ui/`에 `menubar` `sheet` `tree-view` `collapsible` `table` `dialog` `form` `switch` `badge` `data-table` 모두 **이미 존재**               | 신규 `npx shadcn add` 불필요. 기존 프리미티브 재사용                                                                                                                                                                             |
+| 메뉴명 언어               | 한국어 단일 값 (i18n 미적용)                                                                                                                          | PRD 9절 비범위                                                                                                                                                                                                                   |
 | Header/Footer 재사용 방식 | `app/page.tsx`의 Header/Footer 마크업을 **그대로 복제**해 `components/erp/erp-header.tsx` / `components/erp/erp-footer.tsx`로 추출 (디자인 변경 없음) | Task 001 확인 결과, Header/Footer는 `app/layout.tsx`가 아니라 각 페이지(`app/page.tsx`, `app/protected/layout.tsx`)에 개별 인라인되어 있어 공용 컴포넌트가 없음. ERP 레이아웃(`app/erp/layout.tsx`)에서 재사용하려면 추출이 필요 |
 
 ### 변경 금지 파일 목록 (Task 001 확정)
@@ -94,6 +94,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 기존 Header/Footer와 인증 흐름을 그대로 재사용할 수 있음을 확인하고, ERP 신규 코드가 침범하면 안 되는 경계를 문서로 고정한다.
 
 **관련 파일**
+
 - `app/layout.tsx` (ThemeProvider/TooltipProvider/Toaster 루트)
 - `app/page.tsx` — 실제 Header/Footer 마크업이 있는 곳 (루트 레이아웃이 아님에 주의)
 - `app/protected/layout.tsx` — 인증 영역의 nav/footer 패턴
@@ -101,6 +102,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - `proxy.ts`, `lib/supabase/proxy.ts`
 
 **구현 체크리스트**
+
 - [x] Header/Footer 마크업의 실제 위치 확인 — 루트 `app/layout.tsx`가 아니라 **각 페이지(`app/page.tsx`)에 인라인**되어 있음을 확인. ERP용 Header/Footer는 `components/erp/erp-header.tsx` / `components/erp/erp-footer.tsx`로 **동일 마크업 그대로 추출**하기로 결정 (디자인 변경 금지, 마크업 복제만 허용, Task 003에서 실행).
 - [x] `AuthButton` / `ThemeSwitcher` / `LanguageSwitcher` 3종이 ERP 셸에서도 그대로 렌더링 가능한지 확인 — `AuthButton`은 `getClaims()`를 호출하는 async 서버 컴포넌트라 `<Suspense>` 필수(기존 두 곳 모두 이미 래핑됨), `ThemeSwitcher`/`LanguageSwitcher`는 클라이언트 컴포넌트로 그대로 재사용 가능.
 - [x] 기존 이메일/비밀번호 로그인 흐름(`app/auth/login` → `app/auth/confirm` → `app/protected`)이 정상 동작하는지 로컬에서 확인 — `curl`로 `/`(200), `/auth/login`(200) 응답 확인, `npm run typecheck` 통과.
@@ -108,6 +110,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [x] 변경 금지 대상 목록을 이 로드맵 상단 "아키텍처 사전 결정 사항"에 반영 — "변경 금지 파일 목록" 섹션 추가.
 
 **수락 기준**
+
 - [x] ERP 신규 코드가 건드리면 안 되는 파일 목록이 확정되어 있다. (아키텍처 사전 결정 사항 → 변경 금지 파일 목록)
 - [x] `/erp` 경로에 미인증 접근 시 `/auth/login`으로 리다이렉트되는 것이 보장된다. (`curl` 검증 완료)
 
@@ -126,6 +129,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: ERP 영역의 라우트 구조와 메뉴 도메인 타입을 먼저 확정해, 이후 모든 Task가 같은 타입 위에서 병렬 작업 가능하게 한다.
 
 **관련 파일**
+
 - `app/erp/layout.tsx` (신규, 빈 껍데기)
 - `app/erp/page.tsx` (신규, ERP 홈/대시보드 랜딩)
 - `app/erp/menu/[menuId]/page.tsx` (신규, 빈 껍데기)
@@ -133,6 +137,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - `lib/erp/menu-tree.ts` (신규)
 
 **구현 체크리스트**
+
 - [x] `app/erp/` 라우트 세그먼트 생성 및 위 3개 파일을 빈 껍데기로 스캐폴딩 (내용은 제목 텍스트만). `app/erp/menu/[menuId]/page.tsx`는 Next 16 비동기 `params`를 사용하므로 `cacheComponents: true` 규약에 맞춰 얇은 `Page` + `<Suspense>` + `async ErpMenuContent` 패턴으로 작성.
 - [x] `lib/erp/types.ts`에 도메인 타입 정의 완료: `MenuLevel`, `MenuFlat`, `MenuNode`(`MenuFlat & { children: MenuNode[] }`), `UserRole`, `ErpUser`.
 - [x] `lib/erp/menu-tree.ts`에 `buildMenuTree(rows: MenuFlat[]): MenuNode[]` 구현 (정렬은 `sortOrder` → `name`(ko) 순, `Map` 기반 1-pass 구성).
@@ -143,6 +148,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
   - `app/auth/confirm/route.ts:10` — `const next = searchParams.get("next") ?? "/"` → 기본값 `/erp` (이메일 인증 링크 클릭 후 랜딩)
 
 **수락 기준**
+
 - [x] `/erp`, `/erp/menu/<임의값>` 접근 시 404 없이 라우트가 존재한다 — `npm run build` 결과 `/erp`(Static), `/erp/menu/[menuId]`(Partial Prerender)로 정상 생성 확인. 미인증 상태에서는 프록시가 `/auth/login`으로 307 리다이렉트(Task 001에서 확정한 정상 동작). **실제 로그인 세션에서의 렌더링 확인은 테스트 계정이 없어 이 Task에서는 미검증 — Task 007(Phase 1 완료 검증)의 Playwright E2E에서 로그인 후 재확인 필요.**
 - [x] `npm run typecheck` 통과.
 
@@ -153,12 +159,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 기존 Header/Footer를 유지한 채, 그 사이에 Menubar + 좌측 트리 + 우측 콘텐츠 영역의 골격을 구성한다.
 
 **관련 파일**
+
 - `app/erp/layout.tsx`
 - `components/erp/erp-shell.tsx` (신규)
 - `components/erp/erp-header.tsx`, `components/erp/erp-footer.tsx` (신규 — Task 001 결정에 따라 기존 마크업 복제)
 - `lib/i18n/get-locale.ts`, `lib/i18n/dictionaries/`
 
 **구현 체크리스트**
+
 - [x] `app/erp/layout.tsx`를 얇은 `export default function ErpLayout()` + `<Suspense fallback={null}><ErpLayoutContent/></Suspense>` 패턴으로 작성 (`getLocale()`이 `cookies()`/`headers()`를 쓰므로 Suspense 필수).
 - [x] 전체 구조는 `flex h-screen flex-col overflow-hidden`으로 셸 자체를 뷰포트에 고정하고, Header(고정 높이) → Menubar 바(`h-12 shrink-0`) → `flex-1 overflow-hidden` 본문(좌우 분할) → Footer 순으로 배치.
 - [x] 본문 영역: 데스크탑(`lg` 이상)에서 좌측 트리 고정 폭(`w-64`) + 우측 `flex-1 min-w-0` 콘텐츠. `aside`/`main` 각각 `overflow-y-auto`로 독립 스크롤.
@@ -168,6 +176,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [x] (체크리스트에 없었으나 후속 Task 필요성으로 추가) Menubar/트리 영역은 각각 `menubar?`/`tree?` prop으로 슬롯화하고, 비어있을 때 "Task 004/005에서 구현 예정" placeholder를 표시하도록 구현 — Task 004/005가 `ErpShell` 자체를 재설계하지 않고 prop만 채우면 되도록 대비.
 
 **수락 기준**
+
 - [x] `/erp` 접근 시 Header / Menubar 자리 / 좌측 트리 자리(데스크탑) / 우측 콘텐츠 자리 / Footer 5개 영역이 모두 렌더링된다 — `npm run build` 결과 `/erp`가 Partial Prerender로 정상 생성됨(로케일 의존성으로 `○`→`◐` 전환, 정상).
 - [x] 기존 Header의 `AuthButton`, `ThemeSwitcher`, `LanguageSwitcher`가 마크업 그대로이므로 동작 방식도 그대로 유지됨 (로직 변경 없음, 복제본이므로 회귀 위험 없음).
 - [x] `h-screen overflow-hidden` 셸 + `aside`/`main` 개별 `overflow-y-auto` 구조로 Footer가 항상 하단에 고정되고 좌/우 영역만 스크롤되도록 설계.
@@ -175,105 +184,145 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ---
 
-### Task 004: 상단 Menubar(대분류) 및 임시 메뉴 데이터 구현 (F009)
+### Task 004: 상단 Menubar(대분류) 및 임시 메뉴 데이터 구현 (F009) ✅
 
 **목표**: 대분류를 상단 Menubar로 렌더링하고, 선택된 대분류가 좌측 트리로 전달되는 상태 흐름을 완성한다.
 
 **관련 파일**
+
 - `components/erp/erp-menubar.tsx` (신규)
+- `components/erp/erp-menu-tree.tsx` (신규 — Task 005에서 완전한 트리 UX로 확장 예정. Task 004는 접기/펴기 없는 평면 목록 최소 구현만 담당)
 - `lib/erp/mock-menus.ts` (신규, 하드코딩 트리)
 - `components/ui/menubar.tsx` (기존 재사용)
+- `app/erp/layout.tsx` (menubar/tree 슬롯 연결)
 
 **구현 체크리스트**
-- [ ] `lib/erp/mock-menus.ts`에 `MenuFlat[]` 형태의 임시 데이터를 작성한다. **최소 세트**: 대분류 "마스터 관리" → 중분류 "기본 관리" → 소분류 "사용자 관리 / 메뉴 관리 / 사용자 권한 관리". 여기에 **대분류 단독 노드**(예: "경영정보") 1개를 반드시 포함해 리프 취급 케이스를 함께 검증한다.
-- [ ] `components/ui/menubar.tsx`(shadcn Menubar)로 대분류 목록을 렌더링한다.
-- [ ] 대분류 선택 상태를 URL 쿼리(`?cat=<menuId>`)로 관리한다 — 새로고침/딥링크 시에도 선택 상태가 유지되어야 하므로 로컬 state가 아닌 URL을 단일 소스로 둔다.
-- [ ] 선택된 대분류에 시각적 활성 표시(active state)를 적용한다.
-- [ ] 대분류가 화면 폭을 넘칠 때(14개 Placeholder 추가 시) 가로 스크롤 또는 오버플로우 처리를 적용한다.
-- [ ] `lucide-react` 아이콘을 대분류에 매핑할 수 있는 선택적 구조를 마련한다 (`menus` 스키마에 아이콘 컬럼이 없으므로 **코드 측 이름 기반 매핑**으로 처리).
+
+- [x] `lib/erp/mock-menus.ts`에 `MenuFlat[]` 임시 데이터 작성. 대분류 "마스터 관리" → 중분류 "기본 관리" → 소분류 3종(사용자 관리/메뉴 관리/사용자 권한 관리), 그리고 **대분류 단독 노드** "경영정보"(하위 없음) 포함.
+- [x] `components/ui/menubar.tsx`(shadcn Menubar)로 대분류 목록 렌더링.
+- [x] 대분류 선택 상태를 URL 쿼리(`?cat=<menuId>`)로 관리 (`useSearchParams()` 기반, 로컬 state 없음 — 새로고침/딥링크 시에도 유지됨을 Playwright로 확인).
+- [x] 선택된 대분류에 시각적 활성 표시 적용 (`aria-current` + 배경색 클래스).
+- [x] Menubar 바 컨테이너가 `overflow-x-auto`(Task 003에서 이미 마련)라 대분류가 늘어나도 가로 스크롤 처리됨. 15개(대분류 14개+마스터관리)가 들어갈 Task 020에서 재검증 예정.
+- [x] `lucide-react` 아이콘을 메뉴명 → 아이콘 `Record` 매핑으로 처리(코드 측 이름 기반, 매핑 없는 신규 대분류는 기본 `Folder` 아이콘로 폴백).
+- [x] **(계획에 없던 추가 수정)** Radix `MenubarTrigger`는 원래 하위 `MenubarContent`를 여는 용도라 내부 `onKeyDown`이 Enter/Space에서 `preventDefault()`를 호출한다는 것을 소스(`@radix-ui/react-menubar`) 확인 중 발견 — 이 상태로 `asChild+Link`만 쓰면 **키보드 Enter로는 이동이 안 되는 접근성 버그**가 생김. `MenubarTrigger`에 명시적 `onKeyDown`을 추가해 `router.push(href)` 후 `preventDefault()`로 Radix 내부 핸들러를 무력화(`composeEventHandlers`가 내 핸들러를 먼저 실행하고 `defaultPrevented`면 내부 핸들러를 스킵하는 것을 소스로 확인)하는 방식으로 수정. Playwright로 Tab→Enter 이동 재현 확인.
 
 **수락 기준**
-- 대분류 클릭 시 URL이 갱신되고 좌측 트리가 해당 대분류의 하위 노드로 교체된다.
-- 하위가 없는 대분류(예: "경영정보") 클릭 시에도 에러 없이 플레이스홀더 화면으로 이동한다.
+
+- [x] 대분류 클릭 시 URL이 갱신되고 좌측 트리가 해당 대분류의 하위 노드로 교체된다 — Playwright 로그인 세션에서 실제 확인 (`?cat=master` → 트리에 "기본 관리" 그룹 + 소분류 3개 노출, 소분류 클릭 → `/erp/menu/master-basic-users?cat=master`로 이동 + 트리 활성 표시).
+- [x] 하위가 없는 대분류("경영정보") 클릭 시에도 에러 없이 플레이스홀더 화면(`/erp/menu/management-info`)으로 이동 — Playwright 확인, 콘솔 에러/경고 0건.
+
+> **테스트 계정으로 실제 검증 완료** (`archy713@naver.com`, 사용자 제공): 로그인 → `/erp` → 5개 영역 렌더링, 대분류 클릭 → 트리 교체, 소분류 클릭 → 플레이스홀더 이동 + 활성 하이라이트, 하위 없는 대분류 직행, 키보드 Tab+Enter 이동까지 전부 Playwright로 재현 확인. Task 002/003에서 미뤄뒀던 "실제 로그인 세션 검증"이 이번에 해소됨 — 이후 Task도 이 계정으로 계속 검증 가능.
 
 ---
 
-### Task 005: 좌측 트리메뉴 및 반응형 Drawer 전환 구현 (F009 · F004)
+### Task 005: 좌측 트리메뉴 및 반응형 Drawer 전환 구현 (F009 · F004) ✅
 
 **목표**: 중/소분류를 접이식 트리로 렌더링하고, 모바일에서 Sheet(Drawer)로 전환되는 반응형을 완성한다.
 
 **관련 파일**
-- `components/erp/erp-menu-tree.tsx` (신규)
+
+- `components/erp/erp-menu-tree.tsx` (재작성 — `TreeView` 기반)
 - `components/erp/erp-mobile-nav.tsx` (신규)
-- `components/ui/tree-view.tsx`, `components/ui/collapsible.tsx`, `components/ui/sheet.tsx` (기존 재사용)
-- `hooks/` (필요 시 `use-media-query` 추가)
+- `components/erp/erp-shell.tsx` (반응형 브레이크포인트 + `mobileNav` 슬롯 추가)
+- `components/ui/tree-view.tsx` (**접근성 버그 패치** — 아래 참고)
+- `components/ui/sheet.tsx` (기존 재사용, 무수정)
+- `lib/erp/menu-tree.ts` (`menuNodeToTreeItem`/`getActiveMenuId` 추가)
 
 **구현 체크리스트**
-- [ ] `components/ui/tree-view.tsx` 또는 `collapsible.tsx` 조합으로 중분류(확장/축소) + 소분류(리프) 트리를 렌더링한다.
-- [ ] 리프 노드 클릭 시 `/erp/menu/[menuId]`로 이동시키고, 현재 활성 노드를 하이라이트한다.
-- [ ] **중분류 자체가 리프인 경우**(하위 소분류 없음)에도 클릭 가능한 링크로 동작하게 한다.
-- [ ] 현재 URL의 `menuId` 기준으로 상위 중분류가 **자동 확장**되도록 초기 확장 상태를 계산한다.
-- [ ] 반응형 브레이크포인트 정의:
-  - [ ] 데스크탑(`lg` 이상) — 좌측 트리 상시 노출
-  - [ ] 태블릿(`md`~`lg`) — 트리 폭 축소 또는 토글 가능
-  - [ ] 모바일(`md` 미만) — 트리 숨김 + 햄버거 토글 버튼 → `Sheet`(좌측 슬라이드) 로 표시
-- [ ] 모바일 Sheet 내에서 메뉴 선택 시 Sheet가 자동으로 닫히도록 처리한다.
-- [ ] 모바일에서는 상단 Menubar도 접히거나 Sheet 내부로 통합되도록 처리한다 (대분류 14개+ 대응).
-- [ ] 키보드 내비게이션(Tab/Enter/방향키)과 `aria-expanded` / `aria-current` 접근성 속성을 적용한다.
+
+- [x] `components/ui/tree-view.tsx`(shadcn `TreeView`)로 중분류(확장/축소) + 소분류(리프) 트리 렌더링. `Collapsible` 직접 조합 대신 이미 `initialSelectedItemId` 기반 자동 확장·선택 하이라이트를 내장한 이 컴포넌트를 채택(중복 구현 방지).
+- [x] 리프 노드 클릭 시 `/erp/menu/[menuId]?cat=...`로 이동, 활성 노드 하이라이트(`TreeView` 내장 `isSelected` 스타일 + 신규 `aria-current`).
+- [x] **중분류 자체가 리프인 경우**도 처리 — `menuNodeToTreeItem`이 `children.length === 0` 여부만으로 리프/그룹을 판단하므로 레벨에 상관없이 자동으로 클릭 가능한 리프가 됨(별도 분기 불필요).
+- [x] URL의 `menuId` 기준 자동 확장 — `TreeView`의 `initialSelectedItemId`가 조상 경로를 자동 계산. 단, 이 값은 **마운트 시점에만** 반영되므로 뒤로가기/새로고침/직접 진입에도 항상 재계산되도록 `key={pathname}`으로 강제 재마운트 처리(그냥 두면 클릭 내비게이션에서만 갱신되고 새로고침 시 낡은 상태로 남는 문제가 있어 추가한 방어 로직).
+- [x] 반응형 브레이크포인트를 `ErpShell`에 구현: 데스크탑(`lg` 이상) 트리 `w-64` 상시 노출 / 태블릿(`md`~`lg`) 트리 `w-48`로 축소 노출 / 모바일(`md` 미만) 트리+Menubar 모두 숨김 + 햄버거 트리거만 노출.
+- [x] 모바일 Sheet에서 **리프(최종 화면) 선택 시에만** Sheet 자동으로 닫히고, 그룹(하위 있는 대/중분류) 펼치기는 Sheet를 닫지 않음(탐색 흐름 유지) — `menuNodeToTreeItem`의 콜백에서 `setOpen(false)`를 리프 케이스에만 연결.
+- [x] 모바일에서는 상단 Menubar 대신 `ErpMobileNav`가 전체 트리(대~소분류 통합, `categories.map((n) => menuNodeToTreeItem(n, n.id, ...))`)를 Sheet 하나로 제공 — 14개 Placeholder 대분류가 추가돼도 별도 처리 없이 스크롤로 대응.
+- [x] 키보드 내비게이션과 `aria-expanded`/`aria-current` 적용 — `TreeNode`(그룹)는 Radix Accordion 기반이라 기존에도 Tab/Enter/`aria-expanded`가 동작했으나, **`TreeLeaf`(리프)는 순수 `<div onClick>`이라 애초에 Tab 포커스조차 안 되는 접근성 버그**를 소스 확인 중 발견 — `role="treeitem"` `tabIndex={0}` `aria-selected` `aria-current` `onKeyDown`(Enter/Space)을 추가해 수정 (하위 호환 additive 변경, `components/gallery/tree-extension-section.tsx` 데모에도 영향 없음).
 
 **수락 기준**
-- 데스크탑/태블릿/모바일 3개 뷰포트에서 레이아웃이 깨지지 않는다.
-- 모바일에서 햄버거 → Sheet 열림 → 메뉴 선택 → Sheet 닫힘 + 콘텐츠 갱신이 동작한다.
-- 새로고침 후에도 현재 메뉴가 트리에서 활성 상태로 표시된다.
 
-**테스트 체크리스트 (Playwright MCP)**
-- [ ] `browser_resize`로 1440px / 768px / 390px 3개 뷰포트를 순회하며 `browser_take_screenshot`으로 레이아웃 확인
-- [ ] 390px에서 햄버거 클릭 → Sheet 노출 → 소분류 클릭 → Sheet 닫힘 + 우측 제목 변경 확인
-- [ ] 1440px에서 대분류 전환 시 좌측 트리 내용이 교체되는지 확인
-- [ ] `browser_console_messages`로 하이드레이션 경고/에러 0건 확인
+- [x] 데스크탑(1440px)/태블릿(768px)/모바일(390px) 3개 뷰포트에서 레이아웃 정상 — Playwright 스크린샷으로 확인.
+- [x] 모바일에서 햄버거 → Sheet 열림 → 그룹 펼침(Sheet 유지) → 리프 선택 → Sheet 닫힘 + 우측 제목 갱신 — Playwright로 전 과정 재현.
+- [x] 새로고침 후에도 현재 메뉴가 트리에서 활성 상태로 표시 — `/erp/menu/master-basic-menus?cat=master` 직접 진입(하드 네비게이션)으로 확인, "기본 관리" 자동 확장 + "메뉴 관리" `[selected]` 유지.
+
+**테스트 체크리스트 (Playwright MCP)** — 테스트 계정(`archy713@naver.com`)으로 전부 실제 재현
+
+- [x] `browser_resize`로 1440px / 768px / 390px 순회하며 `browser_take_screenshot`으로 레이아웃 확인 — 1440px 정상, 768px 트리 폭 축소+Menubar 유지 정상, 390px 햄버거만 노출 정상.
+- [x] 390px에서 햄버거 클릭 → Sheet 노출 → "마스터 관리" → "기본 관리" 순차 펼침(Sheet 유지) → "사용자 관리" 클릭 → Sheet 닫힘 + URL/제목 갱신 확인.
+- [x] 1440px에서 대분류 전환 시 좌측 트리 내용이 교체되는지 확인(Task 004에서 이미 검증한 것을 재확인).
+- [x] 키보드만으로 Tab → "기본 관리" 포커스 → Enter 펼침 → Tab → "사용자 관리" 포커스(`role=treeitem` 확인) → Enter → 이동 확인 (패치 전이었다면 애초에 Tab으로 포커스조차 안 됐을 항목).
+- [x] `browser_console_messages`로 에러/경고 0건 확인(단, 개발 중 파일 저장 시 발생한 "[Fast Refresh] performing full reload"는 dev 전용 HMR 알림이라 원인이 된 export 배치를 `lib/erp/menu-tree.ts`로 정리해 해소함 — 런타임 버그 아님).
 
 ---
 
-### Task 006: 메뉴 플레이스홀더 공용 컴포넌트 구현 (F010)
+### Task 006: 메뉴 플레이스홀더 공용 컴포넌트 구현 (F010) ✅
 
 **목표**: 모든 업무 메뉴가 공통으로 사용할 "제목만 표시되는 빈 화면" 컴포넌트를 완성한다.
 
 **관련 파일**
+
 - `components/erp/menu-placeholder.tsx` (신규)
-- `app/erp/menu/[menuId]/page.tsx`
-- `app/erp/page.tsx`
-- `components/ui/badge.tsx`, `components/ui/empty.tsx` (기존 재사용)
+- `app/erp/menu/[menuId]/page.tsx` (실 조회 로직으로 교체)
+- `app/erp/page.tsx` (환영 대시보드로 교체)
+- `components/erp/erp-home-chart.tsx` (신규 — ERP 홈 더미 차트)
+- `app/erp/not-found.tsx`, `app/erp/error.tsx` (신규)
+- `lib/erp/menu-tree.ts` (`getMenuBreadcrumb` 추가)
+- `components/ui/badge.tsx`, `components/ui/empty.tsx`, `components/ui/card.tsx`, `components/ui/chart.tsx` (기존 재사용)
 
 **구현 체크리스트**
-- [ ] `MenuPlaceholder` 컴포넌트를 구현한다 — props: `{ title: string; breadcrumb?: string[] }`.
-- [ ] 화면 제목(h1) + "추후 구현 예정" `Badge` + 간단한 안내 문구를 표시한다.
-- [ ] `app/erp/menu/[menuId]/page.tsx`에서 `params`를 **await**해 `menuId`를 읽고(Next 16 비동기 params), 메뉴 이름을 조회해 `MenuPlaceholder`에 전달한다. 조회 실패 시 `notFound()` 처리.
-- [ ] 페이지를 얇은 `Page` + `async MenuContent` + `<Suspense>` 패턴으로 작성한다 (`params` 사용 → Suspense 필수).
-- [ ] `app/erp/page.tsx`(ERP 홈)에 간단한 환영 화면을 구성한다. Recharts 위젯을 배치할 경우 **더미 데이터임을 명시**한다 (실데이터 연동은 범위 제외).
-- [ ] `app/erp/not-found.tsx` / `app/erp/error.tsx`를 추가해 잘못된 `menuId` 접근 시 ERP 셸을 유지한 채 안내가 표시되게 한다.
+
+- [x] `MenuPlaceholder` 컴포넌트 구현 — props: `{ title: string; breadcrumb?: string[] }`. `components/ui/empty.tsx`(`Empty`/`EmptyHeader`/`EmptyMedia`/`EmptyDescription`/`EmptyContent`) 조합으로 구성.
+- [x] 화면 제목(실제 `<h1>`, `EmptyTitle`의 `<div>`가 아닌 시맨틱 h1로 직접 작성) + "추후 구현 예정" `Badge` + 안내 문구 표시. breadcrumb(대분류 > 중분류 > 소분류)도 상단에 함께 표시.
+- [x] `app/erp/menu/[menuId]/page.tsx`에서 `params`를 **await**해 `menuId`를 읽고, `lib/erp/menu-tree.ts`의 신규 `getMenuBreadcrumb(tree, menuId)`로 경로 전체(대→중→소)를 조회해 `MenuPlaceholder`에 전달. 조회 실패 시 `notFound()` 호출.
+- [x] 페이지는 이미 Task 002에서 얇은 `Page` + `async ErpMenuContent` + `<Suspense>` 패턴으로 작성돼 있어 그대로 유지, 내부 로직만 교체.
+- [x] `app/erp/page.tsx`(ERP 홈)에 환영 대시보드 구성 — 인사말 + 더미 KPI 카드 3개(Wallet/Users/TrendingUp 아이콘) + `ErpHomeChart`(Recharts `LineChart`, 기존 `components/ui/chart.tsx` 패턴 재사용). **"샘플 데이터" `Badge` + 안내 문구**로 더미 데이터임을 명시.
+- [x] `app/erp/not-found.tsx` / `app/erp/error.tsx` 추가 — 둘 다 `app/erp/layout.tsx`(ErpShell) 하위에서 렌더링되므로 Header/Menubar/Footer가 유지된 채 콘텐츠 영역만 대체됨. `error.tsx`는 Next.js 규약대로 Client Component(`"use client"`)로 작성, `reset()` 버튼 포함.
+
+**(체크리스트에 없던 결정)** `ErpShell`에 Task 003부터 마련해둔 `breadcrumb` 슬롯은 이번 Task에서 **사용하지 않기로 결정** — breadcrumb 표시 위치가 페이지마다 다르고(메뉴 상세만 필요, ERP 홈은 불필요) `MenuPlaceholder`가 자체적으로 breadcrumb을 렌더링하므로 셸 레벨 슬롯까지 채우면 중복 표시가 됨. 슬롯 자체는 향후 다른 용도로 재사용 가능하도록 그대로 남겨둠.
 
 **수락 기준**
-- 임시 트리의 모든 리프 노드 클릭 시 해당 메뉴 이름이 제목으로 표시된다.
-- 존재하지 않는 `menuId` 직접 입력 시 ERP 셸 안에서 not-found 화면이 표시된다.
+
+- [x] 임시 트리의 모든 리프 노드 클릭 시 해당 메뉴 이름이 제목으로 표시된다 — `master-basic-users`로 Playwright 확인(breadcrumb "마스터 관리 > 기본 관리 > 사용자 관리" + h1 "사용자 관리" + Badge 정상 렌더링).
+- [x] 존재하지 않는 `menuId` 직접 입력 시 ERP 셸 안에서 not-found 화면이 표시된다 — `/erp/menu/does-not-exist`로 확인, Header/Menubar/Footer 유지된 채 안내 화면 표시.
+
+**검증 중 발견한 이슈**: dev 서버에서 `notFound()` 경로 접근 시 콘솔에 `TypeError: Failed to execute 'measure' on 'Performance': ... cannot have a negative time stamp` 에러가 찍혔으나, 별도 포트로 `next build` + `next start` 프로덕션 실행 결과 동일 시나리오에서 콘솔 에러 0건으로 확인됨 — Next.js 16 dev 전용 RSC 성능 계측기(`flushComponentPerformance`)의 프레임워크 자체 버그로 판단, 애플리케이션 코드 문제 아님.
 
 ---
 
-### Task 007: Phase 1 완료 검증
+### Task 007: Phase 1 완료 검증 ✅
 
 **목표**: PRD 12절 "Phase 1 완료 기준" 4개 항목을 실제로 통과시킨다.
 
-**구현 체크리스트**
-- [ ] 기존 Header/Footer가 디자인 변경 없이 유지되었는지 `git diff`로 확인한다 (`app/page.tsx`, `app/layout.tsx`, `components/auth-button.tsx` 등 무변경).
-- [ ] 미인증 상태로 `/erp` 접근 시 `/auth/login`으로 리다이렉트되는지 확인한다.
-- [ ] 로그인 → `/erp` 진입 → Menubar/트리/콘텐츠 3영역 렌더링을 확인한다.
-- [ ] `npm run check-all` 통과.
+**관련 파일 (이번 Task에서 실제로 변경한 것 — Task 002에서 예고했던 로그인 후 랜딩 경로 전환)**
 
-**테스트 체크리스트 (Playwright MCP)**
-- [ ] 미인증 `/erp` 접근 → `/auth/login` 리다이렉트 확인
-- [ ] 이메일/비밀번호 로그인 → `/erp` 랜딩 확인
-- [ ] 대분류 → 중분류 확장 → 소분류 클릭 → 우측 제목 표시 전체 플로우 1회 완주
-- [ ] `ThemeSwitcher`로 다크/라이트 전환 시 ERP 셸의 대비/가독성 확인 (스크린샷 2종)
-- [ ] 로그아웃 → 로그인 페이지 복귀 확인
+- `components/login-form.tsx` — 로그인 성공 후 `router.push("/protected")` → `router.push("/erp")`
+- `app/auth/callback/route.ts` — OAuth 콜백 `next` 기본값 `"/protected"` → `"/erp"`
+- `app/auth/confirm/route.ts` — 이메일 인증 링크 `next` 기본값 `"/"` → `"/erp"`
+- `components/update-password-form.tsx` — **(Task 002 목록에는 없었으나 검증 중 함께 발견)** 비밀번호 변경 후 `router.push("/protected")`도 동일하게 `/erp`로 변경. 비밀번호 재설정 이메일의 `redirectTo`는 `confirm/route.ts`를 거치지 않고 `/auth/update-password`로 직접 가므로 이 파일은 confirm 라우트와 별개로 고쳐야 했음.
+
+**구현 체크리스트**
+
+- [x] 기존 Header/Footer가 디자인 변경 없이 유지되었는지 `git diff`로 확인 — `app/page.tsx`, `app/layout.tsx`, `components/auth-button.tsx`, `components/theme-switcher.tsx`, `components/language-switcher.tsx`, `app/protected/layout.tsx`, `proxy.ts`, `lib/supabase/proxy.ts` 전부 `git diff` 결과 무변경 확인.
+- [x] 미인증 상태로 `/erp` 접근 시 `/auth/login`으로 리다이렉트되는지 확인 — Playwright로 로그아웃 후 재현.
+- [x] 로그인 → `/erp` 진입 → Menubar/트리/콘텐츠 3영역 렌더링 확인 — 로그인 랜딩 경로 변경 후 `/erp`로 바로 진입하는 것까지 함께 확인.
+- [x] `npm run check-all` 통과 — 최초 실행 시 `format:check`에서 4개 파일(`app/erp/layout.tsx`, `components/erp/erp-menu-tree.tsx`, `docs/prd/PRD_MVP.md`, `docs/roadmap/ROADMAP_MVP.md`) 포맷 어긋남 발견 → `prettier --write`로 수정 후 재실행하여 전체 통과.
+
+**테스트 체크리스트 (Playwright MCP)** — 테스트 계정(`archy713@naver.com`)으로 전부 실제 재현
+
+- [x] 미인증 `/erp` 접근 → `/auth/login` 리다이렉트 확인
+- [x] 이메일/비밀번호 로그인 → `/erp` 랜딩 확인 (이번 Task에서 리다이렉트 경로를 바꾼 뒤 재확인 — 이전에는 `/protected`로 갔었음)
+- [x] 대분류("마스터 관리") → 중분류("기본 관리") 확장 → 소분류("메뉴 관리") 클릭 → 우측에 breadcrumb+제목 표시까지 전체 플로우 1회 완주
+- [x] `ThemeSwitcher`로 다크/라이트 전환 시 ERP 셸의 대비/가독성 확인 — 스크린샷 2종으로 확인, Menubar 활성 탭·트리 선택 항목·Badge 전부 양쪽 테마에서 가독성 양호
+- [x] 로그아웃 → 로그인 페이지 복귀 확인
+
+**Phase 1 완료 기준 (PRD 12절) 최종 확인**
+
+- [x] 기존 Header/Footer(`AuthButton`, `ThemeSwitcher`, `LanguageSwitcher` 포함)가 변경 없이 그대로 유지된다.
+- [x] 로그인 후 진입하는 ERP 메인 화면에서 상단 Menubar + 좌측 트리 + 우측 콘텐츠 영역 레이아웃이 정상 렌더링된다.
+- [x] 데스크탑/태블릿/모바일 각 환경에서 위 레이아웃이 반응형으로 정상 대응된다(Task 005에서 검증 완료, 모바일에서 트리는 Sheet로 전환).
+- [x] 메뉴 데이터가 최소 수준(하드코딩된 `MOCK_MENUS`)이어도 트리 클릭 → 우측 콘텐츠 영역에 제목 표시까지의 흐름이 동작한다.
+
+**Phase 1 완료. Phase 2(2-A 인증 완성)로 진행 가능.**
 
 ---
 
@@ -289,11 +338,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 스타터킷의 인증 흐름을 ERP 문맥에 맞게 마무리한다 (기본 흐름은 이미 존재하므로 **신규 구현이 아닌 정비 작업**).
 
 **관련 파일**
+
 - `components/login-form.tsx`, `components/sign-up-form.tsx`
 - `components/forgot-password-form.tsx`, `components/update-password-form.tsx`
 - `app/auth/confirm/route.ts`, `app/auth/callback/route.ts`, `app/auth/error/page.tsx`
 
 **구현 체크리스트**
+
 - [ ] 로그인 성공 후 리다이렉트 대상을 `/protected` → `/erp`로 변경한다 (`login-form.tsx`, `app/auth/callback/route.ts`의 `next` 기본값, `app/auth/confirm/route.ts`).
 - [ ] 회원가입 → 이메일 인증 → 로그인 복귀 전체 흐름을 실제 계정으로 1회 완주 검증한다.
 - [ ] 비밀번호 재설정(`forgot-password` → 메일 → `update-password`) 흐름을 검증한다.
@@ -302,10 +353,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 인증 호출은 기존 관례대로 **Server Action이 아닌 Client Component에서 `supabase.auth.*` 직접 호출** 패턴을 유지한다.
 
 **수락 기준**
+
 - 회원가입 / 로그인 / 로그아웃 / 비밀번호 재설정 4개 흐름이 모두 정상 동작한다.
 - 로그인 성공 시 `/erp`로 진입한다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 신규 이메일 회원가입 → `sign-up-success` 안내 화면 노출 확인
 - [ ] 잘못된 비밀번호 입력 시 한국어 에러 메시지 노출 확인
 - [ ] 정상 로그인 → `/erp` 진입 확인
@@ -319,10 +372,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **참고**: `components/google-auth-button.tsx`(`signInWithOAuth({ provider: "google" })`)와 `app/auth/callback/route.ts`(코드 교환)가 **이미 구현되어 있다.** 이 Task는 대부분 **Provider 설정 + 검증**이다.
 
 **관련 파일**
+
 - `components/google-auth-button.tsx` (기존), `components/login-form.tsx` (이미 연결됨)
 - `app/auth/callback/route.ts` (기존)
 
 **구현 체크리스트**
+
 - [ ] Google Cloud Console에서 OAuth 클라이언트를 생성하고 승인된 리디렉션 URI에 Supabase 콜백 URL을 등록한다.
 - [ ] Supabase 대시보드 > Authentication > Providers에서 Google Provider를 활성화하고 Client ID/Secret을 설정한다.
 - [ ] Supabase Auth의 Redirect URLs에 `http://localhost:3000/auth/callback` 및 배포 도메인 콜백을 등록한다.
@@ -332,10 +387,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 회원가입 페이지에도 동일 버튼을 노출할지 결정하고 반영한다.
 
 **수락 기준**
+
 - "Google로 계속하기" → 동의 화면 → 콜백 → `/erp` 진입이 성공한다.
 - 구글 로그인 계정도 이메일 계정과 동일하게 `profiles`에 레코드를 갖는다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 로그인 페이지에서 "Google로 계속하기" 클릭 → Google 도메인으로 리다이렉트되는지 확인 (`browser_network_requests`)
 - [ ] 콜백 실패 시나리오(잘못된 code) → `app/auth/error` 화면 노출 확인
 - [ ] 로그인 후 `AuthButton`에 구글 계정 정보가 표시되는지 확인
@@ -347,11 +404,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 기존 `next-themes` / i18n 컴포넌트가 ERP 화면에서도 문제없이 동작하는지 확인한다. **신규 개발이 아닌 통합 점검 수준.**
 
 **관련 파일**
+
 - `components/theme-switcher.tsx`, `components/language-switcher.tsx` (모두 무변경)
 - `app/globals.css`, `tailwind.config.ts`
 - `lib/i18n/dictionaries/{ko,en,ja,zh}.ts`, `lib/i18n/dictionaries/types.ts`
 
 **구현 체크리스트**
+
 - [ ] ERP 셸(Menubar / 트리 / 콘텐츠 / Breadcrumb)의 모든 색상이 `--background` `--primary` 등 **CSS 변수 토큰**을 사용하는지 점검한다 (하드코딩 색상 제거).
 - [ ] 다크모드 전환 시 트리 활성 노드·Menubar 활성 탭의 대비가 충분한지 확인한다.
 - [ ] 새로고침 후에도 테마가 유지되는지 확인한다 (`suppressHydrationWarning` + `ThemeProvider` 기존 설정).
@@ -359,6 +418,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 사전 추가 시 `lib/i18n/dictionaries/types.ts`의 `Dictionary` 타입과 `ko/en/ja/zh` 4개 파일을 **모두** 갱신한다.
 
 **수락 기준**
+
 - 라이트/다크 양쪽에서 ERP 화면의 모든 텍스트가 읽히고, 새로고침 후 테마가 유지된다.
 - 언어 전환 시 ERP 셸의 UI 라벨이 바뀌고 `router.refresh()` 후 레이아웃이 깨지지 않는다.
 
@@ -371,10 +431,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 역할/활성 여부 컬럼을 추가하고 `archy712@gmail.com`을 관리자로 지정한다.
 
 **관련 파일**
+
 - Supabase 마이그레이션 (`mcp__supabase__apply_migration`)
 - `lib/supabase/database.types.ts` (재생성 필요)
 
 **구현 체크리스트**
+
 - [ ] `mcp__supabase__list_tables`로 `profiles` 현재 스키마를 확인한다.
 - [ ] 마이그레이션 작성:
   - [ ] `role text not null default 'user'` + `check (role in ('admin','user'))`
@@ -388,11 +450,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] `mcp__supabase__get_advisors`로 보안/성능 경고를 확인하고 해소한다.
 
 **수락 기준**
+
 - `archy712@gmail.com` 계정의 `role`이 `admin`이다.
 - 일반 사용자 세션에서 타인의 `profiles` 행이 조회되지 않는다.
 - `npm run typecheck` 통과 (재생성된 타입 기준).
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 관리자 계정 로그인 후 세션에서 role이 admin으로 조회되는지 확인 (임시 디버그 페이지 또는 `mcp__supabase__execute_sql` 병행)
 - [ ] 신규 회원가입 계정이 `role='user'`, `is_active=true`로 생성되는지 확인
 - [ ] `is_active=false` 계정이 로그인 시 차단되는지 확인 (차단 지점: 로그인 후 서버 컴포넌트 가드)
@@ -404,10 +468,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 메뉴 트리와 사용자별 메뉴 권한을 저장할 스키마를 구축한다.
 
 **관련 파일**
+
 - Supabase 마이그레이션
 - `lib/supabase/database.types.ts` (재생성 필요)
 
 **구현 체크리스트**
+
 - [ ] `menus` 테이블 생성:
   - [ ] `id uuid pk default gen_random_uuid()`
   - [ ] `parent_id uuid references menus(id) on delete cascade` (nullable, 대분류는 null)
@@ -431,10 +497,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] `mcp__supabase__get_advisors` 확인.
 
 **수락 기준**
+
 - 대분류만 단독 등록(`level=1`, `parent_id=null`)이 성공한다 — 하위 노드 없이도 유효해야 한다.
 - 일반 사용자 세션에서 `menus` insert 시도가 RLS로 차단된다.
 
 **테스트 체크리스트**
+
 - [ ] `mcp__supabase__execute_sql`로 대분류 단독 insert 성공 확인
 - [ ] `level=2`인데 `parent_id=null`인 insert가 제약 위반으로 실패하는지 확인
 - [ ] 동일 `(user_id, menu_id)` 중복 insert가 unique 제약으로 실패하는지 확인
@@ -447,12 +515,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 이후 모든 화면이 공유할 서버 측 조회/권한 판정 함수를 한 곳에 모은다.
 
 **관련 파일**
+
 - `lib/erp/queries.ts` (신규 — 조회)
 - `lib/erp/auth.ts` (신규 — 권한 판정)
 - `lib/erp/actions.ts` (신규 — Server Actions)
 - `lib/supabase/server.ts` (기존 재사용)
 
 **구현 체크리스트**
+
 - [ ] `lib/erp/auth.ts`:
   - [ ] `getCurrentErpUser()` — `getClaims()`로 사용자 확인 후 `profiles`에서 `role`/`is_active` 조회. 미인증이면 `redirect("/auth/login")`.
   - [ ] `requireAdmin()` — admin이 아니면 접근 거부 처리.
@@ -468,10 +538,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] Task 004의 `lib/erp/mock-menus.ts`를 개발/폴백용으로만 남기고, 실 조회로 교체할 지점을 TODO로 표시한다.
 
 **수락 기준**
+
 - `getVisibleMenuTree()`가 관리자에게는 전체 트리를, 일반 사용자에게는 권한 있는 리프 + 그 조상만 반환한다.
 - 권한이 소분류에만 있어도 상위 중/대분류가 경로 노출용으로 함께 반환된다.
 
 **테스트 체크리스트**
+
 - [ ] 관리자 / 권한 있는 일반 사용자 / 권한 없는 일반 사용자 3개 계정으로 `getVisibleMenuTree()` 결과 비교
 - [ ] 소분류 1개만 부여된 사용자에게 상위 노드 2개가 함께 반환되는지 확인
 - [ ] `is_active=false` 메뉴가 트리에서 제외되는지 확인 (관리자 제외 여부 정책 확정 후 검증)
@@ -485,12 +557,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 관리자 전용 화면의 진입 가드와, 권한 없는 접근 시 표시될 공용 안내 화면을 먼저 만든다 (Task 015~017의 공통 선행 작업).
 
 **관련 파일**
+
 - `app/erp/admin/layout.tsx` (신규)
 - `components/erp/access-denied.tsx` (신규)
 - `app/erp/forbidden/page.tsx` (신규)
 - `lib/erp/auth.ts`
 
 **구현 체크리스트**
+
 - [ ] `app/erp/admin/layout.tsx`에서 `requireAdmin()`을 호출해 관리자가 아니면 접근 거부 화면으로 보낸다.
 - [ ] `AccessDenied` 컴포넌트 구현 — 안내 메시지 + "홈으로 돌아가기"(`/erp`) 버튼. ERP 셸 안에서 렌더링되어야 한다.
 - [ ] 관리자 3개 화면의 라우트를 확정한다: `/erp/admin/users`, `/erp/admin/menus`, `/erp/admin/permissions`.
@@ -498,10 +572,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 레이아웃은 얇은 `Layout` + `<Suspense>` + `async` 가드 컴포넌트 패턴으로 작성한다.
 
 **수락 기준**
+
 - 일반 사용자가 `/erp/admin/users`에 직접 접근하면 접근 거부 화면이 표시된다.
 - 관리자는 3개 관리자 경로에 모두 진입할 수 있다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 일반 사용자로 `/erp/admin/users` 직접 진입 → 접근 거부 화면 + 홈 버튼 동작 확인
 - [ ] 관리자로 동일 경로 진입 → 정상 화면 확인
 - [ ] 미인증 상태로 진입 → `/auth/login` 리다이렉트 확인
@@ -513,12 +589,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 관리자가 전체 사용자를 조회하고 활성 상태·관리자 권한을 변경할 수 있게 한다.
 
 **관련 파일**
+
 - `app/erp/admin/users/page.tsx` (신규)
 - `components/erp/admin/user-table.tsx` (신규)
 - `lib/erp/actions.ts`
 - `components/ui/{table,data-table,switch,badge,avatar,alert-dialog}.tsx` (기존 재사용)
 
 **구현 체크리스트**
+
 - [ ] 사용자 목록 테이블 구현 — 컬럼: 아바타 / 이메일 / 이름 / 역할(`Badge`) / 활성 여부(`Switch`) / 가입일.
 - [ ] 이메일·이름 검색 필터와 페이지네이션을 적용한다 (`components/ui/pagination.tsx`).
 - [ ] 활성/비활성 토글 Server Action — `Switch` 변경 시 `profiles.is_active` 갱신.
@@ -529,11 +607,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 변경 후 `revalidatePath()`로 목록을 갱신한다.
 
 **수락 기준**
+
 - 관리자가 다른 사용자를 admin으로 승격/강등할 수 있다.
 - 비활성 처리된 사용자는 ERP 진입이 차단된다.
 - 마지막 관리자를 강등하려 하면 차단 메시지가 표시된다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 목록 로딩 및 검색 필터 동작 확인
 - [ ] 활성 토글 off → 새로고침 후 상태 유지 확인
 - [ ] 해당 사용자로 로그인 시 차단되는지 확인
@@ -547,12 +627,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 관리자가 대/중/소분류 메뉴 트리를 등록·수정·삭제·정렬할 수 있게 한다.
 
 **관련 파일**
+
 - `app/erp/admin/menus/page.tsx` (신규)
 - `components/erp/admin/menu-manager.tsx`, `components/erp/admin/menu-form-dialog.tsx` (신규)
 - `lib/erp/actions.ts`
 - `components/ui/{tree-view,dialog,form,input,switch,select,alert-dialog}.tsx` (기존 재사용)
 
 **구현 체크리스트**
+
 - [ ] 좌측에 편집용 메뉴 트리(전체 노드, 비활성 포함)를 표시한다.
 - [ ] 메뉴 등록 `Dialog` + `Form` 구현 — 필드: 상위 메뉴(선택, 없으면 대분류) / 레벨 / 메뉴명 / 정렬순서 / 사용여부.
 - [ ] **상위 메뉴를 비우고 대분류 단독 노드를 등록**할 수 있어야 한다 (PRD 7.2 필수 요구).
@@ -564,10 +646,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 변경 시 `revalidatePath("/erp", "layout")`로 내비게이션 트리를 갱신한다.
 
 **수락 기준**
+
 - 대분류만 단독으로 등록해도 정상 저장되고 Menubar에 즉시 노출된다.
 - 등록/수정/삭제/정렬/사용여부 5개 동작이 모두 동작하고 새로고침 후 유지된다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 대분류 단독 등록 → Menubar 반영 확인
 - [ ] 중분류 → 소분류 순차 등록 후 좌측 트리 계층 확인
 - [ ] 정렬순서 변경 → 트리 순서 반영 확인
@@ -582,12 +666,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 관리자가 사용자별로 접근 가능한 메뉴를 임의 레벨에서 부여/회수할 수 있게 한다.
 
 **관련 파일**
+
 - `app/erp/admin/permissions/page.tsx` (신규)
 - `components/erp/admin/permission-editor.tsx` (신규)
 - `lib/erp/actions.ts`
 - `components/ui/{combobox,command,tree-view,checkbox,button}.tsx` (기존 재사용)
 
 **구현 체크리스트**
+
 - [ ] 사용자 선택 UI 구현 — `Combobox`/`Command` 기반 검색 가능 드롭다운.
 - [ ] 선택한 사용자의 현재 권한을 반영한 **체크박스 트리**를 렌더링한다.
 - [ ] **임의 레벨(대/중/소) 어디에나 체크 가능**해야 한다 (대분류만 체크하는 케이스 포함).
@@ -599,10 +685,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 저장 후 `revalidatePath("/erp", "layout")`.
 
 **수락 기준**
+
 - 특정 사용자에게 소분류 1개만 부여하면, 그 사용자 내비게이션에 해당 소분류와 상위 경로만 노출된다.
 - 권한 회수 후 해당 메뉴가 즉시 사라진다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 사용자 검색 → 선택 → 기존 권한 체크 상태 반영 확인
 - [ ] 소분류 1개 체크 → 저장 → 해당 사용자로 로그인 → 상위 경로 포함 노출 확인
 - [ ] 대분류 단독 노드 체크 → 저장 → 해당 사용자 Menubar 노출 확인
@@ -618,12 +706,14 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 내비게이션 필터링과 서버단 재검증의 이중 방어를 완성한다.
 
 **관련 파일**
+
 - `components/erp/erp-menubar.tsx`, `components/erp/erp-menu-tree.tsx`
 - `app/erp/layout.tsx`, `app/erp/menu/[menuId]/page.tsx`
 - `lib/erp/auth.ts`, `lib/erp/queries.ts`
 - `components/erp/access-denied.tsx`
 
 **구현 체크리스트**
+
 - [ ] ERP 셸의 트리/Menubar 데이터 소스를 `getVisibleMenuTree(userId)` 결과로 교체한다 (**1차 방어: 노출 필터링**).
 - [ ] `app/erp/menu/[menuId]/page.tsx`에서 `getClaims()` + `canAccessMenu()`로 재검증한다 (**2차 방어: 서버단**). 실패 시 `AccessDenied` 렌더링.
 - [ ] 관리자 화면 3종에도 동일한 2차 방어가 적용되어 있는지 확인한다 (Task 014와 중복 점검).
@@ -633,11 +723,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 권한 조회가 매 페이지 렌더마다 중복 발생하지 않도록 요청 단위 캐싱(`React.cache` 등)을 적용한다.
 
 **수락 기준**
+
 - 권한 없는 메뉴는 Menubar/트리 어디에도 노출되지 않는다.
 - URL을 직접 입력해도 접근 거부 화면이 표시된다.
 - 관리자는 예외 없이 전체 메뉴에 접근한다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 일반 사용자 로그인 → 부여받은 메뉴만 노출되는지 확인
 - [ ] 권한 없는 `menuId` URL 직접 입력 → 접근 거부 화면 확인
 - [ ] 관리자 로그인 → 전체 메뉴 노출 및 전 메뉴 진입 확인
@@ -652,11 +744,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 마스터 관리 하위의 기준정보 관리·상품 관리 메뉴를 데이터로 등록한다. **화면 로직은 F010 공용 플레이스홀더로 렌더링하며 CRUD는 범위 제외.**
 
 **관련 파일**
+
 - Supabase 시드 마이그레이션
 - `app/erp/admin/menus/page.tsx` (등록 수단)
 - `components/erp/menu-placeholder.tsx`
 
 **구현 체크리스트**
+
 - [ ] 대분류 "마스터 관리" 등록.
 - [ ] 중분류 "기본 관리" + 소분류 3개(사용자 관리 / 메뉴 관리 / 사용자 권한 관리) 등록 → **Task 014의 매핑 규칙에 따라 실제 관리자 화면으로 연결**.
 - [ ] 중분류 "기준정보 관리" + 소분류 6개 등록: 법인 관리 / 브랜드 관리 / 소브랜드 관리 / 아이템·서브아이템 관리 / 상품 컬러 관리 / 상품 사이즈 관리.
@@ -666,10 +760,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 시드는 **멱등하게** 작성한다 (재실행 시 중복 생성 없음 — 고정 UUID 또는 `on conflict do nothing`).
 
 **수락 기준**
+
 - 마스터 관리 하위 3개 중분류와 12개 소분류가 트리에 정상 표시된다.
 - 기본 관리 3종은 실제 화면으로, 나머지 9종은 플레이스홀더로 이동한다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 관리자 로그인 → 마스터 관리 대분류 클릭 → 중분류 3개 확인
 - [ ] 기준정보 관리 하위 6개 소분류 각각 클릭 → 제목 + "추후 구현 예정" 배지 확인
 - [ ] 기본 관리 > 사용자 관리 클릭 → 플레이스홀더가 아닌 실제 테이블 화면 진입 확인
@@ -681,10 +777,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: 중/소분류가 미확정인 14개 대분류를 대분류 노드만으로 등록한다.
 
 **관련 파일**
+
 - Supabase 시드 마이그레이션
 - `components/erp/erp-menubar.tsx`
 
 **구현 체크리스트**
+
 - [ ] 대분류 14개 등록 (`level=1`, `parent_id=null`): 경영정보 / 인사급여 / 웹회계 / 기획 / 소싱 / 물류 / 협력사 / 영업 / 영업관리 / 영업기획 / 고객관리 / 웹POS / C&F / 게시판.
 - [ ] `sort_order`를 PRD 7.2 나열 순서와 일치시키고, "마스터 관리"가 가장 앞에 오도록 한다.
 - [ ] 각 대분류 클릭 시 하위 노드가 없어도 에러 없이 `MenuPlaceholder`가 렌더링되는지 확인한다.
@@ -694,10 +792,12 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] 시드는 멱등하게 작성한다.
 
 **수락 기준**
+
 - Menubar에 총 15개 대분류가 표시되고 모두 클릭 가능하다.
 - 하위 없는 대분류 클릭 시 플레이스홀더 화면이 정상 표시된다.
 
 **테스트 체크리스트 (Playwright MCP)**
+
 - [ ] 15개 대분류 전부 순회 클릭 → 각각 제목 표시 확인
 - [ ] 모바일 뷰(390px)에서 15개 대분류 접근성 확인
 - [ ] 임의 대분류에 중분류 1개 추가 → 트리 확장 동작 확인 → 삭제 후 원복
@@ -709,11 +809,13 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: Phase 1의 하드코딩 트리를 완전히 걷어내고 DB를 유일한 메뉴 소스로 만든다.
 
 **관련 파일**
+
 - `lib/erp/mock-menus.ts` (삭제 대상)
 - `components/erp/erp-menubar.tsx`, `components/erp/erp-menu-tree.tsx`
 - `app/erp/layout.tsx`
 
 **구현 체크리스트**
+
 - [ ] `lib/erp/mock-menus.ts`에 대한 모든 참조를 제거하고 파일을 삭제한다.
 - [ ] Task 013에서 남긴 TODO 주석을 전부 해소한다.
 - [ ] 메뉴 조회 지연에 대비해 트리/Menubar에 `Skeleton` 로딩 상태를 적용한다 (`components/ui/skeleton.tsx`).
@@ -721,6 +823,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] `npm run check-all` 통과.
 
 **수락 기준**
+
 - 코드베이스에 하드코딩된 메뉴 데이터가 남아 있지 않다.
 - DB에서 메뉴를 수정하면 즉시 화면에 반영된다.
 
@@ -733,6 +836,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 **목표**: PRD 12절 "Phase 2 이후 완료 기준" 8개 항목을 전수 검증한다.
 
 **구현 체크리스트**
+
 - [ ] 이메일/비밀번호 및 구글 OAuth 로그인/회원가입/로그아웃 정상 동작
 - [ ] 다크모드 토글 즉시 반영 + 새로고침 후 유지
 - [ ] `archy712@gmail.com` 계정이 관리자 권한 보유
@@ -746,6 +850,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 - [ ] `npm run check-all` 및 `npm run build` 통과
 
 **테스트 체크리스트 (Playwright MCP) — 시나리오별 E2E**
+
 - [ ] **시나리오 A (관리자)**: 로그인 → 메뉴 등록 → 사용자 권한 부여 → 로그아웃
 - [ ] **시나리오 B (일반 사용자)**: 로그인 → 부여받은 메뉴만 노출 확인 → 진입 → 로그아웃
 - [ ] **시나리오 C (권한 없는 접근)**: 일반 사용자로 관리자 URL 직접 입력 → 접근 거부 → 홈 복귀
@@ -797,8 +902,9 @@ Task 001 (Phase 0 전제 확인)
 ```
 
 **병렬 가능 구간**
+
 - Task 004 / Task 006 — Menubar와 플레이스홀더 컴포넌트는 독립 개발 가능
-- Phase 2-A(Task 008~010)와 Phase 2-B(Task 011~013) — 인증 정비와 스키마 구축은 서로 독립
+- Phase 2-A(Task 008~~010)와 Phase 2-B(Task 011~~013) — 인증 정비와 스키마 구축은 서로 독립
 - Task 015 / 016 / 017 — 세 관리자 화면은 Task 013·014 완료 후 서로 독립
 - Task 019 / 020 — 두 시드 작업은 서로 독립
 
@@ -806,12 +912,12 @@ Task 001 (Phase 0 전제 확인)
 
 ## 진행 현황
 
-| Phase | Task 범위 | 상태 |
-|---|---|---|
-| Phase 0 — 전제 확인 ✅ | Task 001 | ☑ 완료 |
-| **Phase 1 — ERP 메인 화면 뼈대** | Task 002~007 | ▶ 진행 중 (Task 002 완료, **최우선**) |
-| Phase 2-A — 인증 완성 / 공통 UI | Task 008~010 | ☐ 대기 |
-| Phase 2-B — 데이터 모델 | Task 011~013 | ☐ 대기 |
-| Phase 2-C — 관리자 CRUD | Task 014~017 | ☐ 대기 |
-| Phase 2-D — 접근 제어 / 메뉴 등록 | Task 018~021 | ☐ 대기 |
-| Phase 2-E — 통합 검증 | Task 022 | ☐ 대기 |
+| Phase                               | Task 범위    | 상태   |
+| ----------------------------------- | ------------ | ------ |
+| Phase 0 — 전제 확인 ✅              | Task 001     | ☑ 완료 |
+| **Phase 1 — ERP 메인 화면 뼈대** ✅ | Task 002~007 | ☑ 완료 |
+| Phase 2-A — 인증 완성 / 공통 UI     | Task 008~010 | ☐ 대기 |
+| Phase 2-B — 데이터 모델             | Task 011~013 | ☐ 대기 |
+| Phase 2-C — 관리자 CRUD             | Task 014~017 | ☐ 대기 |
+| Phase 2-D — 접근 제어 / 메뉴 등록   | Task 018~021 | ☐ 대기 |
+| Phase 2-E — 통합 검증               | Task 022     | ☐ 대기 |
