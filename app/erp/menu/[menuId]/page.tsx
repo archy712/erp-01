@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { MenuPlaceholder } from "@/components/erp/menu-placeholder";
+import { getAdminRouteForMenuPath } from "@/lib/erp/menu-routes";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import { MOCK_MENUS } from "@/lib/erp/mock-menus";
 
@@ -17,8 +18,9 @@ export default function ErpMenuPage({
   );
 }
 
-// 마스터 관리 > 기본 관리 하위 3종(사용자/메뉴/권한 관리)도 실제 관리자
-// 화면(Task 014~017)이 생기기 전까지는 다른 메뉴와 동일하게 플레이스홀더로
+// 마스터 관리 > 기본 관리 하위 3종(사용자/메뉴/권한 관리)은 이름 경로가
+// lib/erp/menu-routes.ts에 매칭되면 공용 플레이스홀더 대신 실제 관리자
+// 화면(Task 015~017)으로 리다이렉트된다. 나머지 메뉴는 그대로 플레이스홀더로
 // 렌더링된다.
 async function ErpMenuContent({
   params,
@@ -32,6 +34,11 @@ async function ErpMenuContent({
 
   if (!path) {
     notFound();
+  }
+
+  const adminRoute = getAdminRouteForMenuPath(path.map((node) => node.name));
+  if (adminRoute) {
+    redirect(adminRoute);
   }
 
   const current = path[path.length - 1];

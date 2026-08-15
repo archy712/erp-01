@@ -1,0 +1,7 @@
+import { AccessDenied } from "@/components/erp/access-denied";
+
+// requireAdmin()이 관리자가 아닌 사용자를 이 화면으로 리다이렉트한다.
+// app/erp/layout.tsx(ErpShell) 안에서 렌더링되므로 Header/Menubar/Footer는 유지된다.
+export default function ErpForbiddenPage() {
+  return <AccessDenied />;
+}

@@ -13,13 +13,14 @@ export type MenuNode = MenuFlat & {
   children: MenuNode[];
 };
 
-export type UserRole = "admin" | "user";
+// profiles.role 체크 제약과 동일한 3단계. admin/superadmin 모두 ERP 관점에서는
+// "관리자"로 취급한다(lib/erp/auth.ts의 isAdminRole 참고, docs/roadmap/ROADMAP_MVP.md Task 011).
+export type UserRole = "user" | "admin" | "superadmin";
 
 export type ErpUser = {
   id: string;
-  email: string;
-  fullName: string | null;
-  avatarUrl: string | null;
+  email: string | null;
+  name: string | null;
   role: UserRole;
   isActive: boolean;
 };
