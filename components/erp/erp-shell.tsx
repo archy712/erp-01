@@ -37,7 +37,7 @@ export function ErpShell({
     <div className="flex h-screen flex-col overflow-hidden">
       <ErpHeader dict={dict} />
 
-      <div className="flex h-12 w-full shrink-0 items-center gap-2 overflow-x-auto border-b px-4">
+      <div className="flex h-12 w-full shrink-0 items-center justify-center gap-2 overflow-x-auto border-b px-4">
         <div className="flex md:hidden">
           {mobileNav ?? (
             <span className="text-sm text-muted-foreground">
