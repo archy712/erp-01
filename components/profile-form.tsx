@@ -16,19 +16,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Tables } from "@/lib/supabase/database.types";
 
-type Profile = Pick<
-  Tables<"profiles">,
-  "id" | "email" | "username" | "full_name" | "avatar_url"
->;
+type Profile = Pick<Tables<"profiles">, "id" | "email" | "name">;
 
 export function ProfileForm({
   profile,
   className,
   ...props
 }: { profile: Profile } & React.ComponentPropsWithoutRef<"div">) {
-  const [username, setUsername] = useState(profile.username ?? "");
-  const [fullName, setFullName] = useState(profile.full_name ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
+  const [name, setName] = useState(profile.name ?? "");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,9 +40,7 @@ export function ProfileForm({
       const { error } = await supabase
         .from("profiles")
         .update({
-          username: username.trim() || null,
-          full_name: fullName.trim() || null,
-          avatar_url: avatarUrl.trim() || null,
+          name: name.trim() || null,
         })
         .eq("id", profile.id);
       if (error) throw error;
@@ -80,33 +73,13 @@ export function ProfileForm({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="username">사용자 이름</Label>
+                <Label htmlFor="name">이름</Label>
                 <Input
-                  id="username"
+                  id="name"
                   type="text"
-                  placeholder="3자 이상 입력해주세요"
-                  minLength={3}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="full-name">이름</Label>
-                <Input
-                  id="full-name"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="avatar-url">프로필 이미지 URL</Label>
-                <Input
-                  id="avatar-url"
-                  type="url"
-                  placeholder="https://example.com/avatar.png"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  maxLength={50}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

@@ -16,7 +16,7 @@ async function ProfileContent() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, email, username, full_name, avatar_url")
+    .select("id, email, name")
     .eq("id", userId)
     .maybeSingle();
 
@@ -30,9 +30,7 @@ async function ProfileContent() {
         profile ?? {
           id: userId,
           email: data.claims.email ?? null,
-          username: null,
-          full_name: null,
-          avatar_url: null,
+          name: null,
         }
       }
     />
