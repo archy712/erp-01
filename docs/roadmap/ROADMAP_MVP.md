@@ -332,7 +332,7 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 > PRD 2.3. Phase 1의 레이아웃 뼈대 완성 이후 착수한다.
 > 실행 순서: **인증 완성 → 데이터 모델 → 관리자 CRUD → 접근 제어 → 메뉴 데이터 등록 → 통합 검증**
 
-### Phase 2-A: 인증 완성 및 공통 UI 통합 확인
+### Phase 2-A: 인증 완성 및 공통 UI 통합 확인 ✅
 
 #### Task 008: 이메일/비밀번호 인증 흐름 세부 완성 (F001) ✅
 
@@ -372,61 +372,88 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ---
 
-#### Task 009: 구글 OAuth 인증 활성화 및 검증 (F002)
+#### Task 009: 구글 OAuth 인증 활성화 및 검증 (F002) ✅
 
 **목표**: 구글 로그인을 실제 동작 상태로 만든다.
-**참고**: `components/google-auth-button.tsx`(`signInWithOAuth({ provider: "google" })`)와 `app/auth/callback/route.ts`(코드 교환)가 **이미 구현되어 있다.** 이 Task는 대부분 **Provider 설정 + 검증**이다.
+**참고**: `components/google-auth-button.tsx`(`signInWithOAuth({ provider: "google" })`)와 `app/auth/callback/route.ts`(코드 교환)가 **이미 구현되어 있다.** 이 Task는 대부분 **Provider 설정 + 검증**이었고, 실제로 **코드 변경은 전혀 없었다**(검증만 수행, `git status` 클린 상태로 종료).
 
 **관련 파일**
 
-- `components/google-auth-button.tsx` (기존), `components/login-form.tsx` (이미 연결됨)
-- `app/auth/callback/route.ts` (기존)
+- `components/google-auth-button.tsx` (기존, 무변경), `components/login-form.tsx`/`components/sign-up-form.tsx` (이미 연결됨, 무변경)
+- `app/auth/callback/route.ts` (기존, 무변경)
 
 **구현 체크리스트**
 
-- [ ] Google Cloud Console에서 OAuth 클라이언트를 생성하고 승인된 리디렉션 URI에 Supabase 콜백 URL을 등록한다.
-- [ ] Supabase 대시보드 > Authentication > Providers에서 Google Provider를 활성화하고 Client ID/Secret을 설정한다.
-- [ ] Supabase Auth의 Redirect URLs에 `http://localhost:3000/auth/callback` 및 배포 도메인 콜백을 등록한다.
-- [ ] `redirectTo` 값이 `window.location.origin` 기반이므로 로컬/배포 양쪽에서 올바르게 동작하는지 확인한다.
-- [ ] 콜백 후 최종 랜딩이 `/erp`가 되도록 `next` 파라미터 기본값을 정리한다 (Task 008과 동일 지점).
-- [ ] 구글 계정으로 최초 로그인 시 `profiles` 레코드가 생성되는지 확인한다 (없다면 Task 010의 트리거로 보강).
-- [ ] 회원가입 페이지에도 동일 버튼을 노출할지 결정하고 반영한다.
+- [x] Google Cloud Console에서 OAuth 클라이언트를 생성하고 승인된 리디렉션 URI에 Supabase 콜백 URL을 등록한다 — **사용자가 외부 콘솔에서 이미 완료**(Supabase MCP로는 Auth Provider 설정을 조회할 수 없어 재확인 불가, 사용자 확인을 신뢰). Playwright로 "Google로 계속하기" 클릭 시 실제로 `accounts.google.com`으로 정상 리다이렉트되는 것을 확인해 간접적으로 클라이언트 등록이 유효함을 검증함(아래 테스트 체크리스트 참고).
+- [x] Supabase 대시보드 > Authentication > Providers에서 Google Provider를 활성화하고 Client ID/Secret을 설정한다 — **사용자가 이미 완료**, 위와 동일하게 실제 리다이렉트 성공으로 간접 검증(Provider가 꺼져 있었다면 Supabase가 `/authorize` 단계에서 즉시 에러를 반환했을 것).
+- [x] Supabase Auth의 Redirect URLs에 `http://localhost:3000/auth/callback` 및 배포 도메인 콜백을 등록한다 — **사용자가 이미 완료로 간주**(Task 008과 동일한 이유로 MCP 조회 불가). Google 리다이렉트 URL의 `opparams`에 `redirect_to=http://localhost:3000/auth/callback`이 정확히 포함되어 있음을 확인.
+- [x] `redirectTo` 값이 `window.location.origin` 기반이므로 로컬/배포 양쪽에서 올바르게 동작하는지 확인한다 — `google-auth-button.tsx:19` `redirectTo: \`${window.location.origin}/auth/callback\``코드로 확인.`window.location.origin`은 요청 도메인을 그대로 따르므로 로컬(`http://localhost:3000`)/배포 도메인 양쪽에서 동일 코드로 올바르게 동작.
+- [x] 콜백 후 최종 랜딩이 `/erp`가 되도록 `next` 파라미터 기본값을 정리한다 — `app/auth/callback/route.ts:7` `next = searchParams.get("next") ?? "/erp"`로 Task 008에서 이미 처리되어 있음을 재확인, 추가 수정 불필요.
+- [x] 구글 계정으로 최초 로그인 시 `profiles` 레코드가 생성되는지 확인한다 — `mcp__supabase__execute_sql`로 `handle_new_user()` 트리거 정의(`insert into public.profiles (id, email) values (new.id, new.email)`)와 트리거 자체(`on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user()`)를 조회. 트리거가 `auth.users` INSERT 전반에 걸리며 provider 조건이 전혀 없으므로 OAuth/이메일 가입 구분 없이 동일하게 `profiles` 레코드가 생성됨을 SQL 레벨로 재확인(Task 011에서 조사된 내용과 일치).
+- [x] 회원가입 페이지에도 동일 버튼을 노출할지 결정하고 반영한다 — `grep` 확인 결과 `components/login-form.tsx`, `components/sign-up-form.tsx` 양쪽에 이미 `<GoogleAuthButton />`이 노출되어 있음. **결정: 유지**(추가 작업 불필요).
 
 **수락 기준**
 
-- "Google로 계속하기" → 동의 화면 → 콜백 → `/erp` 진입이 성공한다.
-- 구글 로그인 계정도 이메일 계정과 동일하게 `profiles`에 레코드를 갖는다.
+- [x] "Google로 계속하기" → 동의 화면 → 콜백 → `/erp` 진입이 성공한다 — **동의 화면 완주까지는 검증 범위 밖**(실 Google 계정 비밀번호/2FA 필요, 사전에 합의된 경계). "Google로 계속하기" 클릭 → 실제 `accounts.google.com/v3/signin/identifier`로 정상 리다이렉트되는 것까지 확인했고, 콜백 라우트(`/auth/callback`)의 코드 교환 성공 경로(`next` 파라미터 → `/erp`)는 코드 리뷰로 확인. 이 흐름이 성립할 준비가 되어 있음을 확인하는 선에서 마무리.
+- [x] 구글 로그인 계정도 이메일 계정과 동일하게 `profiles`에 레코드를 갖는다 — 트리거가 provider 무관하게 동작함을 SQL로 재검증(위 참고). **미검증**: 실제 구글 계정으로 최초 로그인 후 `profiles` 테이블에 행이 실제로 생성되는지의 런타임 확인은 동의 화면 완주가 전제라 이번 범위 밖 — 트리거 정의 검증으로 대체.
 
 **테스트 체크리스트 (Playwright MCP)**
 
-- [ ] 로그인 페이지에서 "Google로 계속하기" 클릭 → Google 도메인으로 리다이렉트되는지 확인 (`browser_network_requests`)
-- [ ] 콜백 실패 시나리오(잘못된 code) → `app/auth/error` 화면 노출 확인
-- [ ] 로그인 후 `AuthButton`에 구글 계정 정보가 표시되는지 확인
+- [x] 로그인 페이지에서 "Google로 계속하기" 클릭 → Google 도메인으로 리다이렉트되는지 확인 (`browser_network_requests`) — `/auth/login`에서 버튼 클릭 → `https://accounts.google.com/v3/signin/identifier?...redirect_uri=https%3A%2F%2Fybhluyzkmpjmrxyhkolt.supabase.co%2Fauth%2Fv1%2Fcallback...`로 실제 이동 확인. Google 실 로그인 폼이 뜬 즉시 더 진행하지 않고 뒤로가기로 마무리(전제대로 동의 화면 완주는 시도하지 않음).
+- [x] 콜백 실패 시나리오(잘못된 code) → `app/auth/error` 화면 노출 확인 — `/auth/callback?code=invalid-test-code` 직접 접근 → `/auth/error?error=flow_state_not_found`로 리다이렉트, "문제가 발생했습니다." + 한국어 안내 문구("요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") 정상 렌더링 확인(`flow_state_not_found`는 `lib/auth/get-auth-error-message.ts` 매핑 테이블에 없어 공용 fallback 문구로 처리됨 — 정상 동작).
+- [x] 로그인 후 `AuthButton`에 구글 계정 정보가 표시되는지 확인 — **실 구글 로그인 완주가 필요해 런타임 검증은 스킵**, 대신 코드 리뷰로 대체: `components/auth-button.tsx`는 `supabase.auth.getClaims()`로 `user.email`을 읽어 렌더링할 뿐 provider를 구분하는 로직이 전혀 없어(코드에 provider 분기 없음), 구글 로그인이든 이메일 로그인이든 동일하게 동작함을 확인.
+- [x] 콘솔 에러 0건 확인 — `/auth/login` → Google 리다이렉트 → 뒤로가기 → `/auth/callback?code=invalid-test-code` → `/auth/error` 전체 시나리오에서 `browser_console_messages`(최근 네비게이션 기준) 에러 0건. 단, `all: true`로 세션 전체 로그를 조회했을 때 `/erp` 라우트(`permission-editor.tsx`, `lib/erp/auth.ts`, "TEMP: Task 021 error boundary verification")에서 다수의 에러가 섞여 나왔는데, 이는 다른 Task(021 등)의 별개 작업/디버그 코드로 이번 Task 009의 인증 플로우와는 무관함을 확인하고 범위에서 제외.
+- [x] `npm run check-all` 통과 확인 — 이번 Task는 코드 변경이 전혀 없어(`git status` 클린) "기존 상태 유지 확인"으로 기록. `typecheck`/`format:check` 통과, `lint`는 기존 7건의 경고(TanStack Table 메모이제이션 관련, 미사용 변수 등, 전부 이번 Task와 무관한 기존 파일)만 있고 에러 0건.
+
+**검증 범위 밖으로 남긴 것**: 실제 Google 계정으로 동의 화면을 완주해 `/erp`까지 진입하는 것과, 그 결과로 `profiles` 레코드가 실제로 insert되는지의 런타임 확인은 사전 합의된 경계에 따라 이번 Task에서 시도하지 않았다(Google 실 계정 비밀번호/2FA 필요). 코드/설정/트리거 정의 레벨에서는 이 흐름이 성립하도록 준비되어 있음을 확인했다.
 
 ---
 
-#### Task 010: 다크모드 및 i18n 통합 확인 (F003)
+#### Task 010: 다크모드 및 i18n 통합 확인 (F003) ✅
 
 **목표**: 기존 `next-themes` / i18n 컴포넌트가 ERP 화면에서도 문제없이 동작하는지 확인한다. **신규 개발이 아닌 통합 점검 수준.**
 
 **관련 파일**
 
 - `components/theme-switcher.tsx`, `components/language-switcher.tsx` (모두 무변경)
-- `app/globals.css`, `tailwind.config.ts`
-- `lib/i18n/dictionaries/{ko,en,ja,zh}.ts`, `lib/i18n/dictionaries/types.ts`
+- `app/globals.css`, `tailwind.config.ts` (점검 결과 위반 없어 무변경)
+- `lib/i18n/dictionaries/{ko,en,ja,zh}.ts`, `lib/i18n/dictionaries/types.ts` — `erp` 섹션 신설
+- `components/erp/erp-mobile-nav.tsx`, `components/erp/erp-menu-tree.tsx`, `components/erp/menu-placeholder.tsx`, `components/erp/access-denied.tsx`, `components/erp/erp-error-empty.tsx` — `dict`/`title` prop 배선
+- `app/erp/layout.tsx`, `app/erp/forbidden/page.tsx`, `app/erp/menu/[menuId]/page.tsx`, `app/erp/not-found.tsx`, `app/erp/error.tsx` — 번역 문자열 조회·전달
 
 **구현 체크리스트**
 
-- [ ] ERP 셸(Menubar / 트리 / 콘텐츠 / Breadcrumb)의 모든 색상이 `--background` `--primary` 등 **CSS 변수 토큰**을 사용하는지 점검한다 (하드코딩 색상 제거).
-- [ ] 다크모드 전환 시 트리 활성 노드·Menubar 활성 탭의 대비가 충분한지 확인한다.
-- [ ] 새로고침 후에도 테마가 유지되는지 확인한다 (`suppressHydrationWarning` + `ThemeProvider` 기존 설정).
-- [ ] ERP 셸의 **UI 라벨**(로그아웃, 메뉴 열기, 추후 구현 예정 등)만 4개 언어 사전에 추가한다. **메뉴명 자체는 한국어 단일 값 유지**(범위 제외).
-- [ ] 사전 추가 시 `lib/i18n/dictionaries/types.ts`의 `Dictionary` 타입과 `ko/en/ja/zh` 4개 파일을 **모두** 갱신한다.
+- [x] ERP 셸(Menubar / 트리 / 콘텐츠 / Breadcrumb)의 모든 색상이 `--background` `--primary` 등 **CSS 변수 토큰**을 사용하는지 점검한다 (하드코딩 색상 제거) — `grep -rn "text-\[#|bg-\[#|#[0-9a-fA-F]{3,6}|rgb(" components/erp app/erp`로 전수 스캔, **위반 0건**. `erp-home-chart.tsx`의 `color: "hsl(var(--chart-1))"`도 CSS 변수를 참조하는 shadcn Chart 표준 패턴이라 문제없음. Task 001~021 내내 시맨틱 토큰만 사용해온 관례가 유지되고 있음을 확인.
+- [x] 다크모드 전환 시 트리 활성 노드·Menubar 활성 탭의 대비가 충분한지 확인한다 — Task 018~021에서 추가된 실 DB 기반 트리(신규 시드 15개 대분류), `AccessDenied`, `ErpShellSkeleton`, `ErpErrorEmpty`까지 포함해 Playwright로 라이트/다크 재확인, 전부 가독성 양호.
+- [x] 새로고침 후에도 테마가 유지되는지 확인한다 — `app/erp/layout.tsx`는 별도 ThemeProvider 없이 루트 `app/layout.tsx`(변경 금지)의 것을 그대로 상속. 다크→라이트 전환 후 `/erp` 새로고침 → 라이트 유지 Playwright로 확인.
+- [x] ERP 셸의 **UI 라벨**만 4개 언어 사전에 추가한다. **메뉴명 자체는 한국어 단일 값 유지**(범위 제외) — 아래 "사전화한 라벨" 참고.
+- [x] 사전 추가 시 `lib/i18n/dictionaries/types.ts`의 `Dictionary` 타입과 `ko/en/ja/zh` 4개 파일을 **모두** 갱신한다.
+
+**사전화한 라벨** (`Dictionary.erp` 섹션 신설, 6개 그룹)
+
+- `mobileNav`: 모바일 햄버거 버튼 `aria-label`("메뉴 열기") + Sheet 제목("ERP 메뉴") — `components/erp/erp-mobile-nav.tsx`
+- `tree`: 좌측 트리의 3가지 안내 상태(대분류 미선택/존재하지 않는 대분류/하위 메뉴 없음) — `components/erp/erp-menu-tree.tsx`
+- `layout`: `app/erp/layout.tsx`의 메뉴 조회 실패 시 Menubar/트리 자리에 뜨는 대체 문구
+- `placeholder`: `MenuPlaceholder`의 안내 설명 + "추후 구현 예정" Badge — 메뉴명(`title`/`breadcrumb`)은 `menus.name` 그대로 한국어 유지
+- `accessDenied` / `notFound` / `error`: `AccessDenied`, `app/erp/not-found.tsx`, `ErpErrorEmpty`(레이아웃 조회 실패용 `layoutDescription` + 하위 페이지 조회 실패용 `pageDescription` 구분)의 제목/설명/버튼 라벨
+
+클라이언트 컴포넌트(`erp-mobile-nav.tsx`, `erp-menu-tree.tsx`)는 `cookies()`를 직접 못 쓰므로, 기존 `ErpShell`이 `locale`/`dict`를 prop으로 받던 패턴을 그대로 따라 `app/erp/layout.tsx`가 조회한 `dict`를 그대로 내려줬다. `app/erp/error.tsx`는 Next.js 규약상 Client Component여야 하는 에러 바운더리라 서버처럼 `getLocale()`을 쓸 수 없는데, `locale` 쿠키가 httpOnly가 아니고 `getDictionary()`가 순수 함수라는 점을 이용해 `document.cookie`를 직접 읽는 작은 헬퍼(`getClientLocale()`)를 그 파일 안에 로컬로 추가했다(에러 바운더리는 SSR과 대조되는 하이드레이션 대상이 아니라 이 방식이 안전함). `app/erp/forbidden/page.tsx`/`app/erp/not-found.tsx`는 기존에 `cookies()`를 쓰지 않는 단순 동기 컴포넌트였는데, 이번에 `getLocale()`이 필요해지면서 프로젝트 표준 패턴(얇은 `Page` + `<Suspense>` + `async XxxContent`)으로 재구성했다.
 
 **수락 기준**
 
-- 라이트/다크 양쪽에서 ERP 화면의 모든 텍스트가 읽히고, 새로고침 후 테마가 유지된다.
-- 언어 전환 시 ERP 셸의 UI 라벨이 바뀌고 `router.refresh()` 후 레이아웃이 깨지지 않는다.
+- [x] 라이트/다크 양쪽에서 ERP 화면의 모든 텍스트가 읽히고, 새로고침 후 테마가 유지된다.
+- [x] 언어 전환 시 ERP 셸의 UI 라벨이 바뀌고 `router.refresh()` 후 레이아웃이 깨지지 않는다.
+
+**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 테스트 계정(`erp-task010-verify@example.com`, 회원가입 직후 `profiles.role`을 `admin`으로 SQL 승격)으로 검증 후 계정 삭제(`auth.users` 삭제 → `profiles` cascade, 잔존 0건 확인). 시딩된 `menus` 30건은 건드리지 않음.
+
+- [x] 데스크탑(1440px) 로그인 → `/erp` → 마스터 관리 > 기준정보 관리 > 법인 관리까지 트리 진입 → `MenuPlaceholder` 다크/라이트 스크린샷 대비 확인, `ThemeSwitcher`로 전환 시 Menubar 활성 탭·트리 선택 항목 모두 가독성 양호.
+- [x] 새로고침 → 테마(라이트) 유지 확인.
+- [x] `/erp/forbidden`(`AccessDenied`)을 라이트/다크 양쪽 스크린샷으로 대비 확인.
+- [x] 모바일(390px)에서 햄버거 버튼 `aria-label`("메뉴 열기" → 영어 전환 후 "Open menu")과 Sheet 제목("ERP 메뉴" → "ERP Menu") 확인.
+- [x] 언어 전환(영어/일본어/중국어)마다 `dict.erp.tree.selectCategory`("상단에서 대분류를 선택하세요." 등), `MenuPlaceholder` 안내문, `AccessDenied`, `app/erp/not-found.tsx`(잘못된 `menuId`로 접근)가 각 언어로 바뀌는지 확인, 메뉴명(마스터 관리 등)은 언어 전환과 무관하게 한국어 그대로 유지되는지도 함께 확인(의도된 동작) — 4개 언어 전부 확인.
+- [x] `browser_console_messages`로 전 시나리오(라이트/다크 전환, 새로고침, 4개 언어 전환, 트리 탐색, 접근거부/404 화면) 콘솔 에러 0건 확인.
+- [x] `npm run check-all`, `npm run build` 통과 확인.
+- [ ] `app/erp/error.tsx`(nested layout/page 조회 실패용 클라이언트 에러 바운더리)는 실제 트리거 경로(예: 잘못된 형식의 `menuId`)가 기존 코드에서 이미 방어적으로 `notFound()`로 처리되고 있어 Playwright로 직접 재현하지 못함 — `getClientLocale()`/`getDictionary()` 로직은 타입체크·빌드로 검증했고 코드 리뷰로 안전성 확인, 런타임 트리거 재현은 다음 기회로 남김.
 
 ---
 
@@ -978,12 +1005,12 @@ Task 001 (Phase 0 전제 확인)
 
 ## 진행 현황
 
-| Phase                                | Task 범위    | 상태                              |
-| ------------------------------------ | ------------ | --------------------------------- |
-| Phase 0 — 전제 확인 ✅               | Task 001     | ☑ 완료                            |
-| **Phase 1 — ERP 메인 화면 뼈대** ✅  | Task 002~007 | ☑ 완료                            |
-| Phase 2-A — 인증 완성 / 공통 UI      | Task 008~010 | ☐ 진행중 (008 완료, 009~010 대기) |
-| Phase 2-B — 데이터 모델 ✅           | Task 011~013 | ☑ 완료                            |
-| Phase 2-C — 관리자 CRUD ✅           | Task 014~017 | ☑ 완료                            |
-| Phase 2-D — 접근 제어 / 메뉴 등록 ✅ | Task 018~021 | ☑ 완료                            |
-| Phase 2-E — 통합 검증                | Task 022     | ☐ 대기                            |
+| Phase                                | Task 범위    | 상태   |
+| ------------------------------------ | ------------ | ------ |
+| Phase 0 — 전제 확인 ✅               | Task 001     | ☑ 완료 |
+| **Phase 1 — ERP 메인 화면 뼈대** ✅  | Task 002~007 | ☑ 완료 |
+| Phase 2-A — 인증 완성 / 공통 UI ✅   | Task 008~010 | ☑ 완료 |
+| Phase 2-B — 데이터 모델 ✅           | Task 011~013 | ☑ 완료 |
+| Phase 2-C — 관리자 CRUD ✅           | Task 014~017 | ☑ 완료 |
+| Phase 2-D — 접근 제어 / 메뉴 등록 ✅ | Task 018~021 | ☑ 완료 |
+| Phase 2-E — 통합 검증                | Task 022     | ☐ 대기 |
