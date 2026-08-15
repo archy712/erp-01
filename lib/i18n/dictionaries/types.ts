@@ -311,5 +311,22 @@ export interface Dictionary {
       retry: string;
       backToErpHome: string;
     };
+    passwordNotice: {
+      title: string;
+      description: string;
+      cta: string;
+      dismissAriaLabel: string;
+    };
+    changePassword: {
+      title: string;
+      description: string;
+      newPasswordLabel: string;
+      confirmPasswordLabel: string;
+      passwordMismatch: string;
+      saveButton: string;
+      saving: string;
+      successMessage: string;
+      errorFallback: string;
+    };
   };
 }

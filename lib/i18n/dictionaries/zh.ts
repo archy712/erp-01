@@ -440,5 +440,22 @@ export const zh: Dictionary = {
       retry: "重试",
       backToErpHome: "前往 ERP 主页",
     },
+    passwordNotice: {
+      title: "您正在使用临时密码。",
+      description: "为了账户安全，请修改密码。",
+      cta: "修改密码",
+      dismissAriaLabel: "关闭",
+    },
+    changePassword: {
+      title: "修改密码",
+      description: "为了账户安全，请设置新密码。",
+      newPasswordLabel: "新密码",
+      confirmPasswordLabel: "确认新密码",
+      passwordMismatch: "两次输入的密码不一致。",
+      saveButton: "修改密码",
+      saving: "修改中...",
+      successMessage: "密码已修改。",
+      errorFallback: "发生错误。",
+    },
   },
 };

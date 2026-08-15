@@ -463,5 +463,22 @@ export const ko: Dictionary = {
       retry: "다시 시도",
       backToErpHome: "ERP 메인 화면으로 이동",
     },
+    passwordNotice: {
+      title: "임시 비밀번호를 사용 중입니다.",
+      description: "보안을 위해 비밀번호를 변경해 주세요.",
+      cta: "비밀번호 변경하기",
+      dismissAriaLabel: "닫기",
+    },
+    changePassword: {
+      title: "비밀번호 변경",
+      description: "계정 보안을 위해 새 비밀번호를 설정하세요.",
+      newPasswordLabel: "새 비밀번호",
+      confirmPasswordLabel: "새 비밀번호 확인",
+      passwordMismatch: "비밀번호가 일치하지 않습니다.",
+      saveButton: "비밀번호 변경",
+      saving: "변경 중...",
+      successMessage: "비밀번호가 변경되었습니다.",
+      errorFallback: "오류가 발생했습니다.",
+    },
   },
 };

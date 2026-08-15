@@ -472,5 +472,22 @@ export const en: Dictionary = {
       retry: "Try again",
       backToErpHome: "Go to ERP home",
     },
+    passwordNotice: {
+      title: "You're using a temporary password.",
+      description: "Please change your password to keep your account secure.",
+      cta: "Change password",
+      dismissAriaLabel: "Dismiss",
+    },
+    changePassword: {
+      title: "Change password",
+      description: "Set a new password to keep your account secure.",
+      newPasswordLabel: "New password",
+      confirmPasswordLabel: "Confirm new password",
+      passwordMismatch: "Passwords do not match.",
+      saveButton: "Change password",
+      saving: "Saving...",
+      successMessage: "Your password has been changed.",
+      errorFallback: "Something went wrong.",
+    },
   },
 };

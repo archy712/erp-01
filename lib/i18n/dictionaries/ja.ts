@@ -468,5 +468,23 @@ export const ja: Dictionary = {
       retry: "再試行",
       backToErpHome: "ERPメイン画面へ移動",
     },
+    passwordNotice: {
+      title: "仮パスワードを使用しています。",
+      description: "セキュリティのためパスワードを変更してください。",
+      cta: "パスワードを変更する",
+      dismissAriaLabel: "閉じる",
+    },
+    changePassword: {
+      title: "パスワード変更",
+      description:
+        "アカウントのセキュリティのため新しいパスワードを設定してください。",
+      newPasswordLabel: "新しいパスワード",
+      confirmPasswordLabel: "新しいパスワード（確認）",
+      passwordMismatch: "パスワードが一致しません。",
+      saveButton: "パスワードを変更",
+      saving: "変更中...",
+      successMessage: "パスワードを変更しました。",
+      errorFallback: "エラーが発生しました。",
+    },
   },
 };
