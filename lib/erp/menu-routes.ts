@@ -1,8 +1,8 @@
 /**
  * 마스터 관리 > 기본 관리 하위 3개 소분류는 공용 MenuPlaceholder가 아니라
  * 실제 관리자 화면(Task 015~017)으로 연결된다. 메뉴 이름 경로("대>중>소")를
- * 키로 매칭하므로, 메뉴 데이터 소스가 Mock(`lib/erp/mock-menus.ts`)에서
- * 실 DB(Task 019 이후, ID가 UUID로 바뀜)로 전환되어도 매핑이 깨지지 않는다.
+ * 키로 매칭하므로, Mock 데이터 시절부터 실 DB(Task 019 이후, ID가 UUID로
+ * 바뀜) 전환을 거치는 동안에도 매핑이 깨지지 않는다.
  */
 const ADMIN_MENU_ROUTES: Record<string, string> = {
   "마스터 관리>기본 관리>사용자 관리": "/erp/admin/users",

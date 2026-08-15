@@ -5,8 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Folder, LayoutGrid, LineChart, type LucideIcon } from "lucide-react";
 
 import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
-import { buildMenuTree } from "@/lib/erp/menu-tree";
-import { MOCK_MENUS } from "@/lib/erp/mock-menus";
+import type { MenuNode } from "@/lib/erp/types";
 import { cn } from "@/lib/utils";
 
 // 메뉴명 → 아이콘 매핑. `menus` 스키마에 아이콘 컬럼이 없으므로 코드 측에서
@@ -21,12 +20,13 @@ const DEFAULT_CATEGORY_ICON: LucideIcon = Folder;
 // 단일 소스로 사용하므로, 새로고침/딥링크에도 선택이 그대로 유지된다.
 // 하위 노드가 없는 대분류(예: "경영정보")는 트리를 거치지 않고 바로
 // 플레이스홀더 화면(`/erp/menu/[menuId]`)으로 이동한다.
-export function ErpMenubar() {
+//
+// `categories`는 서버(app/erp/layout.tsx)에서 `getVisibleMenuTree(userId)`로
+// 조회한 실 데이터를 그대로 내려받는다(Task 018 — 1차 방어: 노출 필터링).
+export function ErpMenubar({ categories }: { categories: MenuNode[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeCategoryId = searchParams.get("cat");
-
-  const categories = buildMenuTree(MOCK_MENUS);
 
   return (
     <Menubar className="h-9 shrink-0 border-none bg-transparent p-0 shadow-none">

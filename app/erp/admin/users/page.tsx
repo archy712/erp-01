@@ -15,8 +15,9 @@ export default function AdminUsersPage() {
 // getCurrentErpUser()/getUsers()가 cookies()를 쓰는 createClient()에 의존하므로
 // Suspense 경계 안에서만 호출한다 (cacheComponents: true, CLAUDE.md 참고).
 // app/erp/admin/layout.tsx의 requireAdmin() 가드를 이미 통과한 뒤 렌더링되지만,
-// 자기 자신 강등 방지 등 화면 로직에 현재 사용자 id가 필요해 별도로 다시 조회한다
-// (권한 조회 중복 캐싱은 Task 018에서 React.cache로 정리 예정).
+// 자기 자신 강등 방지 등 화면 로직에 현재 사용자 id가 필요해 별도로 다시 조회한다.
+// getCurrentErpUser()는 react의 cache()로 감싸져 있어(lib/erp/auth.ts, Task 018),
+// requireAdmin() 내부 호출과 이 호출이 같은 요청 안에서 실제로는 한 번만 실행된다.
 async function AdminUsersContent() {
   const [currentUser, users] = await Promise.all([
     getCurrentErpUser(),

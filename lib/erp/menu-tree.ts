@@ -82,8 +82,9 @@ export function getActiveMenuId(pathname: string): string | undefined {
 
 /**
  * 루트부터 id로 지정한 노드까지의 경로(대분류 → ... → 자기 자신)를 반환한다.
- * 대상이 없으면 undefined. Task 013에서 `getMenuBreadcrumb`가 이 자리를
- * 실 DB 조회로 대체한다.
+ * 대상이 없으면 undefined. `lib/erp/queries.ts`의 동명 함수(`getMenuBreadcrumb`)는
+ * 이것과 별개로 DB에서 직접 breadcrumb을 조회하는 서버 전용 버전이고, 이 함수는
+ * 클라이언트에서 이미 받아온 트리(`MenuNode[]`)에 대해 동작하는 순수 함수다.
  */
 export function getMenuBreadcrumb(
   nodes: MenuNode[],

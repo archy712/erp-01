@@ -1,19 +1,25 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FolderTree } from "lucide-react";
 
-import { TreeView } from "@/components/ui/tree-view";
 import {
-  buildMenuTree,
-  getActiveMenuId,
-  menuNodeToTreeItem,
-} from "@/lib/erp/menu-tree";
-import { MOCK_MENUS } from "@/lib/erp/mock-menus";
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+} from "@/components/ui/empty";
+import { TreeView } from "@/components/ui/tree-view";
+import { getActiveMenuId, menuNodeToTreeItem } from "@/lib/erp/menu-tree";
+import type { MenuNode } from "@/lib/erp/types";
 
 // 데스크탑/태블릿(md 이상)에서 상시 노출되는 좌측 트리.
 // 선택된 대분류(`?cat=`)의 하위 노드만 보여준다. 모바일 전용 통합 트리는
 // ErpMobileNav를 참고.
-export function ErpMenuTree() {
+//
+// `categories`는 서버(app/erp/layout.tsx)에서 `getVisibleMenuTree(userId)`로
+// 조회한 실 데이터를 그대로 내려받는다(Task 018 — 1차 방어: 노출 필터링).
+export function ErpMenuTree({ categories }: { categories: MenuNode[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -27,7 +33,6 @@ export function ErpMenuTree() {
     );
   }
 
-  const categories = buildMenuTree(MOCK_MENUS);
   const category = categories.find((node) => node.id === categoryId);
 
   if (!category) {
@@ -40,7 +45,14 @@ export function ErpMenuTree() {
 
   if (category.children.length === 0) {
     return (
-      <p className="p-4 text-sm text-muted-foreground">하위 메뉴가 없습니다.</p>
+      <Empty className="flex-1 border-0 p-4">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FolderTree />
+          </EmptyMedia>
+          <EmptyDescription>하위 메뉴가 없습니다.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 

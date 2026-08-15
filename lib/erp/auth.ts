@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -13,8 +14,15 @@ export { isAdminRole };
  *
  * cookies()를 사용하므로 이 함수를 호출하는 컴포넌트는 반드시 <Suspense> 경계
  * 안에 있어야 한다 (cacheComponents: true, CLAUDE.md 참고).
+ *
+ * `react`의 `cache()`로 감싸 같은 요청 안에서는 몇 번을 호출해도 실제 조회는
+ * 한 번만 일어난다(요청 단위 dedupe). 이 함수는 app/erp/layout.tsx,
+ * app/erp/admin/layout.tsx(requireAdmin 내부), 각 admin 페이지, menu/[menuId]
+ * 페이지 등 한 요청 안에서 여러 컴포넌트가 중복 호출하므로 Task 018에서 적용함
+ * (Next.js 16 fetch 캐시가 아니라 React 자체 요청 메모이제이션이라 매 요청마다
+ * 새로 초기화되고, Fluid compute 하에서도 인스턴스 간 데이터가 새지 않는다).
  */
-export async function getCurrentErpUser(): Promise<ErpUser> {
+export const getCurrentErpUser = cache(async (): Promise<ErpUser> => {
   const supabase = await createClient();
   const { data: claims, error: claimsError } = await supabase.auth.getClaims();
 
@@ -43,7 +51,7 @@ export async function getCurrentErpUser(): Promise<ErpUser> {
     role: profile.role as UserRole,
     isActive: profile.is_active,
   };
-}
+});
 
 /**
  * 관리자 전용 화면/액션의 진입 가드. admin이 아니면 접근 거부 화면(/erp/forbidden)으로 보낸다.
