@@ -7,6 +7,7 @@ export const ja: Dictionary = {
     signUp: "新規登録",
     signOut: "ログアウト",
     profile: "プロフィール",
+    settings: "設定",
     greeting: "{email}さん、こんにちは!",
     showPassword: "パスワードを表示",
     hidePassword: "パスワードを隠す",
@@ -485,6 +486,36 @@ export const ja: Dictionary = {
       saving: "変更中...",
       successMessage: "パスワードを変更しました。",
       errorFallback: "エラーが発生しました。",
+    },
+    settings: {
+      navProfile: "プロフィール",
+      navPreferences: "環境設定",
+      navAvatar: "アバター",
+      navContact: "連絡先情報",
+      navSecurity: "セキュリティ",
+      navNotifications: "通知",
+      preferencesDescription: "テーマと言語を設定します。",
+      themeLabel: "テーマ",
+      languageLabel: "言語",
+      avatarDescription:
+        "自分を表すアバターを選択してください。アバター変更機能は準備中です。",
+      contactDescription:
+        "他のメンバーに表示される連絡先情報です。編集機能は準備中です。",
+      contactPhoneLabel: "電話番号",
+      contactBioLabel: "自己紹介",
+      notificationsDescription:
+        "チャネルごとに通知の受信設定を行います。通知設定機能は準備中です。",
+      notificationsEmailLabel: "メール通知",
+      notificationsInAppLabel: "アプリ内通知",
+      notificationsMarketingLabel: "マーケティング情報の受信",
+      sessionsTitle: "ログインセッション管理",
+      sessionsDescription:
+        "現在ログイン中のデバイスとセッションを確認し、リモートでログアウトできます。",
+      mfaTitle: "2段階認証",
+      mfaDescription: "ログイン時にOTPなどの追加認証を要求するよう設定します。",
+      connectionsTitle: "連携アカウント",
+      connectionsDescription:
+        "Googleなどのソーシャルログイン連携状態を確認・解除できます。",
     },
   },
 };

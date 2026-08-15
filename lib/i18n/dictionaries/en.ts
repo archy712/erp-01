@@ -7,6 +7,7 @@ export const en: Dictionary = {
     signUp: "Sign up",
     signOut: "Sign out",
     profile: "Profile",
+    settings: "Settings",
     greeting: "Hey, {email}!",
     showPassword: "Show password",
     hidePassword: "Hide password",
@@ -488,6 +489,37 @@ export const en: Dictionary = {
       saving: "Saving...",
       successMessage: "Your password has been changed.",
       errorFallback: "Something went wrong.",
+    },
+    settings: {
+      navProfile: "Profile",
+      navPreferences: "Preferences",
+      navAvatar: "Avatar",
+      navContact: "Contact info",
+      navSecurity: "Security",
+      navNotifications: "Notifications",
+      preferencesDescription: "Set your theme and language.",
+      themeLabel: "Theme",
+      languageLabel: "Language",
+      avatarDescription:
+        "Choose an avatar to represent you. Changing your avatar isn't available yet.",
+      contactDescription:
+        "Contact details shown to other members. Editing isn't available yet.",
+      contactPhoneLabel: "Phone number",
+      contactBioLabel: "Bio",
+      notificationsDescription:
+        "Choose which notifications you receive, by channel. This isn't available yet.",
+      notificationsEmailLabel: "Email notifications",
+      notificationsInAppLabel: "In-app notifications",
+      notificationsMarketingLabel: "Marketing emails",
+      sessionsTitle: "Login sessions",
+      sessionsDescription:
+        "View devices and sessions currently signed in, and sign them out remotely.",
+      mfaTitle: "Two-factor authentication",
+      mfaDescription:
+        "Require an extra verification step (e.g. OTP) when signing in.",
+      connectionsTitle: "Connected accounts",
+      connectionsDescription:
+        "View and disconnect linked accounts such as Google sign-in.",
     },
   },
 };

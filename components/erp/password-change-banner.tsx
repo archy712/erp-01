@@ -34,7 +34,9 @@ export function PasswordChangeBanner({ dict }: { dict: Dictionary }) {
       <AlertDescription>
         <p>{dict.erp.passwordNotice.description}</p>
         <Button asChild size="sm" variant="outline" className="mt-1">
-          <Link href="/erp/change-password">{dict.erp.passwordNotice.cta}</Link>
+          <Link href="/erp/settings/security">
+            {dict.erp.passwordNotice.cta}
+          </Link>
         </Button>
       </AlertDescription>
       <Button

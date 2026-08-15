@@ -7,6 +7,7 @@ export const ko: Dictionary = {
     signUp: "회원가입",
     signOut: "로그아웃",
     profile: "프로필",
+    settings: "설정",
     greeting: "{email}님, 안녕하세요!",
     showPassword: "비밀번호 표시",
     hidePassword: "비밀번호 숨기기",
@@ -479,6 +480,37 @@ export const ko: Dictionary = {
       saving: "변경 중...",
       successMessage: "비밀번호가 변경되었습니다.",
       errorFallback: "오류가 발생했습니다.",
+    },
+    settings: {
+      navProfile: "프로필",
+      navPreferences: "환경설정",
+      navAvatar: "아바타",
+      navContact: "연락처 정보",
+      navSecurity: "보안",
+      navNotifications: "알림",
+      preferencesDescription: "테마와 언어를 설정합니다.",
+      themeLabel: "테마",
+      languageLabel: "언어",
+      avatarDescription:
+        "나를 나타낼 아바타를 선택하세요. 아바타 변경 기능은 준비 중입니다.",
+      contactDescription:
+        "다른 구성원에게 표시될 연락처 정보입니다. 편집 기능은 준비 중입니다.",
+      contactPhoneLabel: "전화번호",
+      contactBioLabel: "자기소개",
+      notificationsDescription:
+        "알림 수신 여부를 채널별로 설정합니다. 알림 설정 기능은 준비 중입니다.",
+      notificationsEmailLabel: "이메일 알림",
+      notificationsInAppLabel: "인앱 알림",
+      notificationsMarketingLabel: "마케팅 정보 수신",
+      sessionsTitle: "로그인 세션 관리",
+      sessionsDescription:
+        "현재 로그인된 기기와 세션 목록을 확인하고 원격으로 로그아웃할 수 있습니다.",
+      mfaTitle: "2단계 인증",
+      mfaDescription:
+        "로그인 시 OTP 등 추가 인증 단계를 요구하도록 설정합니다.",
+      connectionsTitle: "연동 계정",
+      connectionsDescription:
+        "Google 등 소셜 로그인 연동 상태를 확인하고 해제할 수 있습니다.",
     },
   },
 };

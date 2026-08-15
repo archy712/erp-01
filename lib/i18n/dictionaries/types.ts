@@ -5,6 +5,7 @@ export interface Dictionary {
     signUp: string;
     signOut: string;
     profile: string;
+    settings: string;
     /** {email} 자리표시자를 실제 이메일로 치환해서 사용 */
     greeting: string;
     showPassword: string;
@@ -327,6 +328,31 @@ export interface Dictionary {
       saving: string;
       successMessage: string;
       errorFallback: string;
+    };
+    settings: {
+      navProfile: string;
+      navPreferences: string;
+      navAvatar: string;
+      navContact: string;
+      navSecurity: string;
+      navNotifications: string;
+      preferencesDescription: string;
+      themeLabel: string;
+      languageLabel: string;
+      avatarDescription: string;
+      contactDescription: string;
+      contactPhoneLabel: string;
+      contactBioLabel: string;
+      notificationsDescription: string;
+      notificationsEmailLabel: string;
+      notificationsInAppLabel: string;
+      notificationsMarketingLabel: string;
+      sessionsTitle: string;
+      sessionsDescription: string;
+      mfaTitle: string;
+      mfaDescription: string;
+      connectionsTitle: string;
+      connectionsDescription: string;
     };
   };
 }

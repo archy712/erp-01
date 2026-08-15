@@ -2,11 +2,9 @@ import type { ReactNode } from "react";
 
 import { ErpFooter } from "./erp-footer";
 import { ErpHeader } from "./erp-header";
-import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 type ErpShellProps = {
-  locale: Locale;
   dict: Dictionary;
   /** 데스크탑/태블릿(md 이상)에서 노출되는 대분류 Menubar */
   menubar?: ReactNode;
@@ -28,7 +26,6 @@ type ErpShellProps = {
 // - md(768px)~lg: 좌측 트리 폭 w-48로 축소, Menubar는 그대로 노출
 // - md 미만: Menubar/좌측 트리를 모두 숨기고 mobileNav(햄버거+Sheet)만 노출
 export function ErpShell({
-  locale,
   dict,
   menubar,
   mobileNav,
@@ -38,7 +35,7 @@ export function ErpShell({
 }: ErpShellProps) {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ErpHeader locale={locale} dict={dict} />
+      <ErpHeader dict={dict} />
 
       <div className="flex h-12 w-full shrink-0 items-center gap-2 overflow-x-auto border-b px-4">
         <div className="flex md:hidden">

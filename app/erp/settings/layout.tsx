@@ -1,0 +1,48 @@
+import { Suspense } from "react";
+
+import { SettingsNav } from "@/components/erp/settings-nav";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
+
+export default function SettingsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <SettingsLayoutContent>{children}</SettingsLayoutContent>
+    </Suspense>
+  );
+}
+
+async function SettingsLayoutContent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
+  const items = [
+    { href: "/erp/settings/profile", label: dict.erp.settings.navProfile },
+    {
+      href: "/erp/settings/preferences",
+      label: dict.erp.settings.navPreferences,
+    },
+    { href: "/erp/settings/avatar", label: dict.erp.settings.navAvatar },
+    { href: "/erp/settings/contact", label: dict.erp.settings.navContact },
+    { href: "/erp/settings/security", label: dict.erp.settings.navSecurity },
+    {
+      href: "/erp/settings/notifications",
+      label: dict.erp.settings.navNotifications,
+    },
+  ];
+
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-6 sm:flex-row">
+      <SettingsNav items={items} />
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}

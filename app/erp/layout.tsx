@@ -49,7 +49,6 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
     console.error(error);
     return (
       <ErpShell
-        locale={locale}
         dict={dict}
         menubar={
           <span className="text-sm text-muted-foreground">
@@ -77,7 +76,6 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <ErpShell
-      locale={locale}
       dict={dict}
       // ErpMenubar/ErpMenuTree/ErpMobileNav는 useSearchParams()·usePathname()을
       // 사용하는 클라이언트 컴포넌트라 각자 자체 Suspense 경계가 필요하다.
