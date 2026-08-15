@@ -1,3 +1,5 @@
+import type { TreeDataItem } from "@/components/ui/tree-view";
+
 import type { MenuFlat, MenuNode } from "./types";
 
 function compareMenuNodes(a: MenuNode, b: MenuNode): number {
@@ -42,4 +44,55 @@ export function buildMenuTree(rows: MenuFlat[]): MenuNode[] {
   sortTreeRecursively(roots);
 
   return roots;
+}
+
+/**
+ * MenuNode 트리를 TreeView(components/ui/tree-view.tsx)가 요구하는
+ * TreeDataItem 형태로 변환한다. 하위가 없는 노드(리프)는 클릭 시 바로 해당
+ * 메뉴 화면으로 이동하고, 하위가 있는 노드는 TreeView가 자동으로 펼침
+ * 가능한 그룹으로 렌더링한다(children 유무만으로 판단하므로 "중분류
+ * 자체가 리프인 경우"도 별도 분기 없이 처리됨).
+ */
+export function menuNodeToTreeItem(
+  node: MenuNode,
+  topCategoryId: string,
+  onSelectLeaf: (menuId: string, topCategoryId: string) => void,
+): TreeDataItem {
+  if (node.children.length === 0) {
+    return {
+      id: node.id,
+      name: node.name,
+      onClick: () => onSelectLeaf(node.id, topCategoryId),
+    };
+  }
+
+  return {
+    id: node.id,
+    name: node.name,
+    children: node.children.map((child) =>
+      menuNodeToTreeItem(child, topCategoryId, onSelectLeaf),
+    ),
+  };
+}
+
+/** 현재 pathname이 `/erp/menu/[menuId]`이면 해당 menuId를 추출한다. */
+export function getActiveMenuId(pathname: string): string | undefined {
+  return pathname.match(/^\/erp\/menu\/([^/]+)/)?.[1];
+}
+
+/**
+ * 루트부터 id로 지정한 노드까지의 경로(대분류 → ... → 자기 자신)를 반환한다.
+ * 대상이 없으면 undefined. Task 013에서 `getMenuBreadcrumb`가 이 자리를
+ * 실 DB 조회로 대체한다.
+ */
+export function getMenuBreadcrumb(
+  nodes: MenuNode[],
+  id: string,
+): MenuNode[] | undefined {
+  for (const node of nodes) {
+    if (node.id === id) return [node];
+    const childPath = getMenuBreadcrumb(node.children, id);
+    if (childPath) return [node, ...childPath];
+  }
+  return undefined;
 }
