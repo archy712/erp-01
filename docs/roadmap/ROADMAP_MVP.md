@@ -754,133 +754,144 @@ ERP 신규 코드는 아래 파일의 **마크업/동작을 수정하지 않는�
 
 ---
 
-### Phase 2-D: 메뉴 접근 제어 및 전체 메뉴 데이터 연결
+### Phase 2-D: 메뉴 접근 제어 및 전체 메뉴 데이터 연결 ✅
 
-#### Task 018: 메뉴 접근 제어 적용 (F008)
+#### Task 018: 메뉴 접근 제어 적용 (F008) ✅
 
 **목표**: 내비게이션 필터링과 서버단 재검증의 이중 방어를 완성한다.
 
 **관련 파일**
 
-- `components/erp/erp-menubar.tsx`, `components/erp/erp-menu-tree.tsx`
+- `components/erp/erp-menubar.tsx`, `components/erp/erp-menu-tree.tsx`, `components/erp/erp-mobile-nav.tsx`
 - `app/erp/layout.tsx`, `app/erp/menu/[menuId]/page.tsx`
 - `lib/erp/auth.ts`, `lib/erp/queries.ts`
 - `components/erp/access-denied.tsx`
 
 **구현 체크리스트**
 
-- [ ] ERP 셸의 트리/Menubar 데이터 소스를 `getVisibleMenuTree(userId)` 결과로 교체한다 (**1차 방어: 노출 필터링**).
-- [ ] `app/erp/menu/[menuId]/page.tsx`에서 `getClaims()` + `canAccessMenu()`로 재검증한다 (**2차 방어: 서버단**). 실패 시 `AccessDenied` 렌더링.
-- [ ] 관리자 화면 3종에도 동일한 2차 방어가 적용되어 있는지 확인한다 (Task 014와 중복 점검).
-- [ ] `role='admin'`이면 권한 데이터와 무관하게 항상 통과하는 경로를 확인한다.
-- [ ] `is_active=false` 사용자는 ERP 진입 자체를 차단한다.
-- [ ] **`proxy.ts` / `lib/supabase/proxy.ts`의 쿠키 처리 로직은 변경하지 않는다** — 메뉴 단위 권한은 프록시가 아닌 서버 컴포넌트에서 판정한다.
-- [ ] 권한 조회가 매 페이지 렌더마다 중복 발생하지 않도록 요청 단위 캐싱(`React.cache` 등)을 적용한다.
+- [x] ERP 셸의 트리/Menubar 데이터 소스를 `getVisibleMenuTree(userId)` 결과로 교체한다 (**1차 방어: 노출 필터링**) — `app/erp/layout.tsx`(`ErpLayoutContent`)에서 `getVisibleMenuTree(user.id, user.role)`을 한 번만 호출해 `categories: MenuNode[]`로 `ErpMenubar`/`ErpMenuTree`/`ErpMobileNav` 3개 클라이언트 컴포넌트에 그대로 내려준다. 3개 컴포넌트는 더 이상 `buildMenuTree(MOCK_MENUS)`를 호출하지 않고 prop을 그대로 소비한다(`MOCK_MENUS`/`lib/erp/mock-menus.ts` 파일 자체는 Task 021 범위라 남겨둠).
+- [x] `app/erp/menu/[menuId]/page.tsx`에서 `getClaims()` + `canAccessMenu()`로 재검증한다 (**2차 방어: 서버단**). 실패 시 `AccessDenied` 렌더링 — `getCurrentErpUser()`(내부에서 `getClaims()` 사용)로 사용자를 확인한 뒤 `canAccessMenu(user.id, menuId)`가 `false`면 `<AccessDenied />`를 반환한다. breadcrumb 조회도 mock 기반 `lib/erp/menu-tree.ts`의 `getMenuBreadcrumb(tree, id)`에서 DB 기반 `lib/erp/queries.ts`의 `getMenuBreadcrumb(menuId)`로 교체했다. 판정 순서는 "존재 여부(`notFound()`) → 접근 권한(`AccessDenied`) → 관리자 화면 매핑(`redirect`)"로, 존재하지 않는 menuId는 권한 유무와 무관하게 404가 우선이고, 관리자 화면 3종 진입도 `canAccessMenu` 통과가 선행 조건이 되도록 했다(관리자는 `canAccessMenu`가 항상 true라 실질 제약 없음).
+- [x] 관리자 화면 3종에도 동일한 2차 방어가 적용되어 있는지 확인한다 (Task 014와 중복 점검) — `app/erp/admin/layout.tsx`의 `requireAdmin()` 가드가 여전히 정상 동작함을 Playwright로 재확인(일반 사용자가 `/erp/admin/users` 직접 접근 시 `/erp/forbidden`로 리다이렉트). 새 코드는 추가하지 않음.
+- [x] `role='admin'`이면 권한 데이터와 무관하게 항상 통과하는 경로를 확인한다 — `canAccessMenu()`가 관리자 role에서 `user_menu_permissions` 조회 자체를 생략하고 즉시 true를 반환하는 기존 구현을 그대로 재사용, Playwright로 권한 미부여 소분류에도 관리자가 정상 진입함을 확인.
+- [x] `is_active=false` 사용자는 ERP 진입 자체를 차단한다 — Task 015에서 이미 구현된 `getCurrentErpUser()`의 `/auth/login` 리다이렉트를 회귀 확인.
+- [x] **`proxy.ts` / `lib/supabase/proxy.ts`의 쿠키 처리 로직은 변경하지 않는다** — 수정하지 않음.
+- [x] 권한 조회가 매 페이지 렌더마다 중복 발생하지 않도록 요청 단위 캐싱(`React.cache` 등)을 적용한다 — `lib/erp/auth.ts`의 `getCurrentErpUser()`를 `react`의 `cache()`로 감쌌다. `app/erp/layout.tsx`, `app/erp/admin/layout.tsx`(`requireAdmin()` 내부), `app/erp/admin/users/page.tsx`, `app/erp/menu/[menuId]/page.tsx` 등 한 요청 안에서 여러 컴포넌트가 이 함수를 호출해도 실제 Supabase 조회(`getClaims()` + `profiles` select)는 한 번만 일어난다. `app/erp/admin/users/page.tsx:19`에 있던 "Task 018에서 정리 예정" TODO 주석도 이번에 해소 내용을 반영해 갱신했다. `canAccessMenu()`는 이 요청 흐름에서 한 번만 호출돼 캐싱 이득이 없어 과설계를 피하고 손대지 않았다.
 
 **수락 기준**
 
-- 권한 없는 메뉴는 Menubar/트리 어디에도 노출되지 않는다.
-- URL을 직접 입력해도 접근 거부 화면이 표시된다.
-- 관리자는 예외 없이 전체 메뉴에 접근한다.
+- [x] 권한 없는 메뉴는 Menubar/트리 어디에도 노출되지 않는다.
+- [x] URL을 직접 입력해도 접근 거부 화면이 표시된다.
+- [x] 관리자는 예외 없이 전체 메뉴에 접근한다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 1(`erp-task018-admin@example.com`) / 일반 사용자 1(`erp-task018-user@example.com`) 계정 + 임시 메뉴 5개(대분류A→중분류B→소분류C1/C2, 대분류D단독)로 검증 후 전부 삭제(`execute_sql`로 `menus`/`user_menu_permissions`/`auth.users` 잔존 0건 확인)
 
-- [ ] 일반 사용자 로그인 → 부여받은 메뉴만 노출되는지 확인
-- [ ] 권한 없는 `menuId` URL 직접 입력 → 접근 거부 화면 확인
-- [ ] 관리자 로그인 → 전체 메뉴 노출 및 전 메뉴 진입 확인
-- [ ] 권한 부여 직후 해당 사용자 화면 새로고침 → 즉시 반영 확인 (revalidate 검증)
-- [ ] 비활성 사용자 로그인 → ERP 진입 차단 확인
-- [ ] 존재하지 않는 `menuId` → not-found 화면 확인 (엣지 케이스)
+- [x] 일반 사용자 로그인 → 부여받은 메뉴(대분류A>중분류B>소분류C1)만 Menubar/트리에 노출, 권한 없는 소분류C1의 형제 노드(C2)와 대분류D단독은 노출되지 않는 것을 확인
+- [x] 권한 없는 `menuId`(C2) URL 직접 입력 → `AccessDenied` 화면(Header/Menubar/Footer 유지) 확인, 콘솔 에러 0건
+- [x] 관리자 로그인 → 대분류A/D단독 전체 노출, 대분류D단독(하위 없는 리프 대분류) 직행 진입 확인, 권한 미부여 소분류C2도 정상 진입 확인
+- [x] 관리자가 새 권한(C2)을 대상 사용자에게 부여한 직후 새로고침 → 즉시 반영 확인 — `getVisibleMenuTree()`가 캐시 없이 매 요청 새로 조회하므로 별도 `revalidatePath` 보강 없이도 즉시 반영됨을 확인(참고: Task 017의 권한 관리 화면 자체는 저장 후 이미 `revalidatePath("/erp", "layout")`를 호출하고 있어, 이번 SQL 직접 삽입 시나리오보다 실제 운영 흐름에서는 더 확실하게 갱신된다)
+- [x] `is_active=false`로 비활성화한 사용자 로그인(재접속) 시도 → `/auth/login`으로 리다이렉트되어 ERP 진입 자체가 차단되는 것을 재확인(Task 015 회귀 없음)
+- [x] 존재하지 않는 `menuId`(`/erp/menu/does-not-exist`) → "메뉴를 찾을 수 없습니다" not-found 화면(Task 006) 확인, `AccessDenied`와 시각적으로 구분됨을 확인
+- [x] `mcp__supabase__get_advisors`(security)로 새 경고 없음 확인(이번 Task는 DDL 없이 애플리케이션 코드만 변경했으므로 기존 경고 목록과 동일)
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러/경고 0건 확인
+- [x] `npm run check-all` 통과
+
+**(구현 중 발견한 설계 포인트)** `lib/erp/menu-tree.ts`의 `getMenuBreadcrumb(nodes, id)`(mock 트리용, 순수 함수)와 `lib/erp/queries.ts`의 `getMenuBreadcrumb(menuId)`(DB 조회, async)가 동명이지만 시그니처가 다른 별개 함수로 공존한다 — 전자는 `permission-editor.tsx`/`menu-manager.tsx`/`menu-form-dialog.tsx`(이미 DB에서 가져온 데이터를 클라이언트에서 트리로 변환)가 여전히 사용 중이라 그대로 두고, `menu/[menuId]/page.tsx`만 후자로 교체했다. `MOCK_MENUS`는 이제 `app/`/`components/` 어디에서도 참조되지 않지만, `lib/erp/mock-menus.ts` 파일 자체의 삭제는 Task 021 범위라 남겨뒀다.
 
 ---
 
-#### Task 019: 기준정보/상품 관리 메뉴 데이터 등록 (F011)
+#### Task 019: 기준정보/상품 관리 메뉴 데이터 등록 (F011) ✅
 
 **목표**: 마스터 관리 하위의 기준정보 관리·상품 관리 메뉴를 데이터로 등록한다. **화면 로직은 F010 공용 플레이스홀더로 렌더링하며 CRUD는 범위 제외.**
 
 **관련 파일**
 
-- Supabase 시드 마이그레이션
+- Supabase 시드 마이그레이션 `seed_master_management_menus`
 - `app/erp/admin/menus/page.tsx` (등록 수단)
 - `components/erp/menu-placeholder.tsx`
 
 **구현 체크리스트**
 
-- [ ] 대분류 "마스터 관리" 등록.
-- [ ] 중분류 "기본 관리" + 소분류 3개(사용자 관리 / 메뉴 관리 / 사용자 권한 관리) 등록 → **Task 014의 매핑 규칙에 따라 실제 관리자 화면으로 연결**.
-- [ ] 중분류 "기준정보 관리" + 소분류 6개 등록: 법인 관리 / 브랜드 관리 / 소브랜드 관리 / 아이템·서브아이템 관리 / 상품 컬러 관리 / 상품 사이즈 관리.
-- [ ] 중분류 "상품 관리" + 소분류 3개 등록: 상품 관리 / 상품 정보 현황 / 상품 정보 일괄 수정.
-- [ ] 각 노드의 `sort_order`를 PRD 7.2 트리 순서와 일치시킨다.
-- [ ] 기본 관리 3종을 제외한 9개 소분류가 모두 `MenuPlaceholder`로 렌더링되는지 확인한다.
-- [ ] 시드는 **멱등하게** 작성한다 (재실행 시 중복 생성 없음 — 고정 UUID 또는 `on conflict do nothing`).
+- [x] 대분류 "마스터 관리" 등록.
+- [x] 중분류 "기본 관리" + 소분류 3개(사용자 관리 / 메뉴 관리 / 사용자 권한 관리) 등록 → **Task 014의 매핑 규칙에 따라 실제 관리자 화면으로 연결**.
+- [x] 중분류 "기준정보 관리" + 소분류 6개 등록: 법인 관리 / 브랜드 관리 / 소브랜드 관리 / 아이템·서브아이템 관리 / 상품 컬러 관리 / 상품 사이즈 관리.
+- [x] 중분류 "상품 관리" + 소분류 3개 등록: 상품 관리 / 상품 정보 현황 / 상품 정보 일괄 수정.
+- [x] 각 노드의 `sort_order`를 PRD 7.2 트리 순서와 일치시킨다 — `execute_sql`로 전체 16건 조회해 이름·레벨·`sort_order`가 PRD 7.2와 정확히 일치함을 재확인.
+- [x] 기본 관리 3종을 제외한 9개 소분류가 모두 `MenuPlaceholder`로 렌더링되는지 확인한다.
+- [x] 시드는 **멱등하게** 작성한다 — `seed_master_management_menus` 마이그레이션이 16개 행 모두 고정 UUID + `on conflict (id) do nothing`으로 되어 있음을 SQL 원문으로 직접 확인. 동일 insert 문을 `execute_sql`로 재실행해 행 수가 16건에서 변하지 않는 것도 재검증.
 
 **수락 기준**
 
-- 마스터 관리 하위 3개 중분류와 12개 소분류가 트리에 정상 표시된다.
-- 기본 관리 3종은 실제 화면으로, 나머지 9종은 플레이스홀더로 이동한다.
+- [x] 마스터 관리 하위 3개 중분류와 12개 소분류가 트리에 정상 표시된다.
+- [x] 기본 관리 3종은 실제 화면으로, 나머지 9종은 플레이스홀더로 이동한다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 테스트 계정(`erp-task019-verify@example.com`, 회원가입 직후 `profiles.role`을 `admin`으로 SQL 승격)으로 검증 후 계정 삭제(`auth.users` 삭제 → `profiles` cascade, 잔존 0건). 시딩된 `menus` 16건은 실 운영 데이터라 삭제하지 않고 그대로 유지.
 
-- [ ] 관리자 로그인 → 마스터 관리 대분류 클릭 → 중분류 3개 확인
-- [ ] 기준정보 관리 하위 6개 소분류 각각 클릭 → 제목 + "추후 구현 예정" 배지 확인
-- [ ] 기본 관리 > 사용자 관리 클릭 → 플레이스홀더가 아닌 실제 테이블 화면 진입 확인
+- [x] 관리자 로그인 → 마스터 관리 대분류 클릭 → 중분류 3개(기본 관리/기준정보 관리/상품 관리) PRD 순서대로 확인
+- [x] 기준정보 관리 하위 6개 소분류 각각 정확한 이름·순서로 노출, 클릭 시 breadcrumb + 제목 + "추후 구현 예정" 배지 확인(법인 관리로 대표 검증, 상품 관리 하위도 상품 정보 현황으로 동일 확인)
+- [x] 기본 관리 > 사용자 관리 / 메뉴 관리 / 사용자 권한 관리 클릭 → 셋 다 플레이스홀더가 아닌 `/erp/admin/{users,menus,permissions}` 실제 화면으로 즉시 리다이렉트(Task 014 이름 경로 매핑이 실 DB UUID에서도 그대로 동작, 별도 코드 수정 불필요)
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인
+- [x] `npm run check-all` 통과(신규 에러 없음, 기존 warning 7건만 유지)
 
 ---
 
-#### Task 020: 대분류 Placeholder 메뉴 14개 등록 (F012)
+#### Task 020: 대분류 Placeholder 메뉴 14개 등록 (F012) ✅
 
 **목표**: 중/소분류가 미확정인 14개 대분류를 대분류 노드만으로 등록한다.
 
 **관련 파일**
 
-- Supabase 시드 마이그레이션
-- `components/erp/erp-menubar.tsx`
+- Supabase 시드 마이그레이션 `seed_placeholder_top_level_menus`
+- `components/erp/erp-menu-tree.tsx`
 
 **구현 체크리스트**
 
-- [ ] 대분류 14개 등록 (`level=1`, `parent_id=null`): 경영정보 / 인사급여 / 웹회계 / 기획 / 소싱 / 물류 / 협력사 / 영업 / 영업관리 / 영업기획 / 고객관리 / 웹POS / C&F / 게시판.
-- [ ] `sort_order`를 PRD 7.2 나열 순서와 일치시키고, "마스터 관리"가 가장 앞에 오도록 한다.
-- [ ] 각 대분류 클릭 시 하위 노드가 없어도 에러 없이 `MenuPlaceholder`가 렌더링되는지 확인한다.
-- [ ] Menubar에 총 15개 대분류가 들어갔을 때의 **가로 오버플로우 처리**를 최종 확인한다 (Task 004에서 준비한 처리 검증).
-- [ ] 좌측 트리 영역이 비었을 때의 빈 상태 UI를 처리한다 (`components/ui/empty.tsx`).
-- [ ] 향후 하위 메뉴 추가 시 **스키마 변경 없이** 메뉴 관리 화면에서 확장 가능함을 실제로 1건 추가해 검증한다 (검증 후 롤백).
-- [ ] 시드는 멱등하게 작성한다.
+- [x] 대분류 14개 등록 (`level=1`, `parent_id=null`): 경영정보 / 인사급여 / 웹회계 / 기획 / 소싱 / 물류 / 협력사 / 영업 / 영업관리 / 영업기획 / 고객관리 / 웹POS / C&F / 게시판 — `seed_placeholder_top_level_menus` 마이그레이션에서 14건을 `mcp__supabase__apply_migration`으로 삽입, Task 019와 동일하게 고정 UUID(`11111111-0001-4000-8000-00000000000{1..14}`) + `on conflict (id) do nothing`.
+- [x] `sort_order`를 PRD 7.2 나열 순서와 일치시키고, "마스터 관리"가 가장 앞에 오도록 한다 — 기존 "마스터 관리"(`sort_order=0`)는 그대로 두고 나머지 14개를 PRD 7.2 순서 그대로 `sort_order=1~14`로 등록. `execute_sql`로 전체 15건 재조회해 이름·순서 일치 확인.
+- [x] 각 대분류 클릭 시 하위 노드가 없어도 에러 없이 `MenuPlaceholder`가 렌더링되는지 확인한다 — Playwright로 확인(아래 테스트 체크리스트 참고).
+- [x] Menubar에 총 15개 대분류가 들어갔을 때의 **가로 오버플로우 처리**를 최종 확인한다 — `erp-shell.tsx`의 Menubar 컨테이너가 이미 `overflow-x-auto`로 구성돼 있어 코드 변경은 없었고, 1024px에서 실제로 가로 스크롤이 발생함을 스크린샷으로 확인(1440px에서는 15개가 한 줄에 다 들어감).
+- [x] 좌측 트리 영역이 비었을 때의 빈 상태 UI를 처리한다 (`components/ui/empty.tsx`) — `components/erp/erp-menu-tree.tsx`의 "하위 메뉴가 없습니다" 일반 텍스트 블록(기존 39~43줄)을 `Empty`/`EmptyHeader`/`EmptyMedia`(`FolderTree` 아이콘)/`EmptyDescription` 조합으로 교체. `?cat=` 없음/존재하지 않는 대분류 케이스는 원래도 안내 문구 목적이 달라 그대로 일반 텍스트로 남김(과설계 방지).
+- [x] 향후 하위 메뉴 추가 시 **스키마 변경 없이** 메뉴 관리 화면에서 확장 가능함을 실제로 1건 추가해 검증한다 (검증 후 롤백) — `/erp/admin/menus`에서 "경영정보" 하위에 중분류 "Task020 검증용 중분류" 1건을 Dialog로 등록 → 관리 화면 트리와 실제 ERP 좌측 트리(`/erp?cat=...`) 양쪽에 즉시 반영 확인 → 삭제 확인 다이얼로그를 거쳐 삭제 → `execute_sql`로 `level` 그룹별 카운트가 삭제 전(대분류 15/중분류 3/소분류 12, 총 30건)으로 정확히 복귀했음을 재확인.
+- [x] 시드는 멱등하게 작성한다 — 동일 insert 문(2건 샘플)을 `execute_sql`로 재실행해 `on conflict (id) do nothing`으로 행 수가 15건에서 변하지 않음을 재검증.
 
 **수락 기준**
 
-- Menubar에 총 15개 대분류가 표시되고 모두 클릭 가능하다.
-- 하위 없는 대분류 클릭 시 플레이스홀더 화면이 정상 표시된다.
+- [x] Menubar에 총 15개 대분류가 표시되고 모두 클릭 가능하다.
+- [x] 하위 없는 대분류 클릭 시 플레이스홀더 화면이 정상 표시된다.
 
-**테스트 체크리스트 (Playwright MCP)**
+**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 테스트 계정(`erp-task020-verify@example.com`, 회원가입 직후 `profiles.role`을 `admin`으로 SQL 승격)으로 검증 후 계정 삭제(`auth.users` 삭제 → `profiles` cascade, 잔존 0건 확인). 시딩된 `menus` 30건(마스터 관리 16건 + 대분류 14건)은 실 운영 데이터라 삭제하지 않고 그대로 유지.
 
-- [ ] 15개 대분류 전부 순회 클릭 → 각각 제목 표시 확인
-- [ ] 모바일 뷰(390px)에서 15개 대분류 접근성 확인
-- [ ] 임의 대분류에 중분류 1개 추가 → 트리 확장 동작 확인 → 삭제 후 원복
+- [x] 15개 대분류 전부 순회 클릭 → 각각 제목 표시 확인 — 처음(경영정보)·마지막(게시판)·중간(고객관리)을 대표로 클릭, 각각 breadcrumb + 제목 + "추후 구현 예정" Badge 정상 렌더링, 좌측 트리는 신설한 `Empty` 기반 "하위 메뉴가 없습니다" 안내 확인.
+- [x] 모바일 뷰(390px)에서 15개 대분류 접근성 확인 — 햄버거 메뉴 Sheet 열어 `tree "전체 메뉴 트리"`에 15개 항목(마스터 관리만 확장 가능, 나머지 14개는 leaf treeitem)이 전부 노출되고, 마지막 "게시판" 클릭 시 정상 내비게이션되는 것을 확인.
+- [x] 임의 대분류에 중분류 1개 추가 → 트리 확장 동작 확인 → 삭제 후 원복 — 위 구현 체크리스트 항목에 기록한 시나리오와 동일(경영정보 하위에 추가/확인/삭제/원복).
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러/경고 0건 확인.
+- [x] `npm run check-all` 통과(신규 에러 없음, 기존 warning 7건만 유지).
+- [x] `mcp__supabase__get_advisors`(security)로 새 경고 없음 확인 — 기존 8건(SECURITY DEFINER 함수 관련 7건 + 유출 비밀번호 보호 비활성 1건)과 동일, DDL은 데이터 삽입뿐이라 신규 경고 없음.
 
 ---
 
-#### Task 021: 임시 데이터 제거 및 DB 연동 최종 전환
+#### Task 021: 임시 데이터 제거 및 DB 연동 최종 전환 ✅
 
 **목표**: Phase 1의 하드코딩 트리를 완전히 걷어내고 DB를 유일한 메뉴 소스로 만든다.
 
 **관련 파일**
 
-- `lib/erp/mock-menus.ts` (삭제 대상)
-- `components/erp/erp-menubar.tsx`, `components/erp/erp-menu-tree.tsx`
-- `app/erp/layout.tsx`
+- `lib/erp/mock-menus.ts` (삭제됨)
+- `lib/erp/menu-routes.ts`, `lib/erp/menu-tree.ts` (주석 정리)
+- `app/erp/layout.tsx`, `app/erp/error.tsx`
+- `components/erp/erp-shell-skeleton.tsx`(신규), `components/erp/erp-error-empty.tsx`(신규)
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/mock-menus.ts`에 대한 모든 참조를 제거하고 파일을 삭제한다.
-- [ ] Task 013에서 남긴 TODO 주석을 전부 해소한다.
-- [ ] 메뉴 조회 지연에 대비해 트리/Menubar에 `Skeleton` 로딩 상태를 적용한다 (`components/ui/skeleton.tsx`).
-- [ ] 메뉴 조회 실패 시의 에러 바운더리 동작을 확인한다 (`app/erp/error.tsx`).
-- [ ] `npm run check-all` 통과.
+- [x] `lib/erp/mock-menus.ts`에 대한 모든 참조를 제거하고 파일을 삭제한다 — Task 018에서 이미 `ErpMenubar`/`ErpMenuTree`/`ErpMobileNav`/`menu/[menuId]/page.tsx`가 전부 실 DB 기반으로 전환되어 있었고(`grep -rn "mock-menus\|MOCK_MENUS"`로 사전 확인), 이번에 파일 자체를 삭제했다. 유일하게 남아있던 참조는 `lib/erp/menu-routes.ts`와 `lib/erp/menu-tree.ts`의 설명 주석 2곳뿐이라 문구만 자연스럽게 다듬었다(파일 삭제 사실을 반영, 로직 변경 없음). `lib/erp/menu-tree.ts`의 `buildMenuTree`/`getActiveMenuId`/`getMenuBreadcrumb(nodes, id)` 등은 "평면 배열 → 트리" 순수 변환 유틸로 여전히 `menu-manager.tsx`/`menu-form-dialog.tsx`/`permission-editor.tsx`가 사용 중이라 그대로 유지했다(Mock 전용 코드가 아님).
+- [x] Task 013에서 남긴 TODO 주석을 전부 해소한다 — `grep -rn "TODO\|FIXME" lib/erp/ app/erp/ components/erp/`로 재확인한 결과 남은 TODO는 0건이었다(`requireAdmin()`의 `/erp/forbidden` TODO는 Task 014에서 이미 해소됨).
+- [x] 메뉴 조회 지연에 대비해 트리/Menubar에 `Skeleton` 로딩 상태를 적용한다 — 신규 `components/erp/erp-shell-skeleton.tsx`(`ErpShellSkeleton`)를 만들어 `app/erp/layout.tsx`의 `<Suspense fallback={null}>`을 `<Suspense fallback={<ErpShellSkeleton />}>`로 교체했다. Header(h-16)/Menubar 바(h-12, chip 3개)/좌측 트리(줄 5개)/Footer 자리를 `components/ui/skeleton.tsx`의 `Skeleton`으로 스케치해 `ErpShell` 실제 마크업과 높이를 맞춰 레이아웃 시프트를 줄였다. `getCurrentErpUser()`를 하위 컴포넌트로 쪼개 병렬 Suspense를 여러 개 두는 재구조화는 과설계로 판단해 하지 않았다 — 셸 전체를 한 번에 스켈레톤 처리하는 최소 구현으로 충분하다고 판단.
+- [x] 메뉴 조회 실패 시의 에러 바운더리 동작을 확인한다 — `getVisibleMenuTree()`에 임시 `throw`를 넣고 Playwright로 `/erp` 접속을 재현한 결과, **`app/erp/error.tsx`가 렌더링되지 않고** Next.js 기본 "This page couldn't load" 화면이 떴다. Next.js 공식 문서("error.js does not wrap the layout.js ... above it in the same segment") 확인 결과, `error.js`는 **같은 세그먼트의 `layout.js`가 던진 에러는 잡지 않는 것이 사양**이며, `getVisibleMenuTree()` 호출이 바로 그 `app/erp/layout.tsx`(= `app/erp/error.tsx`와 같은 세그먼트) 안에 있어 해당됐다. 라우트 구조를 바꾸는 대신(과설계 회피), `app/erp/error.tsx`와 `app/erp/layout.tsx`가 같은 시각 요소를 공유하도록 `components/erp/erp-error-empty.tsx`(`ErpErrorEmpty`, 순수 프레젠테이션)를 새로 뽑아내고, `ErpLayoutContent`에서 `getVisibleMenuTree()` 호출을 `try/catch`로 감싸 실패 시 `ErpShell`(Header/Footer 유지, menubar/tree 자리엔 "메뉴를 불러오지 못했습니다" 안내)과 `ErpErrorEmpty`(재시도는 `/erp`로의 `Link`)를 직접 렌더링하도록 고쳤다. 수정 후 동일한 임시 `throw`로 재검증해 정상적으로 에러 화면이 뜨는 것을 확인했고, `throw`는 제거해 `git diff`가 깨끗함을 확인했다. `getCurrentErpUser()`는 내부에서 `redirect()`(특수 throw)를 쓰므로 이 catch에 포함하지 않았다(잘못 감싸면 로그인 리다이렉트가 깨짐) — 이 함수 자체의 조회 실패(`profileError`)는 이번 Task 범위(메뉴 조회) 밖으로 판단해 그대로 뒀다.
+- [x] `npm run check-all` 통과 — typecheck/lint(기존 warning 7건만 유지, 신규 에러·경고 0건)/format:check 모두 통과. `npm run build`도 추가로 통과 확인.
 
 **수락 기준**
 
-- 코드베이스에 하드코딩된 메뉴 데이터가 남아 있지 않다.
-- DB에서 메뉴를 수정하면 즉시 화면에 반영된다.
+- [x] 코드베이스에 하드코딩된 메뉴 데이터가 남아 있지 않다 — `lib/erp/mock-menus.ts` 삭제, `grep -rn "mock-menus\|MOCK_MENUS"` 결과 0건.
+- [x] DB에서 메뉴를 수정하면 즉시 화면에 반영된다 — 임시 관리자 테스트 계정(`task021-erp-test@example.com`, SQL로 직접 생성 후 `profiles.role`을 `admin`으로 승격)으로 로그인해 Playwright로 확인. `menus` 테이블에서 "게시판"(대분류) `is_active`를 `false`로 바꾸고 `/erp` 새로고침 → Menubar에서 즉시 사라짐(15개→14개) 확인, 다시 `true`로 복구 → 재새로고침 시 원상복구 확인. 검증 후 테스트 계정은 `auth.users`/`profiles`에서 완전히 삭제(영구 데이터인 마스터 관리 16건 + Placeholder 14건은 건드리지 않음).
 
 ---
 
@@ -967,12 +978,12 @@ Task 001 (Phase 0 전제 확인)
 
 ## 진행 현황
 
-| Phase                               | Task 범위    | 상태                              |
-| ----------------------------------- | ------------ | --------------------------------- |
-| Phase 0 — 전제 확인 ✅              | Task 001     | ☑ 완료                            |
-| **Phase 1 — ERP 메인 화면 뼈대** ✅ | Task 002~007 | ☑ 완료                            |
-| Phase 2-A — 인증 완성 / 공통 UI     | Task 008~010 | ☐ 진행중 (008 완료, 009~010 대기) |
-| Phase 2-B — 데이터 모델 ✅          | Task 011~013 | ☑ 완료                            |
-| Phase 2-C — 관리자 CRUD ✅          | Task 014~017 | ☑ 완료                            |
-| Phase 2-D — 접근 제어 / 메뉴 등록   | Task 018~021 | ☐ 대기                            |
-| Phase 2-E — 통합 검증               | Task 022     | ☐ 대기                            |
+| Phase                                | Task 범위    | 상태                              |
+| ------------------------------------ | ------------ | --------------------------------- |
+| Phase 0 — 전제 확인 ✅               | Task 001     | ☑ 완료                            |
+| **Phase 1 — ERP 메인 화면 뼈대** ✅  | Task 002~007 | ☑ 완료                            |
+| Phase 2-A — 인증 완성 / 공통 UI      | Task 008~010 | ☐ 진행중 (008 완료, 009~010 대기) |
+| Phase 2-B — 데이터 모델 ✅           | Task 011~013 | ☑ 완료                            |
+| Phase 2-C — 관리자 CRUD ✅           | Task 014~017 | ☑ 완료                            |
+| Phase 2-D — 접근 제어 / 메뉴 등록 ✅ | Task 018~021 | ☑ 완료                            |
+| Phase 2-E — 통합 검증                | Task 022     | ☐ 대기                            |
