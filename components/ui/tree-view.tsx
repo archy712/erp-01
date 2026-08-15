@@ -432,8 +432,14 @@ const TreeLeaf = React.forwardRef<
     return (
       <div
         ref={ref}
+        role="treeitem"
+        aria-selected={isSelected}
+        aria-current={isSelected ? "page" : undefined}
+        aria-disabled={item.disabled}
+        tabIndex={item.disabled ? -1 : 0}
         className={cn(
           "ml-5 flex cursor-pointer items-center py-2 text-left before:right-1",
+          "outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
           treeVariants(),
           className,
           isSelected && selectedTreeVariants(),
@@ -445,6 +451,14 @@ const TreeLeaf = React.forwardRef<
           if (item.disabled) return;
           handleSelectChange(item);
           item.onClick?.();
+        }}
+        onKeyDown={(event) => {
+          if (item.disabled) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleSelectChange(item);
+            item.onClick?.();
+          }
         }}
         draggable={!!item.draggable && !item.disabled}
         onDragStart={onDragStart}
