@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`);
     }
     return NextResponse.redirect(
-      `${origin}/auth/error?error=${encodeURIComponent(error.message)}`,
+      `${origin}/auth/error?error=${encodeURIComponent(error.code ?? "unexpected_failure")}`,
     );
   }
 
   return NextResponse.redirect(
-    `${origin}/auth/error?error=${encodeURIComponent("No code provided")}`,
+    `${origin}/auth/error?error=${encodeURIComponent("missing_code")}`,
   );
 }
