@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -60,13 +60,14 @@ export function UpdatePasswordForm({
                 <Label htmlFor="password">
                   {dict.updatePassword.newPasswordLabel}
                 </Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   placeholder={dict.updatePassword.newPasswordLabel}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  showLabel={dict.common.showPassword}
+                  hideLabel={dict.common.hidePassword}
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
