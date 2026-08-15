@@ -26,6 +26,7 @@ import {
   setMenuActiveAction,
   type ActionResult,
 } from "@/lib/erp/actions";
+import { getMenuIcon } from "@/lib/erp/menu-icons";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import type { MenuFlat, MenuLevel, MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -45,6 +46,7 @@ function toTreeItems(
   return nodes.map((node) => ({
     id: node.id,
     name: node.name,
+    icon: getMenuIcon(node.name, node.children.length > 0),
     onClick: () => onSelect(node.id),
     children:
       node.children.length > 0
@@ -126,8 +128,12 @@ export function MenuManager({ menus, dict }: MenuManagerProps) {
               data={treeData}
               renderItem={({ item }) => {
                 const node = byId.get(item.id);
+                const Icon = item.icon;
                 return (
                   <div className="flex flex-1 items-center gap-2 overflow-hidden">
+                    {Icon ? (
+                      <Icon className="size-4 shrink-0 text-muted-foreground" />
+                    ) : null}
                     <span className="truncate text-sm">{item.name}</span>
                     {node && !node.isActive ? (
                       <Badge variant="outline" className="shrink-0 text-[10px]">

@@ -2,19 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Folder, LayoutGrid, LineChart, type LucideIcon } from "lucide-react";
 
 import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import { getMenuIcon } from "@/lib/erp/menu-icons";
 import type { MenuNode } from "@/lib/erp/types";
 import { cn } from "@/lib/utils";
-
-// 메뉴명 → 아이콘 매핑. `menus` 스키마에 아이콘 컬럼이 없으므로 코드 측에서
-// 이름 기반으로 매핑하고, 매핑이 없는 신규/Placeholder 대분류는 기본 아이콘을 쓴다.
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  "마스터 관리": LayoutGrid,
-  경영정보: LineChart,
-};
-const DEFAULT_CATEGORY_ICON: LucideIcon = Folder;
 
 // 상단 대분류 Menubar. 선택 상태는 로컬 state가 아니라 URL 쿼리(`?cat=`)를
 // 단일 소스로 사용하므로, 새로고침/딥링크에도 선택이 그대로 유지된다.
@@ -31,7 +23,7 @@ export function ErpMenubar({ categories }: { categories: MenuNode[] }) {
   return (
     <Menubar className="h-9 shrink-0 border-none bg-transparent p-0 shadow-none">
       {categories.map((category) => {
-        const Icon = CATEGORY_ICONS[category.name] ?? DEFAULT_CATEGORY_ICON;
+        const Icon = getMenuIcon(category.name, category.children.length > 0);
         const isLeafCategory = category.children.length === 0;
         const href = isLeafCategory
           ? `/erp/menu/${category.id}?cat=${category.id}`

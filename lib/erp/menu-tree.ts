@@ -1,5 +1,6 @@
 import type { TreeDataItem } from "@/components/ui/tree-view";
 
+import { getMenuIcon } from "./menu-icons";
 import type { MenuFlat, MenuNode } from "./types";
 
 function compareMenuNodes(a: MenuNode, b: MenuNode): number {
@@ -62,6 +63,7 @@ export function menuNodeToTreeItem(
     return {
       id: node.id,
       name: node.name,
+      icon: getMenuIcon(node.name, false),
       onClick: () => onSelectLeaf(node.id, topCategoryId),
     };
   }
@@ -69,6 +71,7 @@ export function menuNodeToTreeItem(
   return {
     id: node.id,
     name: node.name,
+    icon: getMenuIcon(node.name, true),
     children: node.children.map((child) =>
       menuNodeToTreeItem(child, topCategoryId, onSelectLeaf),
     ),

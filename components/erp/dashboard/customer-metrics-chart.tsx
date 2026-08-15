@@ -1,5 +1,6 @@
 "use client";
 
+import { Users } from "lucide-react";
 import {
   Bar,
   CartesianGrid,
@@ -40,7 +41,10 @@ export function CustomerMetricsChart({ dict }: { dict: Dictionary }) {
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>{t.title}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="size-4 text-muted-foreground" />
+          {t.title}
+        </CardTitle>
         <CardDescription>{t.description}</CardDescription>
       </CardHeader>
       <CardContent>

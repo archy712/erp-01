@@ -1,5 +1,6 @@
 "use client";
 
+import { Target } from "lucide-react";
 import { PolarAngleAxis, RadialBar, RadialBarChart } from "recharts";
 
 import {
@@ -70,7 +71,10 @@ export function AchievementGauges({ dict }: { dict: Dictionary }) {
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>{t.title}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="size-4 text-muted-foreground" />
+          {t.title}
+        </CardTitle>
         <CardDescription>{t.description}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 sm:grid-cols-2">

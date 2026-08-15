@@ -1,5 +1,6 @@
 "use client";
 
+import { Tags } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -78,7 +79,10 @@ export function BrandRevenueChart({ dict }: { dict: Dictionary }) {
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>{t.title}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Tags className="size-4 text-muted-foreground" />
+          {t.title}
+        </CardTitle>
         <CardDescription>{t.description}</CardDescription>
       </CardHeader>
       <CardContent>
