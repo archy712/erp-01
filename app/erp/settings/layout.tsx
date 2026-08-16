@@ -36,6 +36,8 @@ async function SettingsLayoutContent({
       href: "/erp/settings/notifications",
       label: dict.erp.settings.navNotifications,
     },
+    { href: "/erp/settings/language", label: dict.erp.settings.navLanguage },
+    { href: "/erp/settings/theme", label: dict.erp.settings.navTheme },
   ];
 
   return (

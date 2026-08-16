@@ -414,6 +414,10 @@ export interface Dictionary {
       preferencesDescription: string;
       themeLabel: string;
       languageLabel: string;
+      navLanguage: string;
+      navTheme: string;
+      languageDescription: string;
+      themeDescription: string;
       notificationsDescription: string;
       notificationsEmailLabel: string;
       notificationsInAppLabel: string;

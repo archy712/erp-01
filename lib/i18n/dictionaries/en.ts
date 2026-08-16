@@ -515,6 +515,10 @@ export const en: Dictionary = {
       preferencesDescription: "Set your theme and language.",
       themeLabel: "Theme",
       languageLabel: "Language",
+      navLanguage: "Language",
+      navTheme: "Theme",
+      languageDescription: "Set your display language.",
+      themeDescription: "Set your display theme.",
       notificationsDescription:
         "Choose which notifications you receive, by channel. This isn't available yet.",
       notificationsEmailLabel: "Email notifications",

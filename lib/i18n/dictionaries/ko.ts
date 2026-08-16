@@ -513,6 +513,10 @@ export const ko: Dictionary = {
       preferencesDescription: "테마와 언어를 설정합니다.",
       themeLabel: "테마",
       languageLabel: "언어",
+      navLanguage: "언어",
+      navTheme: "테마",
+      languageDescription: "표시 언어를 설정합니다.",
+      themeDescription: "화면 테마를 설정합니다.",
       notificationsDescription:
         "알림 수신 여부를 채널별로 설정합니다. 알림 설정 기능은 준비 중입니다.",
       notificationsEmailLabel: "이메일 알림",

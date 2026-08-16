@@ -493,6 +493,10 @@ export const zh: Dictionary = {
       preferencesDescription: "设置主题和语言。",
       themeLabel: "主题",
       languageLabel: "语言",
+      navLanguage: "语言",
+      navTheme: "主题",
+      languageDescription: "设置显示语言。",
+      themeDescription: "设置界面主题。",
       notificationsDescription:
         "按渠道设置是否接收通知。通知设置功能正在开发中。",
       notificationsEmailLabel: "邮件通知",

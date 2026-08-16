@@ -518,6 +518,10 @@ export const ja: Dictionary = {
       preferencesDescription: "テーマと言語を設定します。",
       themeLabel: "テーマ",
       languageLabel: "言語",
+      navLanguage: "言語",
+      navTheme: "テーマ",
+      languageDescription: "表示言語を設定します。",
+      themeDescription: "画面テーマを設定します。",
       notificationsDescription:
         "チャネルごとに通知の受信設定を行います。通知設定機能は準備中です。",
       notificationsEmailLabel: "メール通知",
