@@ -50,28 +50,28 @@ ERP MVP에서 **메뉴 데이터만 등록된 뼈대**로 남아 있던 "마스�
 
 Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영향받는 Task를 함께 갱신할 것.
 
-| 항목                      | 결정                                                                                                                                                                                                  | 근거                                                                                                                                                                           |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 권한 함수                 | **기존 `public.is_admin()` / `public.is_superadmin()`을 그대로 재사용. 새 DB 권한 함수를 만들지 않는다.**                                                                                             | 실 DB 확인 결과 `is_admin()`은 정확히 `role in ('admin','superadmin')` 판정. `profiles.role`도 `check (role = any (array['user','admin','superadmin']))` 제약이 이미 걸려 있음 |
-| 앱 레벨 관리자 가드       | **기존 `requireAdmin()`(`lib/erp/auth.ts`, ROADMAP_MVP Task 013/014) 재사용.** 새 가드 함수를 만들지 않는다                                                                                           | `requireAdmin()`이 이미 `isAdminRole()` 판정 후 `/erp/forbidden`으로 리다이렉트한다 — PRD 3.1/9장이 요구하는 하드 게이트와 동작이 완전히 일치                                  |
-| 기준정보 라우트 루트      | `app/erp/master/*` (신규). 관리자 가드는 `app/erp/master/layout.tsx`에서 `requireAdmin()` 1회 호출로 세그먼트 전체에 적용                                                                             | `app/erp/admin/layout.tsx`의 기존 가드 패턴과 동일 구조                                                                                                                        |
-| 상품 라우트 루트          | `app/erp/products/*` (신규). **`requireAdmin()`을 붙이지 않는다** — 기존 `user_menu_permissions` 기반 접근만 적용                                                                                     | PRD 1.2/3.1: 상품 관리의 메뉴 위치·접근 권한은 변경하지 않음(오픈 유지)                                                                                                        |
-| 메뉴 → 라우트 연결        | 기존 `lib/erp/menu-routes.ts`의 `ADMIN_MENU_ROUTES` 매핑 테이블(메뉴 이름 경로 `"대>중>소"` 키)을 확장                                                                                                | UUID가 아닌 이름 경로를 키로 쓰는 기존 설계를 그대로 이어감 (메뉴 id 변경에 강함)                                                                                              |
-| 마스터 도메인 코드 위치   | `lib/erp/master/*`, `components/erp/master/*` (신규 하위 디렉토리)                                                                                                                                    | 12종 엔티티 × (타입/쿼리/액션/폼)이 `lib/erp` 루트에 평평하게 쌓이면 기존 ERP 코어 파일과 섞임. `components/erp/admin/` 선례와 동일한 분리                                     |
-| `updated_at` 트리거       | 기존 범용 `public.set_updated_at()` 재사용                                                                                                                                                            | ROADMAP_MVP Task 012에서 이미 재사용한 weeklyplan 공용 트리거                                                                                                                  |
-| `created_by`/`updated_by` | `created_by`는 컬럼 기본값 `auth.uid()`, `updated_by`는 **신규 트리거 `public.set_master_audit()`**(updated_at + updated_by 동시 설정)로 처리                                                         | 실 DB 확인 결과 기존 `set_updated_at()`은 `updated_at`만 설정하고 `updated_by` 개념이 없음 → 이 한 개만 신설하고 나머지는 재사용                                               |
-| 코드 자동 채번            | 엔티티별 **Postgres 시퀀스** + 공용 함수 `public.next_master_code(p_entity text)`. 시퀀스 `start with`는 `10^(자릿수-1)+1` (예: 4자리 → 1001, 7자리 → 1000001, 9자리 → 100000001)                     | PRD 6.1의 예시 코드(`C1001`/`BC1000001`/`PM100000001`)가 정확히 이 규칙. 서버 액션에서 `max(code)+1`을 계산하면 동시 등록 시 경합이 생김                                       |
-| 코드 수정 허용            | 채번 후 관리자 수정 가능. 컬럼에 `unique` 제약 + 채번 함수는 이미 점유된 코드를 만나면 `nextval` 재시도                                                                                               | PRD 6.1 "등록 후 관리자가 직접 수정할 수 있다" — 수동 수정본이 시퀀스와 충돌할 수 있음                                                                                         |
-| 성별(Gender)              | **테이블 없음.** `lib/erp/master/gender.ts` 앱 상수 3종(`GE1001` 남성 / `GE1002` 여성 / `GE1003` 혼용) + DB는 `text check in ('male','female','unisex')`                                              | PRD 7.5/8장. CRUD 화면을 두지 않으므로 테이블이 불필요                                                                                                                         |
-| 삭제 정책                 | FK를 **전부 `on delete restrict`**로 걸고, 참조가 있으면 UI에서 "사용여부 끄기"만 안내                                                                                                                | PRD 6.3. `menus`의 `on delete cascade`와 반대 정책이므로 혼동 주의 — 기준정보는 실수 삭제 시 피해가 큼                                                                         |
-| 다국어                    | 기준정보/상품 화면은 **한국어 단일 값**. `lib/i18n/dictionaries/`에 신규 문자열을 추가하지 않는다                                                                                                     | PRD 1.3 — 관리자 전용 내부 화면은 한국어만 지원(ROADMAP_MVP Task 010과 동일 기조)                                                                                              |
-| Suspense 경계             | `cacheComponents: true` 환경이므로 `cookies()`/`params`/`searchParams` 사용 컴포넌트는 얇은 `Page` + `<Suspense>` + `async XxxContent` 패턴 유지                                                      | 기존 `app/erp/**` 전 페이지가 이 패턴                                                                                                                                          |
-| shadcn 컴포넌트           | `table` `tabs` `dialog` `sheet` `tree-view` `select` `native-select` `combobox` `switch` `badge` `checkbox` `alert-dialog` `file-dropzone` `input` `textarea` `popover` `skeleton` 모두 **이미 존재** | `npx shadcn add` 불필요. `file-dropzone`은 상품 이미지 업로드에 그대로 재사용                                                                                                  |
-| 상품-사이즈 카디널리티(Task 023①) | **현행 가정 유지** — 상품 1건 = 단일 사이즈(SKU 단위). `products.brand_gender_size_id` 단일 FK 그대로 사용                                                                                    | 사용자 확인 완료(2026-08-16). 스타일-SKU 분리(`product_size_variants`) 불필요                                                                                                  |
-| 상품 썸네일 생성(Task 023②)       | **자동 생성** — 상품 이미지 업로드 시 **Route Handler**에서 리사이즈해 썸네일을 함께 저장                                                                                                     | 사용자 확인 완료(2026-08-16). 관리자가 원본/썸네일을 각각 올리지 않도록 서버에서 처리                                                                                          |
-| 상품 CRUD 권한(Task 023③)         | **현행 유지** — 로그인 사용자 전체 개방. `app/erp/products/*`에 `requireAdmin()` 미적용, `products` RLS의 insert/update/delete도 `is_admin()`으로 좁히지 않음                                | 사용자 확인 완료(2026-08-16). 메뉴 위치·접근 권한 변경 없음(PRD 7.6 원안 유지)                                                                                                 |
-| 상품 일반 속성 항목(Task 023④)    | **PRD 7.6.2 제안값 그대로 채택** — 시즌(text) / 출시연도(integer) / 소재(text) / 원가·판매가(numeric) / 판매상태(select: 판매중·품절·단종, `is_active`와 별개)                               | 사용자 확인 완료(2026-08-16)                                                                                                                                                    |
-| 컬러 RGB 정규화(Task 023⑤)        | 입력 UI는 `#FF5733`처럼 `#` 접두사 허용, 저장 시 제거해 `rgb_hex` 컬럼에는 6자리 HEX(`FF5733`)만 저장                                                                                         | 사용자 확인 완료(2026-08-16)                                                                                                                                                    |
+| 항목                              | 결정                                                                                                                                                                                                  | 근거                                                                                                                                                                           |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 권한 함수                         | **기존 `public.is_admin()` / `public.is_superadmin()`을 그대로 재사용. 새 DB 권한 함수를 만들지 않는다.**                                                                                             | 실 DB 확인 결과 `is_admin()`은 정확히 `role in ('admin','superadmin')` 판정. `profiles.role`도 `check (role = any (array['user','admin','superadmin']))` 제약이 이미 걸려 있음 |
+| 앱 레벨 관리자 가드               | **기존 `requireAdmin()`(`lib/erp/auth.ts`, ROADMAP_MVP Task 013/014) 재사용.** 새 가드 함수를 만들지 않는다                                                                                           | `requireAdmin()`이 이미 `isAdminRole()` 판정 후 `/erp/forbidden`으로 리다이렉트한다 — PRD 3.1/9장이 요구하는 하드 게이트와 동작이 완전히 일치                                  |
+| 기준정보 라우트 루트              | `app/erp/master/*` (신규). 관리자 가드는 `app/erp/master/layout.tsx`에서 `requireAdmin()` 1회 호출로 세그먼트 전체에 적용                                                                             | `app/erp/admin/layout.tsx`의 기존 가드 패턴과 동일 구조                                                                                                                        |
+| 상품 라우트 루트                  | `app/erp/products/*` (신규). **`requireAdmin()`을 붙이지 않는다** — 기존 `user_menu_permissions` 기반 접근만 적용                                                                                     | PRD 1.2/3.1: 상품 관리의 메뉴 위치·접근 권한은 변경하지 않음(오픈 유지)                                                                                                        |
+| 메뉴 → 라우트 연결                | 기존 `lib/erp/menu-routes.ts`의 `ADMIN_MENU_ROUTES` 매핑 테이블(메뉴 이름 경로 `"대>중>소"` 키)을 확장                                                                                                | UUID가 아닌 이름 경로를 키로 쓰는 기존 설계를 그대로 이어감 (메뉴 id 변경에 강함)                                                                                              |
+| 마스터 도메인 코드 위치           | `lib/erp/master/*`, `components/erp/master/*` (신규 하위 디렉토리)                                                                                                                                    | 12종 엔티티 × (타입/쿼리/액션/폼)이 `lib/erp` 루트에 평평하게 쌓이면 기존 ERP 코어 파일과 섞임. `components/erp/admin/` 선례와 동일한 분리                                     |
+| `updated_at` 트리거               | 기존 범용 `public.set_updated_at()` 재사용                                                                                                                                                            | ROADMAP_MVP Task 012에서 이미 재사용한 weeklyplan 공용 트리거                                                                                                                  |
+| `created_by`/`updated_by`         | `created_by`는 컬럼 기본값 `auth.uid()`, `updated_by`는 **신규 트리거 `public.set_master_audit()`**(updated_at + updated_by 동시 설정)로 처리                                                         | 실 DB 확인 결과 기존 `set_updated_at()`은 `updated_at`만 설정하고 `updated_by` 개념이 없음 → 이 한 개만 신설하고 나머지는 재사용                                               |
+| 코드 자동 채번                    | 엔티티별 **Postgres 시퀀스** + 공용 함수 `public.next_master_code(p_entity text)`. 시퀀스 `start with`는 `10^(자릿수-1)+1` (예: 4자리 → 1001, 7자리 → 1000001, 9자리 → 100000001)                     | PRD 6.1의 예시 코드(`C1001`/`BC1000001`/`PM100000001`)가 정확히 이 규칙. 서버 액션에서 `max(code)+1`을 계산하면 동시 등록 시 경합이 생김                                       |
+| 코드 수정 허용                    | 채번 후 관리자 수정 가능. 컬럼에 `unique` 제약 + 채번 함수는 이미 점유된 코드를 만나면 `nextval` 재시도                                                                                               | PRD 6.1 "등록 후 관리자가 직접 수정할 수 있다" — 수동 수정본이 시퀀스와 충돌할 수 있음                                                                                         |
+| 성별(Gender)                      | **테이블 없음.** `lib/erp/master/gender.ts` 앱 상수 3종(`GE1001` 남성 / `GE1002` 여성 / `GE1003` 혼용) + DB는 `text check in ('male','female','unisex')`                                              | PRD 7.5/8장. CRUD 화면을 두지 않으므로 테이블이 불필요                                                                                                                         |
+| 삭제 정책                         | FK를 **전부 `on delete restrict`**로 걸고, 참조가 있으면 UI에서 "사용여부 끄기"만 안내                                                                                                                | PRD 6.3. `menus`의 `on delete cascade`와 반대 정책이므로 혼동 주의 — 기준정보는 실수 삭제 시 피해가 큼                                                                         |
+| 다국어                            | 기준정보/상품 화면은 **한국어 단일 값**. `lib/i18n/dictionaries/`에 신규 문자열을 추가하지 않는다                                                                                                     | PRD 1.3 — 관리자 전용 내부 화면은 한국어만 지원(ROADMAP_MVP Task 010과 동일 기조)                                                                                              |
+| Suspense 경계                     | `cacheComponents: true` 환경이므로 `cookies()`/`params`/`searchParams` 사용 컴포넌트는 얇은 `Page` + `<Suspense>` + `async XxxContent` 패턴 유지                                                      | 기존 `app/erp/**` 전 페이지가 이 패턴                                                                                                                                          |
+| shadcn 컴포넌트                   | `table` `tabs` `dialog` `sheet` `tree-view` `select` `native-select` `combobox` `switch` `badge` `checkbox` `alert-dialog` `file-dropzone` `input` `textarea` `popover` `skeleton` 모두 **이미 존재** | `npx shadcn add` 불필요. `file-dropzone`은 상품 이미지 업로드에 그대로 재사용                                                                                                  |
+| 상품-사이즈 카디널리티(Task 023①) | **현행 가정 유지** — 상품 1건 = 단일 사이즈(SKU 단위). `products.brand_gender_size_id` 단일 FK 그대로 사용                                                                                            | 사용자 확인 완료(2026-08-16). 스타일-SKU 분리(`product_size_variants`) 불필요                                                                                                  |
+| 상품 썸네일 생성(Task 023②)       | **자동 생성** — 상품 이미지 업로드 시 **Route Handler**에서 리사이즈해 썸네일을 함께 저장                                                                                                             | 사용자 확인 완료(2026-08-16). 관리자가 원본/썸네일을 각각 올리지 않도록 서버에서 처리                                                                                          |
+| 상품 CRUD 권한(Task 023③)         | **현행 유지** — 로그인 사용자 전체 개방. `app/erp/products/*`에 `requireAdmin()` 미적용, `products` RLS의 insert/update/delete도 `is_admin()`으로 좁히지 않음                                         | 사용자 확인 완료(2026-08-16). 메뉴 위치·접근 권한 변경 없음(PRD 7.6 원안 유지)                                                                                                 |
+| 상품 일반 속성 항목(Task 023④)    | **PRD 7.6.2 제안값 그대로 채택** — 시즌(text) / 출시연도(integer) / 소재(text) / 원가·판매가(numeric) / 판매상태(select: 판매중·품절·단종, `is_active`와 별개)                                        | 사용자 확인 완료(2026-08-16)                                                                                                                                                   |
+| 컬러 RGB 정규화(Task 023⑤)        | 입력 UI는 `#FF5733`처럼 `#` 접두사 허용, 저장 시 제거해 `rgb_hex` 컬럼에는 6자리 HEX(`FF5733`)만 저장                                                                                                 | 사용자 확인 완료(2026-08-16)                                                                                                                                                   |
 
 ### 변경 금지 파일 목록 (ROADMAP_MVP에서 승계)
 
@@ -132,7 +132,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 024: 마스터 공통 상수 / 타입 / 코드 포맷 유틸 정의 (DB 무관)
+### Task 024: 마스터 공통 상수 / 타입 / 코드 포맷 유틸 정의 (DB 무관) ✅
 
 **목표**: 12종 엔티티가 공유할 앱 레벨 상수·타입·유틸을 **DB보다 먼저** 확정해, Task 025~029와 Phase 5 화면 작업이 같은 타입 위에서 병렬 진행되게 한다.
 
@@ -145,25 +145,25 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/master/gender.ts`: `GENDERS` 상수 배열 정의 — `[{ code: "GE1001", value: "male", label: "남성" }, { code: "GE1002", value: "female", label: "여성" }, { code: "GE1003", value: "unisex", label: "혼용" }]`. `GenderValue = "male" | "female" | "unisex"` 타입, `getGenderLabel(value)`, `isGenderValue(v)` 가드 export. **CRUD 함수·화면은 만들지 않는다**(PRD 7.5: 고정 상수).
-- [ ] `lib/erp/master/types.ts`: 공통 속성 타입 `MasterCommonFields = { id, code, name, sortOrder, isActive, note, createdAt, updatedAt, createdBy, updatedBy }` 정의 후, 각 엔티티 타입(`Company`, `Brand`, `SmallBrand`, `BrandLine`, `ItemType`, `Item`, `SubItem`, `BrandColorType`, `BrandColor`, `BrandGenderSizeType`, `BrandGenderSize`)을 `MasterCommonFields & { parentId... }` 형태로 파생. DB 타입(`Tables<"...">`)이 생기는 Task 029에서 `Pick`으로 재정렬할 수 있도록 **여기서는 UI가 소비할 camelCase 뷰 타입**만 정의한다.
-- [ ] `lib/erp/master/code.ts`: PRD 6.1 표를 그대로 옮긴 `CODE_SPECS` 레코드 정의 —
+- [x] `lib/erp/master/gender.ts`: `GENDERS` 상수 배열 정의 — `[{ code: "GE1001", value: "male", label: "남성" }, { code: "GE1002", value: "female", label: "여성" }, { code: "GE1003", value: "unisex", label: "혼용" }]`. `GenderValue = "male" | "female" | "unisex"` 타입, `getGenderLabel(value)`, `isGenderValue(v)` 가드 export. **CRUD 함수·화면은 만들지 않는다**(PRD 7.5: 고정 상수).
+- [x] `lib/erp/master/types.ts`: 공통 속성 타입 `MasterCommonFields = { id, code, name, sortOrder, isActive, note, createdAt, updatedAt, createdBy, updatedBy }` 정의 후, 각 엔티티 타입(`Company`, `Brand`, `SmallBrand`, `BrandLine`, `ItemType`, `Item`, `SubItem`, `BrandColorType`, `BrandColor`, `BrandGenderSizeType`, `BrandGenderSize`)을 `MasterCommonFields & { parentId... }` 형태로 파생. DB 타입(`Tables<"...">`)이 생기는 Task 029에서 `Pick`으로 재정렬할 수 있도록 **여기서는 UI가 소비할 camelCase 뷰 타입**만 정의한다.
+- [x] `lib/erp/master/code.ts`: PRD 6.1 표를 그대로 옮긴 `CODE_SPECS` 레코드 정의 —
   - 법인 `C`/4, 브랜드 `B`/4, 소브랜드 `SB`/4, 아이템타입 `LC`/4, 아이템 `MC`/4, 서브아이템 `SC`/4, 라인 `BL`/4, 컬러타입 `BCT`/4, 컬러 `BC`/7, 사이즈타입 `BGST`/4, 사이즈 `BGS`/4, 상품 `PM`/9
   - `isValidCode(entity, code)` — `^{prefix}\d{digits}$` 정규식 검증 (관리자가 코드를 직접 수정할 때 클라이언트 1차 검증용)
   - 성별(`GE`/4)은 상수라 채번 대상이 아님을 주석으로 명시
-- [ ] `lib/erp/master/entities.ts`: 엔티티별 메타(한글 라벨, 테이블명, 코드 스펙 키, 부모 엔티티, 라우트) 레지스트리 정의. Phase 5의 공통 마스터-디테일 컴포넌트(Task 032)가 이 메타로 화면 문구와 컬럼 헤더를 구성하도록 설계한다.
-- [ ] 위 4개 파일은 **서버 전용 코드(`lib/supabase/server.ts` 등)를 임포트하지 않는 순수 모듈**로 유지한다 — Client Component에서도 그대로 import 가능해야 한다(`lib/erp/role-labels.ts`가 같은 이유로 분리된 선례).
+- [x] `lib/erp/master/entities.ts`: 엔티티별 메타(한글 라벨, 테이블명, 코드 스펙 키, 부모 엔티티, 라우트) 레지스트리 정의. Phase 5의 공통 마스터-디테일 컴포넌트(Task 032)가 이 메타로 화면 문구와 컬럼 헤더를 구성하도록 설계한다. `product`는 Phase 5 화면 대상이 아니라 이 레지스트리에서 제외(`MasterEntityKey = Exclude<MasterCodeEntity, "product">`).
+- [x] 위 4개 파일은 **서버 전용 코드(`lib/supabase/server.ts` 등)를 임포트하지 않는 순수 모듈**로 유지한다 — Client Component에서도 그대로 import 가능해야 한다(`lib/erp/role-labels.ts`가 같은 이유로 분리된 선례).
 
 **수락 기준**
 
-- [ ] `npm run typecheck` 통과.
-- [ ] `lib/erp/master/*` 4개 파일 어디에도 `"use server"` / `next/headers` / Supabase 클라이언트 import가 없다 (`grep`으로 확인).
-- [ ] PRD 6.1 표의 13행(성별 포함)이 `CODE_SPECS` 또는 주석에 빠짐없이 반영되어 있다.
+- [x] `npm run typecheck` 통과.
+- [x] `lib/erp/master/*` 4개 파일 어디에도 `"use server"` / `next/headers` / Supabase 클라이언트 import가 없다 (`grep`으로 확인).
+- [x] PRD 6.1 표의 13행(성별 포함)이 `CODE_SPECS` 또는 주석에 빠짐없이 반영되어 있다.
 
 **테스트 체크리스트**
 
-- [ ] `isValidCode("company", "C1001")` → true, `isValidCode("company", "C101")` → false, `isValidCode("brandColor", "BC1000001")` → true 를 임시 스크립트(`npx tsx`) 또는 임시 라우트로 확인 후 정리.
-- [ ] `GENDERS`가 정확히 3건이고 `code`/`value`/`label`이 PRD 7.5 표와 일치하는지 확인.
+- [x] `isValidCode("company", "C1001")` → true, `isValidCode("company", "C101")` → false, `isValidCode("brandColor", "BC1000001")` → true 를 임시 스크립트(`npx tsx`)로 확인 후 정리(3건 모두 기대값과 일치).
+- [x] `GENDERS`가 정확히 3건이고 `code`/`value`/`label`이 PRD 7.5 표와 일치하는지 확인.
 
 ---
 
@@ -1080,11 +1080,11 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ### 사용자 확인 대기 항목 (착수 전 필수)
 
-| 항목                                | 관련 Task           | 현재 가정                                    | 상태             |
-| ----------------------------------- | ------------------- | -------------------------------------------- | ---------------- |
-| ① 상품-사이즈 카디널리티            | 023 → 028, 039, 041 | 상품 1건 = 단일 사이즈(SKU 단위)             | ✅ 확인됨(현행 유지) |
-| ② 썸네일 생성 방식                  | 023 → 040           | 업로드 시 자동 리사이즈(Route Handler)       | ✅ 확인됨(현행 유지) |
-| ③ 상품 CRUD 권한 범위               | 023 → 028, 038      | 로그인 사용자 개방 유지                      | ✅ 확인됨(현행 유지) |
-| ④ 상품 "일반 속성" 항목 확정        | 023 → 028, 039      | 시즌/출시연도/소재/원가/판매가/판매상태 제안 | ✅ 확인됨(제안값 채택) |
-| ⑤ 컬러 RGB 입력 정규화 규칙         | 023 → 032, 036      | `#` 허용 입력, 저장 시 제거(6자리)           | ✅ 확인됨(제안 규칙 채택) |
+| 항목                                | 관련 Task           | 현재 가정                                    | 상태                          |
+| ----------------------------------- | ------------------- | -------------------------------------------- | ----------------------------- |
+| ① 상품-사이즈 카디널리티            | 023 → 028, 039, 041 | 상품 1건 = 단일 사이즈(SKU 단위)             | ✅ 확인됨(현행 유지)          |
+| ② 썸네일 생성 방식                  | 023 → 040           | 업로드 시 자동 리사이즈(Route Handler)       | ✅ 확인됨(현행 유지)          |
+| ③ 상품 CRUD 권한 범위               | 023 → 028, 038      | 로그인 사용자 개방 유지                      | ✅ 확인됨(현행 유지)          |
+| ④ 상품 "일반 속성" 항목 확정        | 023 → 028, 039      | 시즌/출시연도/소재/원가/판매가/판매상태 제안 | ✅ 확인됨(제안값 채택)        |
+| ⑤ 컬러 RGB 입력 정규화 규칙         | 023 → 032, 036      | `#` 허용 입력, 저장 시 제거(6자리)           | ✅ 확인됨(제안 규칙 채택)     |
 | ⑥ 시드 상품 성별 vs 사이즈타입 성별 | 041                 | PRD 10장 그대로면 불일치 데이터 발생         | ☐ 확인 필요(Task 041 착수 전) |
