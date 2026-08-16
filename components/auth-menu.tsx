@@ -6,13 +6,11 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   Bell,
-  CircleUserRound,
   Laptop,
   Languages,
   type LucideIcon,
   LogOut,
   Moon,
-  Phone,
   Settings,
   Shield,
   SlidersHorizontal,
@@ -89,16 +87,6 @@ export function AuthMenu({
       href: "/erp/settings/preferences",
       icon: SlidersHorizontal,
       label: dict.erp.settings.navPreferences,
-    },
-    {
-      href: "/erp/settings/avatar",
-      icon: CircleUserRound,
-      label: dict.erp.settings.navAvatar,
-    },
-    {
-      href: "/erp/settings/contact",
-      icon: Phone,
-      label: dict.erp.settings.navContact,
     },
     {
       href: "/erp/settings/security",

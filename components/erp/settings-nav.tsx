@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
-  CircleUserRound,
   type LucideIcon,
-  Phone,
   Shield,
   SlidersHorizontal,
   UserRound,
@@ -25,8 +23,6 @@ type SettingsNavItem = {
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/erp/settings/profile": UserRound,
   "/erp/settings/preferences": SlidersHorizontal,
-  "/erp/settings/avatar": CircleUserRound,
-  "/erp/settings/contact": Phone,
   "/erp/settings/security": Shield,
   "/erp/settings/notifications": Bell,
 };

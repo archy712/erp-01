@@ -163,6 +163,25 @@ export async function getUsers(): Promise<ErpUserListItem[]> {
   return data;
 }
 
+export type DepartmentOption = Pick<Tables<"departments">, "id" | "name">;
+
+/** 프로필 수정 화면의 부서 선택 목록용. 보관(archived_at)되지 않은 부서만 반환한다. */
+export async function getDepartments(): Promise<DepartmentOption[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("departments")
+    .select("id, name")
+    .is("archived_at", null)
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 /** 특정 사용자에게 명시적으로 부여된 메뉴 목록(Task 017 사용자 권한 관리 화면용). */
 export async function getUserPermissions(userId: string): Promise<MenuFlat[]> {
   const supabase = await createClient();

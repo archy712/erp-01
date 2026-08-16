@@ -31,8 +31,6 @@ async function SettingsLayoutContent({
       href: "/erp/settings/preferences",
       label: dict.erp.settings.navPreferences,
     },
-    { href: "/erp/settings/avatar", label: dict.erp.settings.navAvatar },
-    { href: "/erp/settings/contact", label: dict.erp.settings.navContact },
     { href: "/erp/settings/security", label: dict.erp.settings.navSecurity },
     {
       href: "/erp/settings/notifications",
