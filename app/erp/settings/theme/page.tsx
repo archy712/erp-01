@@ -25,7 +25,7 @@ async function SettingsThemeContent() {
   const dict = getDictionary(locale);
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md md:max-w-xl lg:max-w-2xl">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">

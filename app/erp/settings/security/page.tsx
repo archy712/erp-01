@@ -41,11 +41,11 @@ async function SettingsSecurityContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md md:max-w-2xl lg:max-w-3xl">
         <ChangePasswordForm dict={dict} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {upcoming.map((item) => (
           <Card key={item.title}>
             <CardHeader>

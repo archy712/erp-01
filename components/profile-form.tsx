@@ -120,7 +120,7 @@ export function ProfileForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-6">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="email">{dict.profile.emailLabel}</Label>
                 <Input
@@ -172,7 +172,7 @@ export function ProfileForm({
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 sm:col-span-2">
                 <Label>{dict.profile.avatarLabel}</Label>
                 <Dialog
                   open={avatarDialogOpen}
@@ -222,7 +222,7 @@ export function ProfileForm({
                   </DialogContent>
                 </Dialog>
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 sm:col-span-2">
                 <Label htmlFor="bio">{dict.profile.bioLabel}</Label>
                 <Textarea
                   id="bio"
@@ -232,13 +232,19 @@ export function ProfileForm({
                   onChange={(e) => setBio(e.target.value)}
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-sm text-red-500 sm:col-span-2">{error}</p>
+              )}
               {success && (
-                <p className="text-sm text-green-600">
+                <p className="text-sm text-green-600 sm:col-span-2">
                   {dict.profile.saveSuccess}
                 </p>
               )}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full sm:col-span-2"
+                disabled={isLoading}
+              >
                 {isLoading ? dict.profile.saving : dict.profile.saveButton}
               </Button>
             </div>

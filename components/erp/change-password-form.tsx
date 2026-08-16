@@ -69,7 +69,7 @@ export function ChangePasswordForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-6">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="password">
                   {dict.erp.changePassword.newPasswordLabel}
@@ -96,13 +96,19 @@ export function ChangePasswordForm({
                   hideLabel={dict.common.hidePassword}
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-sm text-red-500 sm:col-span-2">{error}</p>
+              )}
               {success && (
-                <p className="text-sm text-green-600">
+                <p className="text-sm text-green-600 sm:col-span-2">
                   {dict.erp.changePassword.successMessage}
                 </p>
               )}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full sm:col-span-2"
+                disabled={isLoading}
+              >
                 {isLoading
                   ? dict.erp.changePassword.saving
                   : dict.erp.changePassword.saveButton}

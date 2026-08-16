@@ -44,7 +44,7 @@ async function SettingsProfileContent() {
   const dict = getDictionary(locale);
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md md:max-w-2xl lg:max-w-3xl">
       <ProfileForm
         dict={dict}
         departments={departments}
