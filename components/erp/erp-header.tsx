@@ -1,16 +1,14 @@
 import { Suspense } from "react";
 import Link from "next/link";
 
+import { AuthButton } from "@/components/auth-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
-import { ErpAccountBar } from "./erp-account-bar";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { hasEnvVars } from "@/lib/utils";
 
-// app/page.tsx 헤더를 그대로 복제하던 규칙(Task 001)의 의도적 예외. ERP 헤더는
-// app/erp/layout.tsx가 미인증 사용자를 미리 리다이렉트하는 로그인 후 컨텍스트에서만
-// 렌더링되므로, 마케팅 홈과 달리 로그인 버튼이 필요 없고 테마/언어 전환도
-// /erp/settings/preferences로 옮겼다. 계정 영역은 설정 아이콘 버튼 + 이메일
-// 텍스트만 남긴다.
+// app/page.tsx 헤더와 동일한 계정 영역(AuthButton → 로그인 상태면 AuthMenu
+// 드롭다운)을 그대로 재사용한다. app/erp/layout.tsx가 미인증 사용자를 이미
+// /auth/login으로 리다이렉트하므로 여기서는 항상 로그인된 AuthMenu가 렌더링된다.
 export function ErpHeader({ dict }: { dict: Dictionary }) {
   return (
     <header className="flex h-16 w-full items-center justify-center border-b border-b-foreground/10">
@@ -24,11 +22,9 @@ export function ErpHeader({ dict }: { dict: Dictionary }) {
         {!hasEnvVars ? (
           <EnvVarWarning dict={dict} />
         ) : (
-          <div className="min-w-0">
-            <Suspense>
-              <ErpAccountBar dict={dict} />
-            </Suspense>
-          </div>
+          <Suspense>
+            <AuthButton />
+          </Suspense>
         )}
       </div>
     </header>
