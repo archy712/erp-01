@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/erp/page-header";
 import { UserTable } from "@/components/erp/admin/user-table";
 import { getCurrentErpUser } from "@/lib/erp/auth";
-import { getMenuPathForAdminRoute } from "@/lib/erp/menu-routes";
+import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import { getUsers } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -29,7 +29,7 @@ async function AdminUsersContent() {
     getLocale(),
   ]);
   const dict = getDictionary(locale);
-  const breadcrumb = getMenuPathForAdminRoute("/erp/admin/users")?.slice(0, -1);
+  const breadcrumb = getMenuPathForRoute("/erp/admin/users")?.slice(0, -1);
 
   return (
     <div className="flex flex-1 flex-col">
