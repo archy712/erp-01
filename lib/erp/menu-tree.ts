@@ -78,9 +78,19 @@ export function menuNodeToTreeItem(
   };
 }
 
-/** 현재 pathname이 `/erp/menu/[menuId]`이면 해당 menuId를 추출한다. */
-export function getActiveMenuId(pathname: string): string | undefined {
-  return pathname.match(/^\/erp\/menu\/([^/]+)/)?.[1];
+/**
+ * 좌측 트리에서 활성(선택) 표시할 menuId를 판별한다.
+ * pathname이 `/erp/menu/[menuId]`이면 그 menuId를 쓰고, 관리자 화면
+ * (`/erp/admin/*`)처럼 menuId가 URL 경로에 없는 곳으로 리다이렉트된 경우에는
+ * `?menu=` 쿼리(app/erp/menu/[menuId]/page.tsx가 관리자 라우트로 리다이렉트할
+ * 때 함께 붙여준다)를 대신 사용한다.
+ */
+export function getActiveMenuId(
+  pathname: string,
+  searchParams?: URLSearchParams | null,
+): string | undefined {
+  const fromPath = pathname.match(/^\/erp\/menu\/([^/]+)/)?.[1];
+  return fromPath ?? searchParams?.get("menu") ?? undefined;
 }
 
 /**

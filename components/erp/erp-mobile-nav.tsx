@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export function ErpMobileNav({
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const items = categories.map((node) =>
     menuNodeToTreeItem(node, node.id, (menuId, topId) => {
@@ -64,7 +65,7 @@ export function ErpMobileNav({
           <TreeView
             key={pathname}
             data={items}
-            initialSelectedItemId={getActiveMenuId(pathname)}
+            initialSelectedItemId={getActiveMenuId(pathname, searchParams)}
             aria-label={dict.erp.mobileNav.treeAriaLabel}
           />
         </div>

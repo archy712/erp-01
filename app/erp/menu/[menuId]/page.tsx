@@ -58,10 +58,12 @@ async function ErpMenuContent({
 
   const adminRoute = getAdminRouteForMenuPath(path.map((node) => node.name));
   if (adminRoute) {
-    // `cat` 쿼리를 붙이지 않으면 좌측 레일/트리가 활성 상태를 잃는다
-    // (ErpCategoryRail/ErpMenuTree는 `?cat=`을 단일 소스로 사용, 대분류는
-    // path[0]).
-    redirect(`${adminRoute}?cat=${path[0].id}`);
+    // `cat`/`menu` 쿼리를 붙이지 않으면 좌측 레일/트리가 활성 상태를 잃는다.
+    // ErpCategoryRail은 `?cat=`(대분류, path[0])을, ErpMenuTree/ErpMobileNav는
+    // `?menu=`(소분류, getActiveMenuId의 fallback — 관리자 라우트는
+    // `/erp/menu/[menuId]` 형태가 아니라 pathname만으로는 menuId를 알 수 없음)를
+    // 단일 소스로 사용한다.
+    redirect(`${adminRoute}?cat=${path[0].id}&menu=${menuId}`);
   }
 
   const current = path[path.length - 1];

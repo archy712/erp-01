@@ -77,7 +77,7 @@ export function ErpMenuTree({
       // initialSelectedItemId를 반영하고 이후 prop 변화에 반응하지 않음).
       key={pathname}
       data={items}
-      initialSelectedItemId={getActiveMenuId(pathname)}
+      initialSelectedItemId={getActiveMenuId(pathname, searchParams)}
       aria-label={dict.erp.tree.ariaLabel}
     />
   );
