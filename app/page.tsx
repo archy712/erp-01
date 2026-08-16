@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight, Boxes } from "lucide-react";
+import { ArrowRight, Boxes, Languages, Moon, Smartphone } from "lucide-react";
 
 import { AuthButton } from "@/components/auth-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { HOME_CATEGORY_ICONS } from "@/lib/erp/home-categories";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
@@ -47,9 +46,10 @@ async function HomeContent() {
     { label: dict.home.footer.avatarGallery, href: "/avatars" },
   ];
 
-  const categories = dict.home.categories.map((category, i) => ({
-    ...category,
-    icon: HOME_CATEGORY_ICONS[i],
+  const featureIcons = [Languages, Smartphone, Moon];
+  const features = dict.home.features.map((feature, i) => ({
+    ...feature,
+    icon: featureIcons[i],
   }));
 
   return (
@@ -116,18 +116,18 @@ async function HomeContent() {
                 {dict.home.categoriesDescription}
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {categories.map((category) => (
-                <Card key={category.title}>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {features.map((feature) => (
+                <Card key={feature.title}>
                   <CardHeader className="flex flex-row items-start gap-4">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                      <category.icon className="size-5 text-muted-foreground" />
+                      <feature.icon className="size-5 text-muted-foreground" />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <CardTitle className="text-base">
-                        {category.title}
+                        {feature.title}
                       </CardTitle>
-                      <CardDescription>{category.description}</CardDescription>
+                      <CardDescription>{feature.description}</CardDescription>
                     </div>
                   </CardHeader>
                 </Card>

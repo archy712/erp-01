@@ -22,79 +22,22 @@ export const en: Dictionary = {
     dashboardCta: "Go to ERP dashboard",
     categoriesHeading: "Key Features",
     categoriesDescription:
-      "Explore the core capabilities available in each top-level menu category.",
-    categories: [
+      "Explore the core capabilities built into the ERP system.",
+    features: [
       {
-        title: "Master Data Management",
+        title: "Multi-language Support",
         description:
-          "Manage core reference data such as users, menus, and permissions for system operations.",
+          "Supports Korean, English, Japanese, and Chinese, automatically selecting the default language based on your browser or system settings.",
       },
       {
-        title: "Management Info",
+        title: "Responsive Support",
         description:
-          "View key business metrics such as sales and profit through dashboards and reports.",
+          "A responsive layout that adapts naturally from mobile to desktop screens.",
       },
       {
-        title: "HR & Payroll",
+        title: "Dark Mode Support",
         description:
-          "Handle employee records, attendance, and payroll settlement.",
-      },
-      {
-        title: "Web Accounting",
-        description:
-          "Process accounting tasks online, from journal entries to financial statements.",
-      },
-      {
-        title: "Planning",
-        description:
-          "Support business planning, budgeting, and performance analysis.",
-      },
-      {
-        title: "Sourcing",
-        description:
-          "Manage material ordering and supplier sourcing processes.",
-      },
-      {
-        title: "Logistics",
-        description:
-          "Manage the full logistics flow, including inbound/outbound and inventory.",
-      },
-      {
-        title: "Partners",
-        description:
-          "Manage partner information, transaction history, and evaluations.",
-      },
-      {
-        title: "Sales",
-        description:
-          "Manage the full sales cycle, from order intake to revenue settlement.",
-      },
-      {
-        title: "Sales Management",
-        description:
-          "Track sales performance, receivables, and revenue status.",
-      },
-      {
-        title: "Sales Planning",
-        description: "Plan sales targets and channel-specific strategies.",
-      },
-      {
-        title: "Customer Management",
-        description:
-          "Manage customer information and consultation history in one place.",
-      },
-      {
-        title: "Web POS",
-        description: "Manage in-store point-of-sale data in real time.",
-      },
-      {
-        title: "C&F",
-        description:
-          "Manage customs clearance and freight (Customs & Freight) operations.",
-      },
-      {
-        title: "Board",
-        description: "Post and share notices and internal news.",
+          "Instantly switch between light, dark, and system themes with the toggle in the header.",
       },
     ],
     footer: {

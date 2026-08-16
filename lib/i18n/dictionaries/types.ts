@@ -20,7 +20,7 @@ export interface Dictionary {
     dashboardCta: string;
     categoriesHeading: string;
     categoriesDescription: string;
-    categories: { title: string; description: string }[];
+    features: { title: string; description: string }[];
     footer: {
       about: string;
       techStack: string;

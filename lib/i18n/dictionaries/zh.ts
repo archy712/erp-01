@@ -21,67 +21,21 @@ export const zh: Dictionary = {
     loginCta: "登录后开始使用",
     dashboardCta: "前往 ERP 仪表盘",
     categoriesHeading: "主要功能",
-    categoriesDescription: "了解各大类菜单提供的核心功能。",
-    categories: [
+    categoriesDescription: "了解 ERP 系统内置的核心功能。",
+    features: [
       {
-        title: "主数据管理",
-        description: "管理用户、菜单、权限等系统运营所需的基础数据。",
+        title: "多语言支持",
+        description:
+          "支持韩语、英语、日语、中文 4 种语言，会根据浏览器・系统语言设置自动选择默认语言。",
       },
       {
-        title: "经营信息",
-        description: "通过仪表盘和报表查看销售、损益等核心经营指标。",
+        title: "响应式支持",
+        description: "提供从移动端到桌面端都能自然适配屏幕尺寸的响应式布局。",
       },
       {
-        title: "人事薪资",
-        description: "处理员工信息、考勤、薪资结算等人事相关业务。",
-      },
-      {
-        title: "网络会计",
-        description: "从凭证录入到财务报表编制，在线处理会计业务。",
-      },
-      {
-        title: "企划",
-        description: "支持业务规划、预算编制和绩效分析工作。",
-      },
-      {
-        title: "采购寻源",
-        description: "管理原辅材料订购和供应商寻源流程。",
-      },
-      {
-        title: "物流",
-        description: "管理入库、出库、库存、配送等全部物流流程。",
-      },
-      {
-        title: "合作商",
-        description: "管理合作商信息、交易记录和评价历史。",
-      },
-      {
-        title: "销售",
-        description: "管理从接单到销售结算的全部销售活动。",
-      },
-      {
-        title: "销售管理",
-        description: "管理销售业绩、应收账款和销售现况。",
-      },
-      {
-        title: "销售企划",
-        description: "制定销售目标和各渠道策略。",
-      },
-      {
-        title: "客户管理",
-        description: "统一管理客户信息和咨询记录。",
-      },
-      {
-        title: "网络POS",
-        description: "实时管理门店销售终端信息。",
-      },
-      {
-        title: "C&F",
-        description: "管理通关及货运（Customs & Freight）业务。",
-      },
-      {
-        title: "公告板",
-        description: "发布和共享公告及内部信息。",
+        title: "深色模式支持",
+        description:
+          "可通过页眉的切换按钮，在浅色・深色・跟随系统主题间即时切换。",
       },
     ],
     footer: {

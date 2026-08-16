@@ -21,71 +21,23 @@ export const ko: Dictionary = {
     loginCta: "로그인하고 시작하기",
     dashboardCta: "ERP 대시보드로 이동",
     categoriesHeading: "주요 기능",
-    categoriesDescription: "대분류 메뉴별로 제공되는 핵심 기능을 살펴보세요.",
-    categories: [
+    categoriesDescription:
+      "ERP 시스템이 기본으로 제공하는 핵심 기능을 살펴보세요.",
+    features: [
       {
-        title: "마스터 관리",
+        title: "다국어 지원",
         description:
-          "사용자, 메뉴, 권한 등 시스템 운영에 필요한 기준 데이터를 관리합니다.",
+          "한국어, 영어, 일본어, 중국어 4개 언어를 지원하며, 브라우저·시스템 언어 설정에 따라 기본 언어가 자동으로 선택됩니다.",
       },
       {
-        title: "경영정보",
+        title: "반응형 지원",
         description:
-          "매출·손익 등 핵심 경영 지표를 대시보드와 리포트로 확인합니다.",
+          "모바일부터 데스크톱까지 화면 크기에 맞춰 자연스럽게 적응하는 반응형 레이아웃을 제공합니다.",
       },
       {
-        title: "인사급여",
+        title: "다크모드 지원",
         description:
-          "직원 정보, 근태, 급여 정산까지 인사 전반의 업무를 처리합니다.",
-      },
-      {
-        title: "웹회계",
-        description:
-          "전표 입력부터 재무제표 작성까지 회계 업무를 온라인으로 처리합니다.",
-      },
-      {
-        title: "기획",
-        description: "사업 계획 수립과 예산 편성, 실적 분석 업무를 지원합니다.",
-      },
-      {
-        title: "소싱",
-        description: "원부자재 발주와 협력사 소싱 프로세스를 관리합니다.",
-      },
-      {
-        title: "물류",
-        description: "입출고, 재고, 배송 등 물류 전 과정을 관리합니다.",
-      },
-      {
-        title: "협력사",
-        description: "협력사 정보와 거래 내역, 평가 이력을 관리합니다.",
-      },
-      {
-        title: "영업",
-        description: "주문 접수부터 매출 정산까지 영업 활동 전반을 관리합니다.",
-      },
-      {
-        title: "영업관리",
-        description: "영업 실적과 채권, 매출 현황을 관리합니다.",
-      },
-      {
-        title: "영업기획",
-        description: "영업 목표 수립과 채널별 전략을 계획합니다.",
-      },
-      {
-        title: "고객관리",
-        description: "고객 정보와 상담 이력을 통합 관리합니다.",
-      },
-      {
-        title: "웹POS",
-        description: "매장 판매 시점 정보를 실시간으로 관리합니다.",
-      },
-      {
-        title: "C&F",
-        description: "통관 및 화물 운송(Customs & Freight) 업무를 관리합니다.",
-      },
-      {
-        title: "게시판",
-        description: "공지사항과 사내 소식을 게시하고 공유합니다.",
+          "라이트・다크・시스템 테마를 헤더의 토글 버튼으로 즉시 전환할 수 있습니다.",
       },
     ],
     footer: {

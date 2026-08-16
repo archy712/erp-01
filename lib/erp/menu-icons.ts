@@ -36,8 +36,8 @@ import {
  * 메뉴명 → 아이콘 매핑의 단일 소스. `menus` 테이블에는 아이콘 컬럼이 없으므로
  * 대/중/소분류 이름을 보고 코드에서 아이콘을 고른다. 상단 Menubar
  * (components/erp/erp-menubar.tsx), 좌측 트리·모바일 내비게이션
- * (lib/erp/menu-tree.ts), 관리자 메뉴 관리 트리(admin/menu-manager.tsx),
- * 로그인 전 홈(lib/erp/home-categories.ts)이 모두 이 파일을 공유한다.
+ * (lib/erp/menu-tree.ts), 관리자 메뉴 관리 트리(admin/menu-manager.tsx)가
+ * 모두 이 파일을 공유한다.
  *
  * 1) EXACT_NAME_ICONS: 현재 DB에 있는 이름과 정확히 일치할 때 쓰는 아이콘.
  * 2) KEYWORD_ICONS: 관리자가 새 메뉴를 추가해 이름이 여기 없어도, 이름에
@@ -113,26 +113,6 @@ const KEYWORD_ICONS: readonly [string, LucideIcon][] = [
   ["설정", Settings],
   ["관리", Settings],
 ];
-
-/** 순서가 고정된 대분류 15종. `lib/erp/home-categories.ts`가 DB sort_order와
- * 같은 순서로 아이콘 배열을 만드는 데 쓴다. */
-export const TOP_CATEGORY_NAMES = [
-  "마스터 관리",
-  "경영정보",
-  "인사급여",
-  "웹회계",
-  "기획",
-  "소싱",
-  "물류",
-  "협력사",
-  "영업",
-  "영업관리",
-  "영업기획",
-  "고객관리",
-  "웹POS",
-  "C&F",
-  "게시판",
-] as const;
 
 export function getMenuIcon(name: string, hasChildren: boolean): LucideIcon {
   const exact = EXACT_NAME_ICONS[name];
