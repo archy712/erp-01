@@ -87,7 +87,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 - **Phase 3** ✅ — 마스터 데이터 모델 구축 (Task 023~029)
 - **Phase 4** ✅ — 메뉴 재구성 및 역할 하드 게이트 (Task 030~031)
-- **Phase 5** — 기준정보 관리 5개 화면 구현 (Task 032~037)
+- **Phase 5** 🚧 — 기준정보 관리 5개 화면 구현 (Task 032~~037, Task 032~~033 완료)
 - **Phase 6** — 상품(Product) 관리 화면 구현 (Task 038~040)
 - **Phase 7** — 더미 데이터 시드 및 통합 검증 (Task 041~042)
 
@@ -514,7 +514,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 > **공통 마스터-디테일 컴포넌트를 먼저 만들고(Task 032), 5개 화면이 그것을 재사용한다.** 화면마다 테이블·폼·삭제 다이얼로그를 복제하면 5배의 중복이 생긴다.
 > Task 033~~037은 Task 032 완료 후 **서로 독립적으로 병렬 개발 가능**하다.
 
-### Task 032: 마스터-디테일 공통 UI 컴포넌트 구현
+### Task 032: 마스터-디테일 공통 UI 컴포넌트 구현 ✅
 
 **목표**: 5개 화면이 공유할 "좌측 트리 + 우측 목록 + 슬라이드 상세 패널 + 등록/수정 폼 + 삭제 다이얼로그"를 한 번만 구현한다.
 
@@ -528,41 +528,44 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - `components/erp/master/sort-order-cell.tsx` (신규 — 위/아래 이동 버튼)
 - `components/erp/master/color-swatch-input.tsx` (신규 — HEX 입력 + 미리보기, Task 036에서 사용)
 - `lib/erp/master/entities.ts` (Task 024 — 엔티티 메타 소비)
+- `lib/erp/master/actions.ts` (**부수 수정** — `createMasterAction`이 자동 채번된 `code`를 응답에 포함하도록 반환 타입을 `ActionResult & { code?: string }`로 확장, 형제 `sort_order` 교환용 `moveMasterEntityAction` 신규 추가)
 - `components/ui/{sheet,table,tree-view,switch,badge,alert-dialog,input,textarea,button}.tsx` (기존 재사용)
 
 **구현 체크리스트**
 
-- [ ] `MasterDetailLayout` — PRD 6.3 와이어프레임대로 좌측 트리(고정 폭) + 우측 목록의 2분할. **ERP 셸(`app/erp/layout.tsx`)의 좌측 메뉴 트리와 별개의 2차 트리**이므로, 데스크탑에서 3분할(ERP 트리 + 마스터 트리 + 목록)이 되어도 가로가 좁아지지 않도록 마스터 트리는 `w-56` 수준으로 잡고 각 영역이 독립 스크롤(`overflow-y-auto`)되게 한다.
-- [ ] 반응형: `lg` 미만에서는 좌측 트리를 접히는 패널 또는 상단 드롭다운으로 전환해 목록이 가로 스크롤되지 않게 한다.
-- [ ] `MasterTreePanel` — 기존 `components/ui/tree-view.tsx` 재사용. **주의**: ROADMAP_MVP Task 017에서 확인된 대로 `TreeView`의 그룹 노드는 Radix Accordion(`<button>`)이라 그 안에 버튼/체크박스를 중첩하면 무효 HTML + hydration 에러가 난다. 트리 노드에는 인터랙티브 요소를 넣지 말고 **선택만** 담당하게 한다.
-- [ ] **좌측 트리 선택 시 트리 자체는 리렌더되지 않고 우측만 갱신**되게 한다(PRD 6.3). 선택 상태는 URL 쿼리(`?companyId=&brandId=` 등)로 관리해 새로고침/딥링크에서도 유지되게 한다 — `erp-menubar.tsx`가 `?cat=`을 쓰는 기존 패턴과 동일.
-- [ ] `MasterListTable` — 컬럼: 코드 / 명칭 / 사용여부(`Switch`) / 정렬순서(위·아래 버튼) / 비고 / 행 클릭 시 상세 패널 오픈. `@tanstack/react-table` 직접 사용(`components/erp/admin/user-table.tsx`와 동일한 결정 — `data-table.tsx`는 툴바를 얹기 어려움).
-- [ ] `MasterFormSheet` — `Sheet` 기반 슬라이드 패널. 필드: 코드(등록 시 "자동 생성" 안내 후 저장 결과 표시 / 수정 시 편집 가능) / 명칭(필수) / 상위(읽기 전용 — 좌측 트리 선택값) / 사용여부 / 정렬순서 / 비고. `components/ui/form.tsx`(react-hook-form) 대신 `useState` 제어 입력으로 구현(Task 015/016과 동일한 기존 결정).
-  - [ ] **다이얼로그/시트를 열 때 `useEffect`로 폼 상태를 초기화하지 않는다** — `react-hooks/set-state-in-effect` 린트에 걸린다. Task 016의 해법(폼 필드 서브컴포넌트를 `open`일 때만 마운트해 `useState` 초기값으로 계산)을 그대로 따른다.
-  - [ ] 코드 직접 수정 시 `isValidCode()`(Task 024)로 클라이언트 1차 검증 + 서버 unique 위반 메시지 표시(이중 방어).
-- [ ] `MasterDeleteDialog` — `AlertDialog` 기반. 삭제 실행 후 서버가 FK `restrict` 에러를 반환하면 **"하위/참조 데이터가 있어 삭제할 수 없습니다. 대신 사용여부를 꺼주세요."** 안내와 함께 "사용여부 끄기" 버튼을 제공한다(PRD 6.3).
-- [ ] `SortOrderCell` — 형제 노드 간 `sort_order` 교환(위/아래). Task 016의 `moveMenuAction` 방식(같은 부모의 형제만 조회 후 인접 형제와 교환)을 마스터 엔티티용으로 일반화.
-- [ ] `ColorSwatchInput` — HEX 6자리 입력 + 실시간 미리보기 스와치. `#` 접두사 입력을 허용하되 저장 값에서는 제거(Task 023 ⑤ 결정).
-- [ ] 하드코딩 색상 금지 — 스와치 미리보기(사용자 데이터 색상)를 제외한 모든 UI 색상은 `--background`/`--primary` 등 CSS 변수 토큰만 사용한다(ROADMAP_MVP Task 010에서 확립한 전수 규칙).
-- [ ] 비활성(`is_active=false`) 행은 `Badge`로 "비활성" 표시하되 관리 목록에서는 계속 보이게 한다(Task 016의 메뉴 관리와 동일 정책).
+- [x] `MasterDetailLayout` — PRD 6.3 와이어프레임대로 좌측 트리(고정 폭) + 우측 목록의 2분할. **ERP 셸(`app/erp/layout.tsx`)의 좌측 메뉴 트리와 별개의 2차 트리**이므로, 데스크탑에서 3분할(ERP 트리 + 마스터 트리 + 목록)이 되어도 가로가 좁아지지 않도록 마스터 트리는 `w-56` 수준으로 잡고 각 영역이 독립 스크롤(`overflow-y-auto`)되게 한다.
+- [x] 반응형: `lg` 미만에서는 좌측 트리를 접히는 패널 또는 상단 드롭다운으로 전환해 목록이 가로 스크롤되지 않게 한다. — `lg` 미만에서는 상단 "트리 열기" 버튼 + `Sheet(side="left")` 드로어로 전환. 드로어 열림 상태는 컴포넌트가 아니라 이를 조합하는 화면이 소유하게 해(`mobileTreeOpen`/`onMobileTreeOpenChange` 컨트롤드 props), 트리 노드 선택 시 화면 쪽에서 곧바로 드로어를 닫을 수 있게 했다(Playwright로 768px에서 확인).
+- [x] `MasterTreePanel` — 기존 `components/ui/tree-view.tsx` 재사용. **주의**: ROADMAP_MVP Task 017에서 확인된 대로 `TreeView`의 그룹 노드는 Radix Accordion(`<button>`)이라 그 안에 버튼/체크박스를 중첩하면 무효 HTML + hydration 에러가 난다. 트리 노드에는 인터랙티브 요소를 넣지 말고 **선택만** 담당하게 한다. — `renderItem`에 텍스트 + `Badge`(비활성 표시)만 렌더링해 인터랙티브 요소 중첩을 피했다.
+- [x] **좌측 트리 선택 시 트리 자체는 리렌더되지 않고 우측만 갱신**되게 한다(PRD 6.3). 선택 상태는 URL 쿼리(`?companyId=&brandId=` 등)로 관리해 새로고침/딥링크에서도 유지되게 한다 — `erp-menubar.tsx`가 `?cat=`을 쓰는 기존 패턴과 동일. — `MasterTreePanel`은 URL을 직접 다루지 않는 순수 컨트롤드 컴포넌트(`selectedId`/`onSelect`)로 설계해, 화면마다 쿼리 키 이름이 달라도(`?companyId=`, `?brandId=` 등) 그대로 재사용 가능하게 했다. 선택 클릭은 `key`를 바꾸는 강제 리마운트 없이 처리되므로 트리 접힘 상태가 유지된다(단, 트리를 거치지 않는 외부 내비게이션으로 선택이 바뀌는 극단적 케이스는 마운트 시점에만 하이라이트가 반영되는 한계를 코드 주석으로 남겼다).
+- [x] `MasterListTable` — 컬럼: 코드 / 명칭 / 사용여부(`Switch`) / 정렬순서(위·아래 버튼) / 비고 / 행 클릭 시 상세 패널 오픈. `@tanstack/react-table` 직접 사용(`components/erp/admin/user-table.tsx`와 동일한 결정 — `data-table.tsx`는 툴바를 얹기 어려움).
+- [x] `MasterFormSheet` — `Sheet` 기반 슬라이드 패널. 필드: 코드(등록 시 "자동 생성" 안내 후 저장 결과 표시 / 수정 시 편집 가능) / 명칭(필수) / 상위(읽기 전용 — 좌측 트리 선택값) / 사용여부 / 정렬순서 / 비고. `components/ui/form.tsx`(react-hook-form) 대신 `useState` 제어 입력으로 구현(Task 015/016과 동일한 기존 결정).
+  - [x] **다이얼로그/시트를 열 때 `useEffect`로 폼 상태를 초기화하지 않는다** — `react-hooks/set-state-in-effect` 린트에 걸린다. Task 016의 해법(폼 필드 서브컴포넌트를 `open`일 때만 마운트해 `useState` 초기값으로 계산)을 그대로 따랐다(`MasterFormSheet` → `open`일 때만 `MasterFormFields` 마운트).
+  - [x] 코드 직접 수정 시 `isValidCode()`(Task 024)로 클라이언트 1차 검증 + 서버 unique 위반 메시지 표시(이중 방어) — Playwright로 `C10`(형식 오류, 서버 요청 없이 즉시 차단) / 중복 코드(서버 `23505` → "이미 사용 중인 코드입니다." 인라인 표시) 둘 다 확인.
+- [x] `MasterDeleteDialog` — `AlertDialog` 기반. 삭제 실행 후 서버가 FK `restrict` 에러를 반환하면 **"하위/참조 데이터가 있어 삭제할 수 없습니다. 대신 사용여부를 꺼주세요."** 안내와 함께 "사용여부 끄기" 버튼을 제공한다(PRD 6.3). — Radix `AlertDialogAction`은 클릭 시 기본적으로 다이얼로그를 닫으므로(Context7로 Radix Dialog.Close 합성 동작 확인), `event.preventDefault()`로 기본 닫힘을 막고 실패 시에만 안내 UI로 전환하도록 구현.
+- [x] `SortOrderCell` — 형제 노드 간 `sort_order` 교환(위/아래). Task 016의 `moveMenuAction` 방식(같은 부모의 형제만 조회 후 인접 형제와 교환)을 마스터 엔티티용으로 일반화. — `lib/erp/master/actions.ts`에 `moveMasterEntityAction` 신규 추가, 엔티티별 "형제" 스코프 컬럼(예: 사이즈타입은 `brand_id`+`gender` 복합)을 `MASTER_SCOPE_COLUMNS`로 일반화.
+- [x] `ColorSwatchInput` — HEX 6자리 입력 + 실시간 미리보기 스와치. `#` 접두사 입력을 허용하되 저장 값에서는 제거(Task 023 ⑤ 결정).
+- [x] 하드코딩 색상 금지 — 스와치 미리보기(사용자 데이터 색상)를 제외한 모든 UI 색상은 `--background`/`--primary` 등 CSS 변수 토큰만 사용한다(ROADMAP_MVP Task 010에서 확립한 전수 규칙).
+- [x] 비활성(`is_active=false`) 행은 `Badge`로 "비활성" 표시하되 관리 목록에서는 계속 보이게 한다(Task 016의 메뉴 관리와 동일 정책).
 
 **수락 기준**
 
-- [ ] 5개 화면이 이 컴포넌트들만 조합해 구현 가능한 수준의 props 인터페이스를 갖는다(엔티티별 분기는 `entities.ts` 메타로 흡수).
-- [ ] 좌측 트리 선택 → 우측만 갱신되고 트리 접힘 상태가 유지된다.
-- [ ] 데스크탑(1440px) / 태블릿(768px) / 모바일(390px) 3개 뷰포트에서 레이아웃이 깨지지 않는다.
+- [x] 5개 화면이 이 컴포넌트들만 조합해 구현 가능한 수준의 props 인터페이스를 갖는다(엔티티별 분기는 `entities.ts` 메타로 흡수) — Task 033(법인 관리, 트리 없음)과 임시 검증 페이지(법인→브랜드, 트리 있음) 둘 다로 실제 조합 검증 완료.
+- [x] 좌측 트리 선택 → 우측만 갱신되고 트리 접힘 상태가 유지된다.
+- [x] 데스크탑(1440px) / 태블릿(768px) / 모바일(390px) 3개 뷰포트에서 레이아웃이 깨지지 않는다 — 세 뷰포트 모두 `document.body.scrollWidth === window.innerWidth` 확인(가로 스크롤 없음), 테이블은 자체 `overflow-x-auto`로만 스크롤.
 
-**테스트 체크리스트 (Playwright MCP)** — Task 033(법인 관리)에서 실제 데이터와 함께 종합 검증하되, 이 Task에서는 스토리 성격의 임시 페이지로 선검증
+**테스트 체크리스트 (Playwright MCP)** — 실제 확인 결과, Task 033(법인 관리)과 함께 종합 검증
 
-- [ ] `browser_resize`로 1440 / 768 / 390px 순회하며 `browser_take_screenshot`으로 2분할 레이아웃 확인.
-- [ ] 라이트/다크 양쪽에서 트리 선택 하이라이트·비활성 배지 대비 확인.
-- [ ] 트리 노드 안에 `<button>` 중첩이 없는지 `browser_console_messages`로 hydration 에러 0건 확인 (Task 017에서 실제 발생했던 회귀 지점).
-- [ ] 키보드만으로 트리 노드 포커스 → Enter 선택 → 우측 테이블 행 포커스 → Enter로 상세 패널 오픈이 가능한지 확인.
-- [ ] `npm run check-all` 통과.
+- [x] `browser_resize`로 1440 / 768 / 390px 순회하며 `browser_take_screenshot`으로 2분할 레이아웃 확인 — 1440px: ERP 트리 + 마스터 트리(`w-56`) + 목록 3분할 정상. 768px/390px: 트리가 상단 버튼 + `Sheet` 드로어로 전환, 목록은 가로 스크롤 없이 표시.
+- [x] 라이트/다크 양쪽에서 트리 선택 하이라이트·비활성 배지 대비 확인 — 스크린샷으로 확인, 둘 다 식별 가능.
+- [x] 트리 노드 안에 `<button>` 중첩이 없는지 `browser_console_messages`로 hydration 에러 0건 확인 (Task 017에서 실제 발생했던 회귀 지점) — 세션 전체(로그인/회원가입/CRUD/삭제/뷰포트 전환 포함)에서 `browser_console_messages(level: "error"/"warning", all: true)` 결과 에러·경고 0건.
+- [x] 키보드만으로 트리 노드 포커스 → Enter 선택 → 우측 테이블 행 포커스 → Enter로 상세 패널 오픈이 가능한지 확인 — 검색창 → Tab(트리 리프 포커스) → Enter(선택, URL 갱신) → 테이블 검색창 → Tab(행 포커스) → Enter(수정 시트 오픈)까지 전부 마우스 없이 확인.
+- [x] `npm run check-all` 통과.
+
+**검증 방법 참고**: 이 컴포넌트들만으로는 화면이 완성되지 않으므로, Task 033(법인 관리, 트리 없는 단일 목록형)을 함께 구현해 실사용으로 검증했고, 트리 조합(`MasterDetailLayout`+`MasterTreePanel`)은 법인→브랜드 계층으로 만든 임시 라우트(`app/erp/master/tree-story/*`, Playwright 검증 직후 삭제 — 커밋된 적 없음)로 별도 검증했다. 임시 관리자 계정 2개(`task032-erp-test@example.com`, `task032b-erp-test@example.com`)와 테스트 법인 4건(`C1001`~`C1004`) + 브랜드 1건(`B1001`)으로 검증 후 전부 삭제, `execute_sql`로 `companies`/`brands`/해당 `profiles`/`auth.users` 잔존 0건 확인.
 
 ---
 
-### Task 033: 법인 관리 화면 구현 (PRD 7.1)
+### Task 033: 법인 관리 화면 구현 (PRD 7.1) ✅
 
 **목표**: 5개 화면 중 가장 단순한 단일 목록형 화면을 먼저 완성해, Task 032의 공통 컴포넌트와 Task 029의 액션 계층을 실사용으로 검증한다.
 
@@ -574,34 +577,34 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] **좌측 트리 없는 단일 목록형**으로 구현한다 — 5개 화면 중 유일하게 마스터-디테일이 아님(PRD 7.1). `MasterDetailLayout`을 쓰지 않고 `MasterListTable` + `MasterFormSheet`만 조합.
-- [ ] 목록 컬럼: 법인코드 / 법인명 / 사용여부 / 정렬순서 / 비고 / 등록일.
-- [ ] 우상단 "+ 법인 등록" 버튼 → `MasterFormSheet` 오픈. 코드는 저장 시 `C####`로 자동 채번됨을 폼에 안내.
-- [ ] 행 클릭 → 상세/수정 슬라이드 패널. 코드 직접 수정 가능.
-- [ ] 사용여부 `Switch` 토글 → `setMasterActiveAction("company", ...)`.
-- [ ] 정렬순서 위/아래 버튼 → 형제(= 전체 법인) 간 `sort_order` 교환.
-- [ ] 삭제 → 하위 브랜드가 있으면 FK `restrict`로 거부되고 `MasterDeleteDialog`가 "사용여부 끄기" 안내를 표시.
-- [ ] 코드/법인명 검색 필터(클라이언트 사이드 `useMemo`) + 페이지네이션(`getPaginationRowModel`).
-- [ ] 저장/삭제 후 `revalidatePath("/erp/master/companies")`.
-- [ ] 페이지는 얇은 `Page` + `<Suspense>` + `async CompaniesContent` 패턴으로 작성.
+- [x] **좌측 트리 없는 단일 목록형**으로 구현한다 — 5개 화면 중 유일하게 마스터-디테일이 아님(PRD 7.1). `MasterDetailLayout`을 쓰지 않고 `MasterListTable` + `MasterFormSheet`만 조합.
+- [x] 목록 컬럼: 법인코드 / 법인명 / 사용여부 / 정렬순서 / 비고 / 등록일.
+- [x] 우상단 "+ 법인 등록" 버튼 → `MasterFormSheet` 오픈. 코드는 저장 시 `C####`로 자동 채번됨을 폼에 안내.
+- [x] 행 클릭 → 상세/수정 슬라이드 패널. 코드 직접 수정 가능.
+- [x] 사용여부 `Switch` 토글 → `setMasterActiveAction("company", ...)`.
+- [x] 정렬순서 위/아래 버튼 → 형제(= 전체 법인) 간 `sort_order` 교환.
+- [x] 삭제 → 하위 브랜드가 있으면 FK `restrict`로 거부되고 `MasterDeleteDialog`가 "사용여부 끄기" 안내를 표시.
+- [x] 코드/법인명 검색 필터(클라이언트 사이드 `useMemo`) + 페이지네이션(`getPaginationRowModel`) — 검색/페이지네이션은 `MasterListTable`(Task 032 공통 컴포넌트) 내부에 구현되어 있어 재사용만 했다.
+- [x] 저장/삭제 후 `revalidatePath("/erp/master/companies")` — `lib/erp/master/actions.ts`의 공용 액션(`createMasterAction`/`updateMasterAction`/`deleteMasterAction`/`setMasterActiveAction`/`moveMasterEntityAction`)이 `MASTER_ENTITIES["company"].route`로 이미 처리.
+- [x] 페이지는 얇은 `Page` + `<Suspense>` + `async CompaniesContent` 패턴으로 작성.
 
 **수락 기준**
 
-- [ ] 등록 / 수정 / 삭제 / 사용여부 토글 / 정렬 5개 동작이 모두 동작하고 새로고침 후 유지된다.
-- [ ] 등록 시 코드가 `C1001` 형식으로 자동 채번된다.
-- [ ] 하위 브랜드가 있는 법인은 삭제되지 않고 안내 문구가 표시된다.
+- [x] 등록 / 수정 / 삭제 / 사용여부 토글 / 정렬 5개 동작이 모두 동작하고 새로고침 후 유지된다.
+- [x] 등록 시 코드가 `C1001` 형식으로 자동 채번된다 — 실제로는 시퀀스가 이전 테스트 회차부터 이어지므로 `C1001`, `C1002`, `C1003`, `C1004` 순으로 채번됨을 확인(형식 자체는 항상 `C####`).
+- [x] 하위 브랜드가 있는 법인은 삭제되지 않고 안내 문구가 표시된다.
 
-**테스트 체크리스트 (Playwright MCP)** — 임시 관리자 계정 1개 + 테스트 법인 데이터로 검증 후 전부 삭제(잔존 0건 확인)
+**테스트 체크리스트 (Playwright MCP)** — 실제 확인 결과. 임시 관리자 계정 2개(`task032-erp-test@example.com`, `task032b-erp-test@example.com`) + 테스트 법인 4건(`C1001`~`C1004`) + 브랜드 1건(`B1001`)으로 검증 후 전부 삭제(잔존 0건 확인)
 
-- [ ] "+ 법인 등록" → 법인명만 입력 후 저장 → 목록에 즉시 반영, `execute_sql`로 `code`가 `C####` 형식인지 확인.
-- [ ] 법인명 미입력 저장 시도 → "법인명을 입력해주세요." 인라인 에러 + `aria-invalid` 확인(요청 자체가 발생하지 않는 클라이언트 검증).
-- [ ] 코드를 잘못된 형식(`C10`)으로 수정 저장 → 클라이언트 검증 에러 확인. 다른 법인의 코드로 수정 → 서버 unique 에러("이미 사용 중인 코드입니다.") 확인.
-- [ ] 사용여부 off → "비활성" 배지 즉시 표시, 새로고침 후 유지 확인.
-- [ ] 정렬순서 "아래로" 클릭 → 인접 행과 순서 교체 확인, 새로고침 후 유지 확인.
-- [ ] 하위 브랜드가 있는 법인 삭제 시도 → 안내 다이얼로그 확인 → "사용여부 끄기"로 대체 처리되는지 확인.
-- [ ] 하위가 없는 법인 삭제 → 목록에서 사라지고 `execute_sql`로 DB에서도 삭제 확인.
-- [ ] 검색어 입력 → 필터링 + 페이지가 1페이지로 리셋되는지 확인.
-- [ ] `browser_console_messages`로 콘솔 에러 0건, `npm run check-all` 통과 확인.
+- [x] "+ 법인 등록" → 법인명만 입력 후 저장 → 목록에 즉시 반영, 토스트에 채번된 코드 표시 확인("법인을(를) 등록했습니다. (코드: C1001)") — `execute_sql` 없이도 토스트로 즉시 확인 가능하도록 Task 032에서 `createMasterAction`이 `code`를 반환하게 개선했고, 실제로 `C1001`/`C1002`/`C1003`/`C1004` 전부 확인.
+- [x] 법인명 미입력 저장 시도 → "명칭을 입력해주세요." 인라인 에러 + `aria-invalid` 확인(요청 자체가 발생하지 않는 클라이언트 검증) — 확인 완료(PRD 문구는 "법인명을"이었으나 `MasterFormSheet`가 엔티티 공용 컴포넌트라 "명칭을 입력해주세요."로 통일, 5개 화면에서 일관된 문구).
+- [x] 코드를 잘못된 형식(`C10`)으로 수정 저장 → 클라이언트 검증 에러 확인. 다른 법인의 코드로 수정 → 서버 unique 에러("이미 사용 중인 코드입니다.") 확인 — 둘 다 확인.
+- [x] 사용여부 off → "비활성" 배지 즉시 표시, 새로고침 후 유지 확인.
+- [x] 정렬순서 "아래로" 클릭 → 인접 행과 순서 교체 확인, 새로고침 후 유지 확인.
+- [x] 하위 브랜드가 있는 법인 삭제 시도 → 안내 다이얼로그 확인 → "사용여부 끄기"로 대체 처리되는지 확인.
+- [x] 하위가 없는 법인 삭제 → 목록에서 사라지고 `execute_sql`로 DB에서도 삭제 확인.
+- [x] 검색어 입력 → 필터링 확인(예: "법인 A" 검색 시 총 2건 → 1건으로 축소). 페이지네이션은 `MasterListTable`이 `useEffect`로 검색어 변경 시 `pageIndex`를 0으로 리셋하는 것을 코드로 확인(`user-table.tsx`와 동일 패턴).
+- [x] `browser_console_messages`로 콘솔 에러 0건, `npm run check-all` 통과 확인.
 
 ---
 
@@ -1078,13 +1081,13 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ## 진행 현황
 
-| Phase                                           | Task 범위    | 상태    |
-| ----------------------------------------------- | ------------ | ------- |
-| **Phase 3 — 마스터 데이터 모델 구축** ✅        | Task 023~029 | ✅ 완료 |
-| **Phase 4 — 메뉴 재구성 / 역할 하드 게이트** ✅ | Task 030~031 | ✅ 완료 |
-| Phase 5 — 기준정보 5개 화면                     | Task 032~037 | ☐ 예정  |
-| Phase 6 — 상품 관리 화면                        | Task 038~040 | ☐ 예정  |
-| Phase 7 — 시드 및 통합 검증                     | Task 041~042 | ☐ 예정  |
+| Phase                                           | Task 범위    | 상태                                              |
+| ----------------------------------------------- | ------------ | ------------------------------------------------- |
+| **Phase 3 — 마스터 데이터 모델 구축** ✅        | Task 023~029 | ✅ 완료                                           |
+| **Phase 4 — 메뉴 재구성 / 역할 하드 게이트** ✅ | Task 030~031 | ✅ 완료                                           |
+| Phase 5 — 기준정보 5개 화면                     | Task 032~037 | 🚧 진행 중 (Task 032~~033 ✅, Task 034~~037 예정) |
+| Phase 6 — 상품 관리 화면                        | Task 038~040 | ☐ 예정                                            |
+| Phase 7 — 시드 및 통합 검증                     | Task 041~042 | ☐ 예정                                            |
 
 ### 사용자 확인 대기 항목 (착수 전 필수)
 
