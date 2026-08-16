@@ -191,8 +191,7 @@ export const ja: Dictionary = {
   },
   erpHome: {
     title: "ERPメイン画面",
-    description:
-      "上部のメニューバーまたは左側のツリーからメニューを選択してください。",
+    description: "左側のアイコンレールとツリーからメニューを選択してください。",
     sampleDataBadge: "サンプルデータ",
     sampleDataNote:
       "以下の数値とグラフはレイアウト確認用のダミーデータで、実際のデータとは関係ありません。",
@@ -482,13 +481,16 @@ export const ja: Dictionary = {
       "このスターターキットを構成するフレームワーク、ライブラリ、開発ツールを分野別に整理しました。",
   },
   erp: {
+    rail: {
+      ariaLabel: "大分類",
+    },
     mobileNav: {
       menuOpen: "メニューを開く",
       menuTitle: "ERPメニュー",
       treeAriaLabel: "全メニューツリー",
     },
     tree: {
-      selectCategory: "上部で大分類を選択してください。",
+      selectCategory: "左側で大分類を選択してください。",
       categoryNotFound: "存在しない大分類です。",
       noSubMenu: "下位メニューがありません。",
       ariaLabel: "メニューツリー",

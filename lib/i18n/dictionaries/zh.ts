@@ -175,7 +175,7 @@ export const zh: Dictionary = {
   },
   erpHome: {
     title: "ERP 主页",
-    description: "请从上方菜单栏或左侧树形菜单中选择菜单开始使用。",
+    description: "请从左侧图标栏和树形菜单中选择菜单开始使用。",
     sampleDataBadge: "示例数据",
     sampleDataNote: "以下数值和图表仅为布局预览用的模拟数据，与实际数据无关。",
     kpi: {
@@ -457,13 +457,16 @@ export const zh: Dictionary = {
     description: "按类别整理的构成本入门套件的框架、库和开发工具。",
   },
   erp: {
+    rail: {
+      ariaLabel: "大类",
+    },
     mobileNav: {
       menuOpen: "打开菜单",
       menuTitle: "ERP 菜单",
       treeAriaLabel: "完整菜单树",
     },
     tree: {
-      selectCategory: "请在上方选择大类。",
+      selectCategory: "请在左侧选择大类。",
       categoryNotFound: "该大类不存在。",
       noSubMenu: "没有下级菜单。",
       ariaLabel: "菜单树",

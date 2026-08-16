@@ -2,9 +2,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // getCurrentErpUser()/getVisibleMenuTree()/getLocale() 조회가 끝날 때까지
 // app/erp/layout.tsx의 Suspense fallback으로 노출되는 ERP 셸 스켈레톤.
-// 빈 화면(fallback=null) 대신 Header/Menubar/좌측 트리/Footer의 대략적인
-// 형태만 스케치한다 — ErpShell의 실제 마크업(h-16 헤더, h-12 메뉴바,
-// w-48/lg:w-64 트리)과 높이를 맞춰 레이아웃 시프트를 줄인다 (Task 021).
+// 빈 화면(fallback=null) 대신 Header/레일/트리 패널/Footer의 대략적인 형태만
+// 스케치한다 — ErpShell의 실제 마크업(h-16 헤더, w-14/lg:w-16 레일,
+// w-48/lg:w-64 트리 패널)과 높이를 맞춰 레이아웃 시프트를 줄인다 (Task 021).
 export function ErpShellSkeleton() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -18,20 +18,26 @@ export function ErpShellSkeleton() {
         </div>
       </header>
 
-      <div className="flex h-12 w-full shrink-0 items-center gap-2 border-b px-4">
-        <Skeleton className="h-6 w-24 rounded-md" />
-        <Skeleton className="h-6 w-24 rounded-md" />
-        <Skeleton className="h-6 w-24 rounded-md" />
+      <div className="flex h-12 w-full shrink-0 items-center gap-2 border-b px-4 md:hidden">
+        <Skeleton className="h-6 w-6 rounded-md" />
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden w-48 shrink-0 space-y-2 overflow-y-auto border-r p-4 md:block lg:w-64">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/6" />
-          <Skeleton className="h-4 w-5/6" />
-        </aside>
+        <div className="hidden shrink-0 md:flex">
+          <div className="flex w-14 shrink-0 flex-col items-center gap-2 overflow-y-auto border-r p-2 lg:w-16">
+            <Skeleton className="size-10 rounded-md" />
+            <Skeleton className="size-10 rounded-md" />
+            <Skeleton className="size-10 rounded-md" />
+            <Skeleton className="size-10 rounded-md" />
+          </div>
+          <div className="w-48 shrink-0 space-y-2 overflow-y-auto border-r p-4 lg:w-64">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/6" />
+            <Skeleton className="h-4 w-5/6" />
+          </div>
+        </div>
 
         <main className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-6">
           <Skeleton className="h-6 w-1/3" />

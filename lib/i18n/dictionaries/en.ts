@@ -193,7 +193,7 @@ export const en: Dictionary = {
   },
   erpHome: {
     title: "ERP Home",
-    description: "Select a menu from the top bar or the left tree to begin.",
+    description: "Select a menu from the left icon rail and tree to begin.",
     sampleDataBadge: "Sample Data",
     sampleDataNote:
       "The figures and chart below are dummy data for layout preview only and are unrelated to real data.",
@@ -487,13 +487,16 @@ export const en: Dictionary = {
       "The frameworks, libraries, and dev tools that make up this starter kit, organized by category.",
   },
   erp: {
+    rail: {
+      ariaLabel: "Categories",
+    },
     mobileNav: {
       menuOpen: "Open menu",
       menuTitle: "ERP Menu",
       treeAriaLabel: "Full menu tree",
     },
     tree: {
-      selectCategory: "Select a category above.",
+      selectCategory: "Select a category on the left.",
       categoryNotFound: "This category does not exist.",
       noSubMenu: "No submenu items.",
       ariaLabel: "Menu tree",

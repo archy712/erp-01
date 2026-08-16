@@ -17,8 +17,9 @@ import { getActiveMenuId, menuNodeToTreeItem } from "@/lib/erp/menu-tree";
 import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
-// 모바일(md 미만) 전용 내비게이션. 상단 Menubar 대신 햄버거 버튼으로 여는
-// Sheet 안에 대분류~소분류 전체 트리를 하나로 통합해서 보여준다.
+// 모바일(md 미만) 전용 내비게이션. 데스크톱의 좌측 아이콘 레일+트리 패널
+// 대신 햄버거 버튼으로 여는 Sheet 안에 대분류~소분류 전체 트리를 하나로
+// 통합해서 보여준다.
 // 소분류(리프) 선택 시에는 Sheet가 자동으로 닫히고, 하위가 있는 대분류/중분류를
 // 펼치는 동작은 Sheet를 닫지 않는다(탐색을 이어갈 수 있어야 하므로).
 //

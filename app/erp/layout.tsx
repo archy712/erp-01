@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ErpCategoryRail } from "@/components/erp/erp-category-rail";
 import { ErpErrorEmpty } from "@/components/erp/erp-error-empty";
 import { ErpMenuTree } from "@/components/erp/erp-menu-tree";
-import { ErpMenubar } from "@/components/erp/erp-menubar";
 import { ErpMobileNav } from "@/components/erp/erp-mobile-nav";
 import { ErpShell } from "@/components/erp/erp-shell";
 import { ErpShellSkeleton } from "@/components/erp/erp-shell-skeleton";
@@ -33,7 +33,7 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
-  // ERP 셸 전역에서 단 한 번만 조회해 Menubar/트리/모바일 내비 3곳에 그대로
+  // ERP 셸 전역에서 단 한 번만 조회해 레일/트리/모바일 내비 3곳에 그대로
   // 내려준다 (Task 018 — 1차 방어: 노출 필터링). 관리자는 활성 메뉴 전체,
   // 일반 사용자는 부여된 메뉴 + 조상 노드만 포함된 트리를 받는다.
   //
@@ -50,7 +50,7 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
     return (
       <ErpShell
         dict={dict}
-        menubar={
+        rail={
           <span className="text-sm text-muted-foreground">
             {dict.erp.layout.menuLoadError}
           </span>
@@ -77,11 +77,11 @@ async function ErpLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <ErpShell
       dict={dict}
-      // ErpMenubar/ErpMenuTree/ErpMobileNav는 useSearchParams()·usePathname()을
+      // ErpCategoryRail/ErpMenuTree/ErpMobileNav는 useSearchParams()·usePathname()을
       // 사용하는 클라이언트 컴포넌트라 각자 자체 Suspense 경계가 필요하다.
-      menubar={
+      rail={
         <Suspense fallback={null}>
-          <ErpMenubar categories={categories} />
+          <ErpCategoryRail categories={categories} dict={dict} />
         </Suspense>
       }
       mobileNav={

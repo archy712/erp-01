@@ -331,6 +331,9 @@ export interface Dictionary {
     description: string;
   };
   erp: {
+    rail: {
+      ariaLabel: string;
+    };
     mobileNav: {
       menuOpen: string;
       menuTitle: string;

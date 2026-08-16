@@ -186,7 +186,7 @@ export const ko: Dictionary = {
   },
   erpHome: {
     title: "ERP 메인 화면",
-    description: "상단 Menubar 또는 왼쪽 트리에서 메뉴를 선택해 시작하세요.",
+    description: "왼쪽 아이콘 레일과 트리에서 메뉴를 선택해 시작하세요.",
     sampleDataBadge: "샘플 데이터",
     sampleDataNote:
       "아래 수치와 그래프는 레이아웃 확인용 더미 데이터이며 실제 데이터와 무관합니다.",
@@ -476,13 +476,16 @@ export const ko: Dictionary = {
       "이 스타터킷을 구성하는 프레임워크, 라이브러리, 개발 도구를 분야별로 정리했습니다.",
   },
   erp: {
+    rail: {
+      ariaLabel: "대분류",
+    },
     mobileNav: {
       menuOpen: "메뉴 열기",
       menuTitle: "ERP 메뉴",
       treeAriaLabel: "전체 메뉴 트리",
     },
     tree: {
-      selectCategory: "상단에서 대분류를 선택하세요.",
+      selectCategory: "왼쪽에서 대분류를 선택하세요.",
       categoryNotFound: "존재하지 않는 대분류입니다.",
       noSubMenu: "하위 메뉴가 없습니다.",
       ariaLabel: "메뉴 트리",
