@@ -16,6 +16,7 @@ import {
 import { HOME_CATEGORY_ICONS } from "@/lib/erp/home-categories";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 
 export default function Home() {
@@ -29,6 +30,13 @@ export default function Home() {
 async function HomeContent() {
   const locale = await getLocale();
   const dict = getDictionary(locale);
+
+  let isLoggedIn = false;
+  if (hasEnvVars) {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+    isLoggedIn = Boolean(data?.claims);
+  }
 
   const footerLinks = [
     { label: dict.home.footer.about, href: "/about" },
@@ -55,8 +63,8 @@ async function HomeContent() {
             ERP v0.1
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-            <LanguageSwitcher locale={locale} />
-            <ThemeSwitcher />
+            {!isLoggedIn && <LanguageSwitcher locale={locale} />}
+            {!isLoggedIn && <ThemeSwitcher />}
             {!hasEnvVars ? (
               <EnvVarWarning dict={dict} />
             ) : (
@@ -76,8 +84,8 @@ async function HomeContent() {
             </h1>
             <p className="text-muted-foreground">{dict.home.description}</p>
             <Button asChild size="lg">
-              <Link href="/auth/login">
-                {dict.home.loginCta}
+              <Link href={isLoggedIn ? "/erp" : "/auth/login"}>
+                {isLoggedIn ? dict.home.dashboardCta : dict.home.loginCta}
                 <ArrowRight className="size-4" />
               </Link>
             </Button>

@@ -6,9 +6,10 @@ export const en: Dictionary = {
     signIn: "Sign in",
     signUp: "Sign up",
     signOut: "Sign out",
-    profile: "Profile",
     settings: "Settings",
-    greeting: "Hey, {email}!",
+    language: "Language",
+    theme: "Theme",
+    userGreeting: "{name} ({time})",
     showPassword: "Show password",
     hidePassword: "Hide password",
   },
@@ -17,6 +18,7 @@ export const en: Dictionary = {
     description:
       "From master data to sales, logistics, and accounting — manage every part of your business on one platform.",
     loginCta: "Log in to get started",
+    dashboardCta: "Go to ERP dashboard",
     categoriesHeading: "Key Features",
     categoriesDescription:
       "Explore the core capabilities available in each top-level menu category.",

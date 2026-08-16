@@ -4,10 +4,11 @@ export interface Dictionary {
     signIn: string;
     signUp: string;
     signOut: string;
-    profile: string;
     settings: string;
-    /** {email} 자리표시자를 실제 이메일로 치환해서 사용 */
-    greeting: string;
+    language: string;
+    theme: string;
+    /** {name}, {time} 자리표시자를 각각 사용자 이름과 로그인 시각으로 치환해서 사용 */
+    userGreeting: string;
     showPassword: string;
     hidePassword: string;
   };
@@ -15,6 +16,7 @@ export interface Dictionary {
     heading: string;
     description: string;
     loginCta: string;
+    dashboardCta: string;
     categoriesHeading: string;
     categoriesDescription: string;
     categories: { title: string; description: string }[];

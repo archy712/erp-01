@@ -6,9 +6,10 @@ export const zh: Dictionary = {
     signIn: "登录",
     signUp: "注册",
     signOut: "退出登录",
-    profile: "个人资料",
     settings: "设置",
-    greeting: "你好，{email}！",
+    language: "语言",
+    theme: "主题",
+    userGreeting: "{name} ({time})",
     showPassword: "显示密码",
     hidePassword: "隐藏密码",
   },
@@ -17,6 +18,7 @@ export const zh: Dictionary = {
     description:
       "从基础数据管理到销售、物流、财务——在一个平台上处理企业运营所需的全部业务。",
     loginCta: "登录后开始使用",
+    dashboardCta: "前往 ERP 仪表盘",
     categoriesHeading: "主要功能",
     categoriesDescription: "了解各大类菜单提供的核心功能。",
     categories: [

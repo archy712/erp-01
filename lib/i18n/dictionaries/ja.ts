@@ -6,9 +6,10 @@ export const ja: Dictionary = {
     signIn: "ログイン",
     signUp: "新規登録",
     signOut: "ログアウト",
-    profile: "プロフィール",
     settings: "設定",
-    greeting: "{email}さん、こんにちは!",
+    language: "言語",
+    theme: "テーマ",
+    userGreeting: "{name}さん ({time})",
     showPassword: "パスワードを表示",
     hidePassword: "パスワードを隠す",
   },
@@ -17,6 +18,7 @@ export const ja: Dictionary = {
     description:
       "マスタ管理から営業、物流、会計まで—企業運営に必要なすべての業務を1つのプラットフォームで。",
     loginCta: "ログインして始める",
+    dashboardCta: "ERPダッシュボードへ移動",
     categoriesHeading: "主な機能",
     categoriesDescription:
       "大分類メニューごとに提供される主要機能をご確認ください。",

@@ -6,9 +6,10 @@ export const ko: Dictionary = {
     signIn: "로그인",
     signUp: "회원가입",
     signOut: "로그아웃",
-    profile: "프로필",
     settings: "설정",
-    greeting: "{email}님, 안녕하세요!",
+    language: "언어",
+    theme: "테마",
+    userGreeting: "{name}님({time})",
     showPassword: "비밀번호 표시",
     hidePassword: "비밀번호 숨기기",
   },
@@ -17,6 +18,7 @@ export const ko: Dictionary = {
     description:
       "마스터 관리부터 영업, 물류, 회계까지 — 기업 운영에 필요한 모든 업무를 하나의 플랫폼에서 처리하세요.",
     loginCta: "로그인하고 시작하기",
+    dashboardCta: "ERP 대시보드로 이동",
     categoriesHeading: "주요 기능",
     categoriesDescription: "대분류 메뉴별로 제공되는 핵심 기능을 살펴보세요.",
     categories: [
