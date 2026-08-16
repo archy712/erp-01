@@ -14,12 +14,12 @@ export const en: Dictionary = {
     hidePassword: "Hide password",
   },
   home: {
-    logoAriaLabel: "Go to home",
     heading: "Welcome to the ERP System",
     description:
       "From master data to sales, logistics, and accounting — manage every part of your business on one platform.",
     loginCta: "Log in to get started",
     dashboardCta: "Go to ERP dashboard",
+    loginNote: "You need to log in to use the ERP service.",
     categoriesHeading: "Key Features",
     categoriesDescription:
       "Explore the core capabilities built into the ERP system.",

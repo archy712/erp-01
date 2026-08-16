@@ -13,11 +13,11 @@ export interface Dictionary {
     hidePassword: string;
   };
   home: {
-    logoAriaLabel: string;
     heading: string;
     description: string;
     loginCta: string;
     dashboardCta: string;
+    loginNote: string;
     categoriesHeading: string;
     categoriesDescription: string;
     features: { title: string; description: string }[];

@@ -1,6 +1,6 @@
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight, Boxes, Languages, Moon, Smartphone } from "lucide-react";
+import { ArrowRight, Languages, Moon, Smartphone } from "lucide-react";
 
 import { AuthButton } from "@/components/auth-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
@@ -53,61 +53,60 @@ async function HomeContent() {
   }));
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex min-h-16 w-full items-center justify-center border-b border-b-foreground/10 py-2">
-        {/* ERP 헤더(components/erp/erp-header.tsx)와 동일하게 타이틀을 항상
-            정중앙에 둔다. 다만 로그아웃 상태에서는 우측(언어/테마/로그인/
-            회원가입)이 좁은 화면에서 줄바꿈될 수 있어, absolute 대신
-            1fr/auto/1fr 3열 grid를 쓴다 — 각 열이 독립된 공간을 차지하므로
-            우측 열이 여러 줄로 늘어나도 중앙 타이틀과 겹치지 않는다. */}
-        <div className="grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 px-5">
-          <Button
-            asChild
-            size="icon"
-            variant="ghost"
-            className="shrink-0 justify-self-start"
-            aria-label={dict.home.logoAriaLabel}
-          >
-            <Link href="/">
-              <Boxes className="size-5" />
-            </Link>
-          </Button>
-          <Link
-            href="/"
-            className="shrink-0 justify-self-center text-lg font-semibold tracking-tight"
-          >
-            ERP v0.1
-          </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2 justify-self-end sm:gap-3">
-            {!isLoggedIn && <LanguageSwitcher locale={locale} />}
-            {!isLoggedIn && <ThemeSwitcher />}
-            {!hasEnvVars ? (
-              <EnvVarWarning dict={dict} />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="relative flex min-h-screen flex-col">
+      {/* 헤더 바 없이, 언어/테마 전환과 계정 메뉴만 우측 상단에 작게 배치한다.
+          로그아웃 상태에서는 히어로 섹션의 로그인/회원가입 버튼이 그 역할을
+          대신하므로 여기서는 AuthButton을 렌더링하지 않는다. */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2 sm:top-6 sm:right-6">
+        {!isLoggedIn && <LanguageSwitcher locale={locale} />}
+        {!isLoggedIn && <ThemeSwitcher />}
+        {!hasEnvVars && <EnvVarWarning dict={dict} />}
+        {hasEnvVars && isLoggedIn && (
+          <Suspense>
+            <AuthButton />
+          </Suspense>
+        )}
+      </div>
 
       <main className="flex flex-1 flex-col items-center">
-        <div className="flex w-full max-w-6xl flex-col gap-16 px-5 py-16">
-          <section className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
-            <h1 className="text-3xl font-bold lg:text-4xl">
-              {dict.home.heading}
+        <div className="flex w-full max-w-6xl flex-col gap-24 px-5 pt-24 pb-16 sm:pt-32">
+          <section className="mx-auto flex max-w-2xl flex-col items-center gap-5 text-center">
+            <h1 className="text-4xl font-bold lg:text-5xl">
+              {dict.home.heading.split("\n").map((line, i, lines) => (
+                <Fragment key={line}>
+                  {line}
+                  {i < lines.length - 1 && <br />}
+                </Fragment>
+              ))}
             </h1>
-            <p className="text-muted-foreground">{dict.home.description}</p>
-            <Button asChild size="lg">
-              <Link href={isLoggedIn ? "/erp" : "/auth/login"}>
-                {isLoggedIn ? dict.home.dashboardCta : dict.home.loginCta}
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+            <p className="text-balance text-muted-foreground">
+              {dict.home.description}
+            </p>
+            {isLoggedIn ? (
+              <Button asChild size="lg">
+                <Link href="/erp">
+                  {dict.home.dashboardCta}
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <Button asChild size="lg">
+                    <Link href="/auth/login">{dict.common.signIn}</Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                    <Link href="/auth/sign-up">{dict.common.signUp}</Link>
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {dict.home.loginNote}
+                </p>
+              </>
+            )}
           </section>
 
-          <section className="flex flex-col gap-6">
+          <section className="flex flex-col gap-10">
             <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 text-center">
               <h2 className="text-2xl font-bold">
                 {dict.home.categoriesHeading}
@@ -116,19 +115,13 @@ async function HomeContent() {
                 {dict.home.categoriesDescription}
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-3">
               {features.map((feature) => (
-                <Card key={feature.title}>
-                  <CardHeader className="flex flex-row items-start gap-4">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                      <feature.icon className="size-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <CardTitle className="text-base">
-                        {feature.title}
-                      </CardTitle>
-                      <CardDescription>{feature.description}</CardDescription>
-                    </div>
+                <Card key={feature.title} className="p-6">
+                  <CardHeader className="gap-3 p-0">
+                    <feature.icon className="size-6" />
+                    <CardTitle className="text-base">{feature.title}</CardTitle>
+                    <CardDescription>{feature.description}</CardDescription>
                   </CardHeader>
                 </Card>
               ))}

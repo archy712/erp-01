@@ -14,12 +14,12 @@ export const ja: Dictionary = {
     hidePassword: "パスワードを隠す",
   },
   home: {
-    logoAriaLabel: "ホームへ移動",
     heading: "ERPシステムへようこそ",
     description:
       "マスタ管理から営業、物流、会計まで—企業運営に必要なすべての業務を1つのプラットフォームで。",
     loginCta: "ログインして始める",
     dashboardCta: "ERPダッシュボードへ移動",
+    loginNote: "ERPサービスはログイン後にご利用いただけます。",
     categoriesHeading: "主な機能",
     categoriesDescription:
       "ERPシステムが標準で提供する主要機能をご確認ください。",
