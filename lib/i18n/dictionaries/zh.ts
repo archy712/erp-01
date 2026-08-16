@@ -14,6 +14,7 @@ export const zh: Dictionary = {
     hidePassword: "隐藏密码",
   },
   home: {
+    logoAriaLabel: "前往首页",
     heading: "欢迎使用 ERP 系统",
     description:
       "从基础数据管理到销售、物流、财务——在一个平台上处理企业运营所需的全部业务。",

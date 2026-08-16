@@ -14,6 +14,7 @@ export const en: Dictionary = {
     hidePassword: "Hide password",
   },
   home: {
+    logoAriaLabel: "Go to home",
     heading: "Welcome to the ERP System",
     description:
       "From master data to sales, logistics, and accounting — manage every part of your business on one platform.",

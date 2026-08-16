@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Boxes } from "lucide-react";
 
 import { AuthButton } from "@/components/auth-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
@@ -54,15 +54,31 @@ async function HomeContent() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex min-h-16 w-full flex-wrap items-center justify-center gap-y-2 border-b border-b-foreground/10 py-2">
-        <div className="flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5">
+      <header className="flex min-h-16 w-full items-center justify-center border-b border-b-foreground/10 py-2">
+        {/* ERP 헤더(components/erp/erp-header.tsx)와 동일하게 타이틀을 항상
+            정중앙에 둔다. 다만 로그아웃 상태에서는 우측(언어/테마/로그인/
+            회원가입)이 좁은 화면에서 줄바꿈될 수 있어, absolute 대신
+            1fr/auto/1fr 3열 grid를 쓴다 — 각 열이 독립된 공간을 차지하므로
+            우측 열이 여러 줄로 늘어나도 중앙 타이틀과 겹치지 않는다. */}
+        <div className="grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 px-5">
+          <Button
+            asChild
+            size="icon"
+            variant="ghost"
+            className="shrink-0 justify-self-start"
+            aria-label={dict.home.logoAriaLabel}
+          >
+            <Link href="/">
+              <Boxes className="size-5" />
+            </Link>
+          </Button>
           <Link
             href="/"
-            className="shrink-0 text-lg font-semibold tracking-tight"
+            className="shrink-0 justify-self-center text-lg font-semibold tracking-tight"
           >
             ERP v0.1
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 justify-self-end sm:gap-3">
             {!isLoggedIn && <LanguageSwitcher locale={locale} />}
             {!isLoggedIn && <ThemeSwitcher />}
             {!hasEnvVars ? (

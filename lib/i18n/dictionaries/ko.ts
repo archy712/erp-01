@@ -14,6 +14,7 @@ export const ko: Dictionary = {
     hidePassword: "비밀번호 숨기기",
   },
   home: {
+    logoAriaLabel: "홈으로 이동",
     heading: "ERP 시스템에 오신 것을 환영합니다",
     description:
       "마스터 관리부터 영업, 물류, 회계까지 — 기업 운영에 필요한 모든 업무를 하나의 플랫폼에서 처리하세요.",

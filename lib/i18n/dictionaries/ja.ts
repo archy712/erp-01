@@ -14,6 +14,7 @@ export const ja: Dictionary = {
     hidePassword: "パスワードを隠す",
   },
   home: {
+    logoAriaLabel: "ホームへ移動",
     heading: "ERPシステムへようこそ",
     description:
       "マスタ管理から営業、物流、会計まで—企業運営に必要なすべての業務を1つのプラットフォームで。",
