@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-Next.js 16 (App Router) + Supabase Auth 스타터 킷입니다. `@supabase/ssr`로 쿠키 기반 세션을 Client Component, Server Component, Route Handler, `proxy.ts` 전반에서 공유합니다. shadcn/ui 컴포넌트·아이콘·아바타·차트 갤러리(`/gallery`, `/icons`, `/avatars`, `/charts`)와 소개/기술 스택 페이지(`/about`, `/tech-stack`), 4개 언어(ko/en/ja/zh) 다국어 지원을 포함합니다.
+Next.js 16 (App Router) + Supabase Auth 기반 사내 ERP 시스템입니다. `@supabase/ssr`로 쿠키 기반 세션을 Client Component, Server Component, Route Handler, `proxy.ts` 전반에서 공유합니다. shadcn/ui 컴포넌트·아이콘·아바타·차트 갤러리(`/gallery`, `/icons`, `/avatars`, `/charts`)와 소개/기술 스택 페이지(`/about`, `/tech-stack`), 4개 언어(ko/en/ja/zh) 다국어 지원을 포함하는 스타터킷 위에, 로그인 후 진입하는 실제 업무 영역인 **`/erp/*`**(3단 메뉴 내비게이션 + 역할 기반 권한 + 관리자 CRUD 화면)를 구축했습니다. 상세 요구사항/구현 계획은 `docs/prd/`·`docs/roadmap/`를 참고하세요.
 
 ## 명령어
 
@@ -46,12 +46,23 @@ npm run check-all     # typecheck + lint + format:check 순차 실행
 
 1. 루트의 `proxy.ts`가 모든 요청(정적 파일 제외)에서 `updateSession()`을 호출합니다.
 2. `updateSession()`(`lib/supabase/proxy.ts`)은 `/`, `/login*`, `/auth/*`와 로그인 없이 열람 가능한 공개 페이지(`/gallery`, `/icons`, `/avatars`, `/charts`, `/about`, `/tech-stack`)를 제외한 경로에서 세션이 없으면 `/auth/login`으로 리다이렉트합니다. 새 공개 페이지를 추가하면 이 allow-list에도 등록해야 합니다.
-3. `app/auth/*`에 로그인/회원가입/비밀번호 재설정/이메일 확인(`confirm/route.ts`) 페이지가 있고, `app/protected/*`가 인증이 필요한 영역입니다. 개별 서버 컴포넌트(`app/protected/page.tsx` 등)도 `getClaims()`로 재확인 후 `redirect("/auth/login")` 하는 이중 방어 패턴을 씁니다.
+3. `app/auth/*`에 로그인/회원가입/비밀번호 재설정/이메일 확인(`confirm/route.ts`) 페이지가 있고, `app/protected/*`(스타터킷 기본 프로필 예제)와 `app/erp/*`(실제 업무 영역, 위 "ERP 애플리케이션" 참고)가 인증이 필요한 영역입니다. 개별 서버 컴포넌트(`app/protected/page.tsx`, `app/erp/layout.tsx`의 `getCurrentErpUser()` 등)도 세션을 재확인 후 `redirect("/auth/login")` 하는 이중 방어 패턴을 씁니다.
 4. 로그인/회원가입 폼(`components/*-form.tsx`)은 Server Action이 아니라 **Client Component에서 `supabase.auth.*`를 직접 호출**하는 패턴입니다(`login-form.tsx`, `profile-form.tsx` 참고).
 
 ### DB 타입
 
 `lib/supabase/database.types.ts`는 Supabase에서 생성된 타입입니다(`mcp__supabase__generate_typescript_types`로 재생성). 컴포넌트에서는 `Tables<"테이블명">` 헬퍼로 필요한 컬럼만 `Pick`해서 씁니다(`components/profile-form.tsx` 참고). 스키마를 변경했다면 이 파일을 재생성해야 합니다.
+
+### ERP 애플리케이션 (`app/erp/`)
+
+로그인 후 진입하는 실제 업무 영역입니다. `docs/prd/PRD_MVP.md` → `docs/roadmap/ROADMAP_MVP.md`(Task 001~022, 전체 완료)로 구축된 레이어이며, `app/erp/layout.tsx`가 모든 하위 경로의 공통 진입점입니다.
+
+- **3단 내비게이션**: 상단 카테고리 레일(대분류, `ErpCategoryRail`) + 좌측 트리(중/소분류, `ErpMenuTree`/`ErpTreePanel`) + 우측 콘텐츠 영역. 모바일은 `ErpMobileNav`로 Drawer 전환. 셸 컴포넌트는 전부 `components/erp/erp-shell*.tsx`.
+- **메뉴/권한 시스템**: `menus` 테이블(대/중/소 3단, `level`+`parent_id`)과 `user_menu_permissions`(사용자별 메뉴 단위 권한 부여)로 동작. 역할은 `profiles.role`이 `user`/`admin`/`superadmin` 셋 중 하나이며, DB 함수 `is_admin()`(admin·superadmin 모두 true), `is_superadmin()`(superadmin만 true)이 RLS와 앱 양쪽에서 재사용됩니다. 새 권한 로직이 필요해도 이 두 함수를 우선 재사용하고, 없는 경우에만 새로 추가하세요.
+- **`lib/erp/`**: `auth.ts`(`getCurrentErpUser()`/`requireAdmin()`/`canAccessMenu()` — 전부 `cookies()`를 쓰므로 Suspense 경계 필요, `react`의 `cache()`로 요청 단위 dedupe됨), `queries.ts`(메뉴 트리/사용자 목록 등 조회), `actions.ts`(Server Actions, 진입부에서 반드시 `requireAdmin()` 먼저 호출하는 규약), `types.ts`, `menu-tree.ts`/`menu-routes.ts`/`menu-icons.ts`(메뉴 데이터 ↔ 라우트/아이콘 매핑), `role-labels.ts`(`isAdminRole()` 등).
+- **관리자 전용 CRUD**: `/erp/admin/{users,menus,permissions}` — 사용자 관리·메뉴 관리(대/중/소 등록·정렬·사용여부)·사용자별 메뉴 권한 부여. `app/erp/admin/layout.tsx`가 `requireAdmin()`으로 가드하며, 권한 없는 접근은 `/erp/forbidden`(`components/erp/access-denied.tsx`)으로 이동합니다.
+- **ERP 메인 화면(`/erp`)**: 매출/손익/객수 등 경영정보를 카드+recharts 차트로 보여주는 대시보드이지만, `components/erp/dashboard/dashboard-data.ts`의 **더미 데이터**만 사용합니다(실 데이터 연동은 범위 밖, `ROADMAP_MVP.md` "범위 제외" 참고).
+- **기능 단위 PRD/로드맵 문서 컨벤션**: `docs/prd/PRD_<기능>.md`(요구사항) → `docs/roadmap/ROADMAP_<기능>.md`(Task 단위 구현 계획, `development-planner` 에이전트가 생성) 쌍으로 관리합니다. 지금까지 `MVP`(ERP 뼈대, 완료) → `MASTER`(마스터 관리/기준정보 5화면 + 상품 관리, 계획 단계)가 있습니다. 로드맵의 Task는 이전 문서의 마지막 Task 번호에 이어서 연속 채번합니다.
 
 ### Next.js 16 관련 특이사항
 
