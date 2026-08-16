@@ -85,7 +85,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ## 개발 단계
 
-- **Phase 3** — 마스터 데이터 모델 구축 (Task 023~029) **← 최우선**
+- **Phase 3** ✅ — 마스터 데이터 모델 구축 (Task 023~029)
 - **Phase 4** — 메뉴 재구성 및 역할 하드 게이트 (Task 030~031)
 - **Phase 5** — 기준정보 관리 5개 화면 구현 (Task 032~037)
 - **Phase 6** — 상품(Product) 관리 화면 구현 (Task 038~040)
@@ -275,7 +275,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   - [x] 엔티티명(snake_case) → (접두사, 시퀀스명, 대상 테이블) 매핑을 `case` 문으로 내장하고, 알 수 없는 엔티티는 예외 발생. **주의**: DB 함수의 `p_entity`는 `company`/`brand_color`/`product`처럼 snake_case이고, `lib/erp/master/code.ts`의 `MasterCodeEntity`는 `company`/`brandColor`/`product`처럼 camelCase — Task 029의 서버 액션이 이 둘을 매핑해야 한다(동일 문자열이 아님).
   - [x] `nextval()` 값을 접두사와 `lpad`로 결합해 코드 생성.
   - [x] **생성된 코드가 대상 테이블에 이미 존재하면(관리자가 수동으로 그 코드를 쓴 경우) 다음 `nextval`로 재시도**하는 루프(최대 100회, 초과 시 예외). 대상 테이블이 아직 없으면(Task 028 이전의 `product`) `to_regclass()`로 감지해 중복 검사를 건너뛴다.
-  - [x] `security definer` + `set search_path = ''` + 함수 내부에서 `public.is_admin()` 재확인(기존 `set_user_menu_permissions()`와 동일 컨벤션 — SECURITY DEFINER로 RLS를 우회하는 만큼 내부 권한 재확인으로 상쇄).
+  - [x] `security definer` + `set search_path = ''` + 함수 내부에서 `public.is_admin()` 재확인(기존 `set_user_menu_permissions()`와 동일 컨벤션 — SECURITY DEFINER로 RLS를 우회하는 만큼 내부 권한 재확인으로 상쇄). **[Task 029에서 보정]** 이 원안은 모든 엔티티에 획일적으로 `is_admin()`을 요구했는데, Task 023 ③(상품은 로그인 사용자 전체 개방)과 충돌함이 Task 029에서 드러나 `product` 엔티티만 로그인 확인으로 완화하도록 `create or replace`했다(마이그레이션 `adjust_next_master_code_product_permission`). 나머지 11종은 원안 그대로 관리자 전용이다.
 - [x] 서버 액션(Task 029)이 등록 시 `rpc("next_master_code", { p_entity })`를 호출해 코드를 받아 insert하도록 인터페이스를 확정한다. **`max(code)+1` 계산 방식은 채택하지 않는다**(동시 등록 시 경합).
 - [x] `get_advisors` 확인 — `next_master_code()`에 대한 신규 SECURITY DEFINER WARN이 나왔고, 기존 6개 함수와 동일 패턴(내부 `is_admin()` 재확인으로 상쇄)이므로 근거를 기록하고 유지했다(revoke 대상 아님 — 트리거 전용 함수인 `set_master_audit()`와는 다른 케이스).
 
@@ -342,7 +342,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 029: 타입 재생성 및 마스터 데이터 액세스 계층 구현
+### Task 029: 타입 재생성 및 마스터 데이터 액세스 계층 구현 ✅
 
 **목표**: Phase 5·6의 모든 화면이 공유할 서버 측 조회 함수와 Server Action을 한 곳에 모은다. **화면 6개가 각자 쿼리를 짜지 않도록 하는 것이 이 Task의 존재 이유다.**
 
@@ -356,46 +356,46 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — Task 025/026/028에서 만든 12개 테이블 블록이 반영되는지 확인. weeklyplan 테이블이 함께 생성되는 것은 정상(같은 프로젝트 공유).
-- [ ] `lib/erp/master/queries.ts` — 조회 함수(전부 함수 내부에서 `await createClient()` 호출, 전역 변수 금지):
-  - [ ] `getCompanies({ activeOnly? })`
-  - [ ] `getBrands(companyId?, { activeOnly? })`
-  - [ ] `getSmallBrands(brandId, { activeOnly? })` / `getBrandLines(brandId, { activeOnly? })`
-  - [ ] `getItemTypes(smallBrandId, ...)` / `getItems(itemTypeId, ...)` / `getSubItems(itemId, ...)`
-  - [ ] `getBrandColorTypes(brandId, ...)` / `getBrandColors(colorTypeId, ...)`
-  - [ ] `getBrandGenderSizeTypes(brandId, gender, ...)` / `getBrandGenderSizes(sizeTypeId, ...)`
-  - [ ] `getProducts(filters)` — 검색어(상품코드/상품명) + 브랜드/서브아이템/성별/사용여부 필터 + 페이지네이션
-  - [ ] `getProductById(productId)` — 상세/수정 폼용, 라인/컬러/사이즈 임베디드 select
-  - [ ] `getBrandIdOfSubItem(subItemId)` — 교차 브랜드 검증용 브랜드 역추적 (`sub_item → item → item_type → small_brand → brand`)
-  - [ ] 각 목록 조회의 정렬은 `sort_order` → `name` 순으로 통일 (`buildMenuTree`의 기존 정렬 관례와 동일)
-  - [ ] `activeOnly` 기본값 정책 명시: **하위 등록 폼의 드롭다운은 `activeOnly: true`**(PRD 6.3 — 비활성 상위는 신규 등록에서 제외), **관리 화면의 목록은 `activeOnly: false`**(비활성 항목도 관리해야 함)
-- [ ] `lib/erp/master/actions.ts` — Server Actions:
-  - [ ] `createMasterAction(entity, input)` / `updateMasterAction(entity, id, input)` / `deleteMasterAction(entity, id)` / `setMasterActiveAction(entity, id, isActive)` — 12종 엔티티를 엔티티 키로 분기하는 공용 액션으로 구현(엔티티마다 4개 액션을 복제하면 48개가 됨).
-  - [ ] **모든 액션 첫 줄에서 `requireAdmin()` 호출** (기존 `lib/erp/auth.ts` 재사용, 새 가드 안 만듦). 단 상품 관련 액션은 Task 023 ③ 확정 결과에 따른다.
-  - [ ] 등록 시 `rpc("next_master_code", { p_entity })`로 코드를 채번(Task 027).
-  - [ ] 삭제 시 FK `restrict` 위반(`23503`)을 잡아 **"하위 데이터가 있어 삭제할 수 없습니다. 사용여부를 끄세요."** 한국어 메시지로 변환한다(PRD 6.3).
-  - [ ] 코드 중복(`23505`) → "이미 사용 중인 코드입니다." 로 변환.
-  - [ ] 반환 타입은 기존 `lib/erp/actions.ts`의 `ActionResult`(`{ success: true } | { success: false; error: string }`) 형태를 그대로 따른다.
-  - [ ] 변경 후 해당 화면 경로에 `revalidatePath()` 호출.
-- [ ] 모든 조회 함수 JSDoc에 "`cookies()`를 쓰는 `createClient()`에 의존하므로 호출하는 컴포넌트는 `<Suspense>` 경계가 필요하다"를 명시(기존 `lib/erp/queries.ts` 관례).
+- [x] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — Task 025/026/028에서 만든 12개 테이블 블록이 반영됨을 확인. weeklyplan 테이블도 함께 생성됨(정상, 같은 프로젝트 공유).
+- [x] `lib/erp/master/queries.ts` — 조회 함수(전부 함수 내부에서 `await createClient()` 호출, 전역 변수 없음):
+  - [x] `getCompanies({ activeOnly? })`
+  - [x] `getBrands(companyId?, { activeOnly? })`
+  - [x] `getSmallBrands(brandId, { activeOnly? })` / `getBrandLines(brandId, { activeOnly? })`
+  - [x] `getItemTypes(smallBrandId, ...)` / `getItems(itemTypeId, ...)` / `getSubItems(itemId, ...)`
+  - [x] `getBrandColorTypes(brandId, ...)` / `getBrandColors(colorTypeId, ...)`
+  - [x] `getBrandGenderSizeTypes(brandId, gender, ...)` / `getBrandGenderSizes(sizeTypeId, ...)`
+  - [x] `getProducts(filters)` — 검색어(상품코드/상품명, ilike 이스케이프 처리) + 브랜드(라인의 `brand_id`를 `!inner` 조인으로 필터)/서브아이템/성별/사용여부 필터 + 페이지네이션(`range`+`count: "exact"`)
+  - [x] `getProductById(productId)` — 상세/수정 폼용, 서브아이템/라인/컬러/사이즈 이름을 임베디드 select로 함께 반환(`ProductDetail`)
+  - [x] `getBrandIdOfSubItem(subItemId)` — 교차 브랜드 검증용 브랜드 역추적 (`sub_item → item → item_type → small_brand → brand`), DB의 `check_product_brand_consistency()` 트리거와 같은 경로를 앱 레벨에서 미러링
+  - [x] 각 목록 조회의 정렬은 `sort_order` → `name` 순으로 통일 (`buildMenuTree`의 기존 정렬 관례와 동일)
+  - [x] `activeOnly` 옵션을 모든 조회 함수에 노출(기본값 `false`=전체 반환) — 하위 등록 폼 드롭다운은 호출부에서 `{ activeOnly: true }`로, 관리 화면 목록은 옵션 생략(전체)으로 사용하는 정책을 함수 시그니처로 강제
+- [x] `lib/erp/master/actions.ts` — Server Actions:
+  - [x] `createMasterAction(entity, input)` / `updateMasterAction(entity, id, input)` / `deleteMasterAction(entity, id)` / `setMasterActiveAction(entity, id, isActive)` — 12종 엔티티를 엔티티 키로 분기하는 공용 액션 4개로 구현(48개 복제 없음). 테이블별로 다른 Insert/Update 타입과 동적 테이블명이 근본적으로 양립하지 않아, DB 왕복 지점만 `LooseMasterTable`이라는 명시적 타입으로 캐스팅하고 컬럼 매핑 정확성은 `buildEntityFields()`가 엔티티별로 보장한다.
+  - [x] **기준정보 11종은 첫 줄에서 `requireAdmin()` 호출**(기존 `lib/erp/auth.ts` 재사용, 새 가드 안 만듦). **상품(product)은 Task 023 ③ 확정 결과에 따라 `getCurrentErpUser()`로 로그인만 확인**(`guardEntity()`가 분기).
+  - [x] 등록 시 `rpc("next_master_code", { p_entity })`로 코드를 채번(Task 027) — **Task 029에서 발견한 보정**: DB 함수가 모든 엔티티에 획일적으로 `is_admin()`을 요구해 상품 로그인-사용자 개방과 충돌했으므로, `next_master_code()`를 `product`만 로그인 확인으로 완화하도록 `create or replace`했다(마이그레이션 `adjust_next_master_code_product_permission`).
+  - [x] 삭제 시 FK `restrict` 위반(`23503`)을 잡아 **"하위 데이터가 있어 삭제할 수 없습니다. 사용여부를 끄세요."** 한국어 메시지로 변환.
+  - [x] 코드 중복(`23505`) → "이미 사용 중인 코드입니다." 로 변환.
+  - [x] 반환 타입은 기존 `lib/erp/actions.ts`의 `ActionResult`를 그대로 import해 재사용(실제 필드명은 `message`— 이 Task 설명의 `error`는 오기, 기존 파일 기준을 따름).
+  - [x] 변경 후 해당 화면 경로(기준정보는 `MASTER_ENTITIES[entity].route`, 상품은 `/erp/products`)에 `revalidatePath()` 호출.
+- [x] 모든 조회 함수가 있는 `queries.ts` 상단에 "`cookies()`를 쓰는 `createClient()`에 의존하므로 호출하는 컴포넌트는 `<Suspense>` 경계가 필요하다"를 명시(기존 `lib/erp/queries.ts` 관례).
 
 **수락 기준**
 
-- [ ] `npm run typecheck` 통과 (재생성된 타입 기준, `npm run check-all` 전체 통과).
-- [ ] 12종 엔티티 전부에 대해 조회/생성/수정/삭제/활성토글 경로가 존재한다.
-- [ ] 관리자가 아닌 세션에서 마스터 Server Action 호출 시 `requireAdmin()`이 `/erp/forbidden`으로 리다이렉트한다.
+- [x] `npm run typecheck` 통과 (재생성된 타입 기준), `npm run check-all` 전체 통과(사전 존재하던 무관한 warning 7건 제외 오류 0건).
+- [x] 12종 엔티티 전부에 대해 조회/생성/수정/삭제/활성토글 경로가 존재한다(기준정보 11종은 `MASTER_TABLES`/`guardEntity`가 커버, 상품은 `getProducts`/`getProductById` + 동일 4개 액션으로 커버).
+- [x] 관리자가 아닌 세션에서 마스터 Server Action 호출 시 `requireAdmin()`이 `/erp/forbidden`으로 리다이렉트한다 — Playwright로 실측 확인.
 
 **테스트 체크리스트 (Playwright MCP + execute_sql)**
 
-검증 방법: `lib/erp/master/*`는 서버 전용이라 브라우저에서 직접 호출할 수 없으므로 ROADMAP_MVP Task 013의 선례대로 **임시 디버그 라우트**(`app/api/debug-task029/route.ts`)를 만들어 실제 로그인 세션으로 검증한 뒤 **검증 완료 즉시 삭제**한다(커밋 금지, `git status`로 잔존 확인).
+검증 방법: `lib/erp/master/*`는 서버 전용이라 브라우저에서 직접 호출할 수 없으므로 ROADMAP_MVP Task 013의 선례대로 **임시 디버그 라우트**(`app/api/debug-task029/route.ts`)를 만들어 실제 로그인 세션(신규 가입시킨 admin/user 임시 계정 2개)으로 검증한 뒤 **검증 완료 즉시 삭제**했다(`git status`로 잔존 없음 확인, 커밋되지 않음).
 
-- [ ] 관리자 세션에서 `createMasterAction("company", ...)` 호출 → `execute_sql`로 `code`가 `C####` 형식으로 자동 채번되어 저장되었는지 확인.
-- [ ] 하위 브랜드가 있는 법인에 `deleteMasterAction` 호출 → 한국어 에러 메시지("하위 데이터가 있어 삭제할 수 없습니다...") 반환 확인.
-- [ ] 중복 코드로 `updateMasterAction` 호출 → "이미 사용 중인 코드입니다." 반환 확인.
-- [ ] 일반 사용자(`role='user'`) 세션에서 동일 액션 호출 → `/erp/forbidden` 리다이렉트 확인.
-- [ ] `getBrandIdOfSubItem()`이 5단 역추적으로 정확한 브랜드 id를 반환하는지 확인(Task 039의 교차 브랜드 검증이 이 함수에 의존).
-- [ ] `activeOnly` 기본값 정책이 의도대로 동작하는지 확인 — 비활성 브랜드가 드롭다운 조회에서는 빠지고 관리 목록 조회에서는 나오는지.
-- [ ] 임시 디버그 라우트 및 테스트 데이터/계정 삭제 후 잔존 0건 확인.
+- [x] 관리자 세션에서 `createMasterAction("company", ...)` 호출 → `execute_sql`로 `code`가 `C1001`로 자동 채번되어 저장됨을 확인.
+- [x] 하위 브랜드가 있는 법인에 `deleteMasterAction` 호출 → 한국어 에러 메시지("하위 데이터가 있어 삭제할 수 없습니다...") 반환 확인.
+- [x] 중복 코드로 `updateMasterAction` 호출 → "이미 사용 중인 코드입니다." 반환 확인.
+- [x] 일반 사용자(`role='user'`) 세션에서 동일 액션(디버그 라우트) 호출 → 실제 브라우저가 `/erp/forbidden`으로 리다이렉트됨을 Playwright로 확인.
+- [x] `getBrandIdOfSubItem()`이 5단 역추적으로 정확한 브랜드 id를 반환하는지 확인 — 법인→브랜드→소브랜드→아이템타입→아이템→서브아이템 전체 체인을 실제로 생성해 `resolvedBrandId === expectedBrandId` 일치 확인.
+- [x] `activeOnly` 정책이 의도대로 동작하는지 확인 — 활성 1건/비활성 1건 브랜드를 만들어 `activeOnly: true` 시 1건, 생략 시 2건 반환됨을 확인.
+- [x] 임시 디버그 라우트, 테스트 데이터, 임시 계정(admin/user 2개) 삭제 및 소비된 시퀀스 6종 원복 후 잔존 0건 확인.
 
 ---
 
@@ -1070,13 +1070,13 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ## 진행 현황
 
-| Phase                                    | Task 범위    | 상태   |
-| ---------------------------------------- | ------------ | ------ |
-| **Phase 3 — 마스터 데이터 모델 구축**    | Task 023~029 | ☐ 예정 |
-| Phase 4 — 메뉴 재구성 / 역할 하드 게이트 | Task 030~031 | ☐ 예정 |
-| Phase 5 — 기준정보 5개 화면              | Task 032~037 | ☐ 예정 |
-| Phase 6 — 상품 관리 화면                 | Task 038~040 | ☐ 예정 |
-| Phase 7 — 시드 및 통합 검증              | Task 041~042 | ☐ 예정 |
+| Phase                                    | Task 범위    | 상태    |
+| ---------------------------------------- | ------------ | ------- |
+| **Phase 3 — 마스터 데이터 모델 구축** ✅ | Task 023~029 | ✅ 완료 |
+| Phase 4 — 메뉴 재구성 / 역할 하드 게이트 | Task 030~031 | ☐ 예정  |
+| Phase 5 — 기준정보 5개 화면              | Task 032~037 | ☐ 예정  |
+| Phase 6 — 상품 관리 화면                 | Task 038~040 | ☐ 예정  |
+| Phase 7 — 시드 및 통합 검증              | Task 041~042 | ☐ 예정  |
 
 ### 사용자 확인 대기 항목 (착수 전 필수)
 

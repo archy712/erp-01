@@ -43,3 +43,22 @@ export type BrandGenderSizeType = MasterCommonFields & {
 export type BrandGenderSize = MasterCommonFields & {
   brandGenderSizeTypeId: string;
 };
+
+export type SalesStatus = "on_sale" | "sold_out" | "discontinued";
+
+// Task 028에서 products 스키마가 확정된 뒤 Task 029에서 추가.
+export type Product = MasterCommonFields & {
+  subItemId: string;
+  brandLineId: string;
+  brandColorId: string;
+  brandGenderSizeId: string;
+  gender: GenderValue;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  season: string | null;
+  releaseYear: number | null;
+  material: string | null;
+  costPrice: number | null;
+  salePrice: number | null;
+  salesStatus: SalesStatus | null;
+};
