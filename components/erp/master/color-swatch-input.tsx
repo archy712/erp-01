@@ -5,9 +5,16 @@ import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-/** 앞의 `#`을 제거하고 대문자로 정규화한다. 저장 값(`rgb_hex`)은 항상 `#` 없는 6자리 HEX다(Task 023 ⑤ 결정). */
+/** 앞의 `#`을 제거하고 대문자로 정규화한다. 저장 값(`rgb_hex`)은 항상 `#` 없는 6자리 HEX다(Task 023 ⑤ 결정).
+ *
+ * 6자리로 slice하는 이유(Task 036에서 발견): `#` 제거 "이전" 원본 문자열 기준으로
+ * `maxLength`를 걸면 `#FF5733`처럼 `#` 포함 7자를 한 번에 붙여넣을 때 브라우저가
+ * onChange 발생 전에 마지막 한 글자를 잘라버려("#FF573") `#` 제거 후 5자만 남는다
+ * (한 글자씩 타이핑할 때는 매 keystroke마다 `#`이 즉시 제거되므로 우연히 증상이
+ * 없었다). 그래서 `#` 유무와 무관하게 이 함수가 "정규화 후" 6자로 slice하는 것을
+ * 유일한 길이 제한 지점으로 삼고, 아래 `maxLength`는 `#` 한 글자만큼 여유를 둔다. */
 export function normalizeHex(raw: string): string {
-  return raw.replace(/^#/, "").toUpperCase();
+  return raw.replace(/^#/, "").toUpperCase().slice(0, 6);
 }
 
 /** 6자리 16진수(0-9, A-F)인지 검사한다. 서버(DB 체크 제약)와 동일한 규칙의 클라이언트 1차 검증. */
@@ -63,7 +70,9 @@ export function ColorSwatchInput({
             value={value}
             onChange={(event) => onChange(normalizeHex(event.target.value))}
             placeholder="FF5733"
-            maxLength={6}
+            // `#` 접두사를 포함해 붙여넣는 경우를 위한 여유 1자(정규화는
+            // normalizeHex의 slice(0, 6)이 담당 — 위 주석 참고).
+            maxLength={7}
             disabled={disabled}
             aria-invalid={error ? true : undefined}
             className="pl-6 uppercase"
