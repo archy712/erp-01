@@ -222,7 +222,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 026: 속성 축 4개 테이블 생성 (컬러 / 사이즈)
+### Task 026: 속성 축 4개 테이블 생성 (컬러 / 사이즈) ✅
 
 **목표**: 브랜드 하위의 컬러타입/컬러/사이즈타입/사이즈 테이블을 구축한다. 성별은 테이블이 아니라 `text` 체크 제약으로 표현한다.
 
@@ -233,28 +233,28 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `brand_color_types` 생성 — 공통 컬럼 9종 + `brand_id uuid not null references public.brands(id) on delete restrict`.
-- [ ] `brand_colors` 생성 — 공통 컬럼 9종 + `brand_color_type_id uuid not null references public.brand_color_types(id) on delete restrict` + `rgb_hex char(6) not null check (rgb_hex ~ '^[0-9A-Fa-f]{6}$')` (PRD 7.4: `#` 없는 6자리 HEX 필수).
-- [ ] `brand_gender_size_types` 생성 — 공통 컬럼 9종 + `brand_id uuid not null references public.brands(id) on delete restrict` + `gender text not null check (gender in ('male','female','unisex'))`. **성별 테이블은 만들지 않는다**(PRD 8장).
-- [ ] `brand_gender_sizes` 생성 — 공통 컬럼 9종 + `brand_gender_size_type_id uuid not null references public.brand_gender_size_types(id) on delete restrict`.
-- [ ] 4개 테이블 모두 `set_master_audit()` before-update 트리거 연결 (Task 025에서 생성한 함수 재사용, 새로 만들지 않음).
-- [ ] 인덱스: `(부모FK, sort_order)` + `brand_gender_size_types(brand_id, gender)` 복합 인덱스(사이즈 화면이 브랜드+성별로 필터링하므로) + FK 커버링 인덱스.
-- [ ] RLS 활성화 + 정책 — Task 025와 동일(select 전체 허용 / CUD는 `is_admin()`).
-- [ ] `get_advisors`(security + performance) 확인.
+- [x] `brand_color_types` 생성 — 공통 컬럼 9종 + `brand_id uuid not null references public.brands(id) on delete restrict`.
+- [x] `brand_colors` 생성 — 공통 컬럼 9종 + `brand_color_type_id uuid not null references public.brand_color_types(id) on delete restrict` + `rgb_hex char(6) not null check (rgb_hex ~ '^[0-9A-Fa-f]{6}$')` (PRD 7.4: `#` 없는 6자리 HEX 필수).
+- [x] `brand_gender_size_types` 생성 — 공통 컬럼 9종 + `brand_id uuid not null references public.brands(id) on delete restrict` + `gender text not null check (gender in ('male','female','unisex'))`. **성별 테이블은 만들지 않았다**(PRD 8장).
+- [x] `brand_gender_sizes` 생성 — 공통 컬럼 9종 + `brand_gender_size_type_id uuid not null references public.brand_gender_size_types(id) on delete restrict`.
+- [x] 4개 테이블 모두 `set_master_audit()` before-update 트리거 연결 (Task 025에서 생성한 함수 재사용, 새로 만들지 않음).
+- [x] 인덱스: `(부모FK, sort_order)` + `brand_gender_size_types(brand_id, gender)` 복합 인덱스(사이즈 화면이 브랜드+성별로 필터링하므로) + FK 커버링 인덱스.
+- [x] RLS 활성화 + 정책 — Task 025와 동일(select 전체 허용 / CUD는 `is_admin()`).
+- [x] `get_advisors`(security + performance) 확인 — 신규 보안 WARN 없음(Task 025에서 `set_master_audit()` PUBLIC 권한을 이미 회수해뒀음), 성능은 빈 테이블 `unused_index` INFO뿐.
 
 **수락 기준**
 
-- [ ] 4개 테이블이 생성되고 `brand_colors.rgb_hex`, `brand_gender_size_types.gender` 체크 제약이 동작한다.
-- [ ] `gender` 허용값 3종이 `lib/erp/master/gender.ts`의 `GenderValue`와 정확히 일치한다.
+- [x] 4개 테이블이 생성되고 `brand_colors.rgb_hex`, `brand_gender_size_types.gender` 체크 제약이 동작한다.
+- [x] `gender` 허용값 3종이 `lib/erp/master/gender.ts`의 `GenderValue`와 정확히 일치한다(`male`/`female`/`unisex` 3종 insert 성공으로 확인).
 
 **테스트 체크리스트**
 
-- [ ] `execute_sql`로 컬러타입 → 컬러 1건씩 insert 성공, `rgb_hex='FF5733'` 저장 확인.
-- [ ] `rgb_hex='#FF5733'`(7자) 및 `'ZZZZZZ'` insert → 체크 제약 위반(`23514`) 확인.
-- [ ] `gender='men'` 같은 잘못된 값 insert → 체크 제약 위반 확인. `'male'`/`'female'`/`'unisex'` 3종은 성공 확인.
-- [ ] 하위 컬러가 있는 컬러타입 delete 시도 → FK 위반 확인.
-- [ ] `role='user'` 시뮬레이션으로 CUD 차단 / select 허용 확인.
-- [ ] `TEST_%` 행 전부 정리 후 잔존 0건 확인.
+- [x] `execute_sql`로 컬러타입 → 컬러 1건씩 insert 성공, `rgb_hex='FF5733'` 저장 확인.
+- [x] `rgb_hex='#FF5733'`(7자) 및 `'ZZZZZZ'` insert → 둘 다 거부 확인. `'ZZZZZZ'`은 체크 제약 위반(`23514`), `'#FF5733'`은 `char(6)` 길이 제한에서 먼저 걸려 `22001`(value too long)로 거부 — 두 경우 모두 저장은 차단됨.
+- [x] `gender='men'` 같은 잘못된 값 insert → 체크 제약 위반(`23514`) 확인. `'male'`/`'female'`/`'unisex'` 3종은 성공 확인.
+- [x] 하위 컬러가 있는 컬러타입 delete 시도 → FK 위반(`23503`) 확인.
+- [x] `role='user'` 시뮬레이션으로 select는 통과, insert는 `42501`로 차단, update/delete는 RLS `USING` 필터로 영향 행 0건 확인.
+- [x] `TEST_%` 행 전부 정리 후 잔존 0건 확인.
 
 ---
 
