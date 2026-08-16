@@ -167,7 +167,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 025: 분류 축 7개 테이블 생성 (companies ~ sub_items)
+### Task 025: 분류 축 7개 테이블 생성 (companies ~ sub_items) ✅
 
 **목표**: 법인→브랜드→소브랜드/라인→아이템타입→아이템→서브아이템의 분류 축 테이블과 RLS를 구축한다.
 
@@ -178,47 +178,47 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] 신규 트리거 함수 `public.set_master_audit()` 생성 — `new.updated_at = now(); new.updated_by = auth.uid(); return new;` (`security definer` + `set search_path = ''`, 기존 6개 함수와 동일 컨벤션). **기존 `set_updated_at()`은 `updated_by`를 다루지 않아 재사용 불가하므로 이 한 개만 신설**하고, `is_admin()`/`is_superadmin()`은 신설하지 않는다.
-- [ ] 공통 컬럼 정의(7개 테이블 전부 동일, PRD 6.2):
-  - [ ] `id uuid primary key default gen_random_uuid()`
-  - [ ] `code text not null unique`
-  - [ ] `name text not null`
-  - [ ] `sort_order integer not null default 0`
-  - [ ] `is_active boolean not null default true`
-  - [ ] `note text`
-  - [ ] `created_at timestamptz not null default now()` / `updated_at timestamptz not null default now()`
-  - [ ] `created_by uuid references public.profiles(id) default auth.uid()` / `updated_by uuid references public.profiles(id)`
-  - [ ] `before update` 트리거로 `public.set_master_audit()` 연결
-- [ ] `companies` 생성 — 부모 FK 없음(최상위).
-- [ ] `brands` 생성 — `company_id uuid not null references public.companies(id) on delete restrict`.
-- [ ] `small_brands` 생성 — `brand_id uuid not null references public.brands(id) on delete restrict`.
-- [ ] `brand_lines` 생성 — `brand_id uuid not null references public.brands(id) on delete restrict` (소브랜드와 형제 관계, PRD 5장).
-- [ ] `item_types` 생성 — `small_brand_id uuid not null references public.small_brands(id) on delete restrict`.
-- [ ] `items` 생성 — `item_type_id uuid not null references public.item_types(id) on delete restrict`.
-- [ ] `sub_items` 생성 — `item_id uuid not null references public.items(id) on delete restrict`.
-- [ ] 인덱스: 각 테이블에 `(부모FK, sort_order)` 복합 인덱스 + FK 커버링 인덱스(`created_by`/`updated_by` 포함 — ROADMAP_MVP Task 012에서 `get_advisors`가 FK 커버링 인덱스 누락을 지적한 선례 반영).
-- [ ] RLS 활성화 + 정책 (7개 테이블 동일, PRD 9장, **기존 `is_admin()` 재사용**):
-  - [ ] `select` — `to authenticated using (true)` (상품 폼 드롭다운이 읽어야 하므로 전체 허용)
-  - [ ] `insert` — `to authenticated with check (public.is_admin())`
-  - [ ] `update` — `to authenticated using (public.is_admin()) with check (public.is_admin())`
-  - [ ] `delete` — `to authenticated using (public.is_admin())`
-- [ ] `mcp__supabase__get_advisors`(security + performance) 확인 — 신규 경고가 나오면 해소하고, weeklyplan 기존 경고는 손대지 않는다.
+- [x] 신규 트리거 함수 `public.set_master_audit()` 생성 — `new.updated_at = now(); new.updated_by = auth.uid(); return new;` (`security definer` + `set search_path = ''`, 기존 6개 함수와 동일 컨벤션). **기존 `set_updated_at()`은 `updated_by`를 다루지 않아 재사용 불가하므로 이 한 개만 신설**했고, `is_admin()`/`is_superadmin()`은 신설하지 않았다. `set_updated_at()`/`handle_new_user()`와 동일하게 `anon`/`authenticated`(및 `public`)의 직접 RPC 실행 권한도 회수했다(트리거 전용 함수).
+- [x] 공통 컬럼 정의(7개 테이블 전부 동일, PRD 6.2):
+  - [x] `id uuid primary key default gen_random_uuid()`
+  - [x] `code text not null unique`
+  - [x] `name text not null`
+  - [x] `sort_order integer not null default 0`
+  - [x] `is_active boolean not null default true`
+  - [x] `note text`
+  - [x] `created_at timestamptz not null default now()` / `updated_at timestamptz not null default now()`
+  - [x] `created_by uuid references public.profiles(id) default auth.uid()` / `updated_by uuid references public.profiles(id)`
+  - [x] `before update` 트리거로 `public.set_master_audit()` 연결
+- [x] `companies` 생성 — 부모 FK 없음(최상위).
+- [x] `brands` 생성 — `company_id uuid not null references public.companies(id) on delete restrict`.
+- [x] `small_brands` 생성 — `brand_id uuid not null references public.brands(id) on delete restrict`.
+- [x] `brand_lines` 생성 — `brand_id uuid not null references public.brands(id) on delete restrict` (소브랜드와 형제 관계, PRD 5장).
+- [x] `item_types` 생성 — `small_brand_id uuid not null references public.small_brands(id) on delete restrict`.
+- [x] `items` 생성 — `item_type_id uuid not null references public.item_types(id) on delete restrict`.
+- [x] `sub_items` 생성 — `item_id uuid not null references public.items(id) on delete restrict`.
+- [x] 인덱스: 각 테이블에 `(부모FK, sort_order)` 복합 인덱스(`companies`는 부모가 없어 `sort_order` 단일 인덱스) + FK 커버링 인덱스(`created_by`/`updated_by` 포함).
+- [x] RLS 활성화 + 정책 (7개 테이블 동일, PRD 9장, **기존 `is_admin()` 재사용**):
+  - [x] `select` — `to authenticated using (true)` (상품 폼 드롭다운이 읽어야 하므로 전체 허용)
+  - [x] `insert` — `to authenticated with check (is_admin())`
+  - [x] `update` — `to authenticated using (is_admin()) with check (is_admin())`
+  - [x] `delete` — `to authenticated using (is_admin())`
+- [x] `mcp__supabase__get_advisors`(security + performance) 확인 — `set_master_audit()`가 `anon`/`authenticated`에서 직접 RPC 호출 가능하다는 신규 WARN이 나와, PUBLIC EXECUTE 권한을 회수해 해소했다(`set_updated_at()`과 동일 ACL로 일치 확인). 나머지 pre-existing 경고(성능 INFO성 unused_index 포함)는 weeklyplan/기존 함수 영역이라 손대지 않았다.
 
 **수락 기준**
 
-- [ ] 7개 테이블이 모두 생성되고, `list_tables`로 공통 컬럼 9종 + 부모 FK가 확인된다.
-- [ ] `role='user'` 세션에서 `companies` select는 성공하고 insert는 RLS(`42501`)로 차단된다.
-- [ ] 하위 행이 있는 부모 삭제가 `on delete restrict`로 차단된다.
+- [x] 7개 테이블이 모두 생성되고, `list_tables`로 공통 컬럼 9종 + 부모 FK가 확인된다.
+- [x] `role='user'` 세션에서 `companies` select는 성공하고 insert는 RLS(`42501`)로 차단된다.
+- [x] 하위 행이 있는 부모 삭제가 `on delete restrict`로 차단된다.
 
 **테스트 체크리스트**
 
-- [ ] `execute_sql`로 `companies` → `brands` → `small_brands` → `item_types` → `items` → `sub_items` 체인 1건씩 insert 성공 확인 (`TEST_` 접두사 사용).
-- [ ] `brand_lines`도 같은 브랜드 하위로 1건 insert 성공 확인 (소브랜드와 독립적인 형제 축임을 확인).
-- [ ] 하위 브랜드가 있는 `companies` 행 delete 시도 → FK 위반(`23503`)으로 실패 확인.
-- [ ] 동일 `code` 중복 insert → unique 위반(`23505`) 확인.
-- [ ] `set_config`로 `role='user'` JWT를 시뮬레이션해 insert/update/delete 3종이 모두 RLS 차단되는지, select는 통과하는지 확인.
-- [ ] `update` 실행 후 `updated_at`이 갱신되고 `updated_by`가 채워지는지 확인(`set_master_audit()` 동작 검증).
-- [ ] 테스트에 사용한 `TEST_%` 행 전부 삭제 후 잔존 0건 확인.
+- [x] `execute_sql`로 `companies` → `brands` → `small_brands` → `item_types` → `items` → `sub_items` 체인 1건씩 insert 성공 확인 (`TEST_` 접두사 사용).
+- [x] `brand_lines`도 같은 브랜드 하위로 1건 insert 성공 확인 (소브랜드와 독립적인 형제 축임을 확인).
+- [x] 하위 브랜드가 있는 `companies` 행 delete 시도 → FK 위반(`23503`)으로 실패 확인.
+- [x] 동일 `code` 중복 insert → unique 위반(`23505`) 확인.
+- [x] `set local role authenticated` + `set_config('request.jwt.claims', ...)`로 `role='user'` 세션을 시뮬레이션 — insert는 `insufficient_privilege`(42501)로 차단, select는 통과, update/delete는 RLS `USING` 절이 대상 행을 0건으로 필터링해 영향 행 0건(오류 없이 조용히 무시)임을 `GET DIAGNOSTICS`로 확인(Postgres RLS의 정상 동작 — UPDATE/DELETE는 USING 불일치 시 예외가 아니라 0-row 결과).
+- [x] `update` 실행 후 `updated_at`이 갱신되고 `updated_by`가 채워지는지 확인(`set_master_audit()` 동작 검증) — admin 세션으로 갱신 시 `updated_by`가 실행자 id로 정확히 채워짐을 확인.
+- [x] 테스트에 사용한 `TEST_%` 행 전부 삭제 후 잔존 0건 확인.
 
 ---
 
