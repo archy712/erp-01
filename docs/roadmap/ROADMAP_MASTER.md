@@ -296,7 +296,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 028: products 테이블 및 상품 이미지 스토리지 버킷 구축
+### Task 028: products 테이블 및 상품 이미지 스토리지 버킷 구축 ✅
 
 > Task 023에서 ①(단일 사이즈 유지)·③(로그인 사용자 개방 유지)·④(PRD 제안값 그대로) 모두 "현행 가정 유지"로 확정됨(사용자 확인 완료 2026-08-16) — 아래 체크리스트는 원안 그대로 착수 가능.
 
@@ -309,36 +309,36 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `products` 테이블 생성 — 공통 컬럼 9종(PRD 6.2) + 아래 컬럼:
-  - [ ] `sub_item_id uuid not null references public.sub_items(id) on delete restrict`
-  - [ ] `brand_line_id uuid not null references public.brand_lines(id) on delete restrict`
-  - [ ] `brand_color_id uuid not null references public.brand_colors(id) on delete restrict`
-  - [ ] `brand_gender_size_id uuid not null references public.brand_gender_sizes(id) on delete restrict` — **Task 023 ①에서 스타일-SKU 분리로 확정되면 이 컬럼 대신 `product_size_variants` 하위 테이블로 대체**
-  - [ ] `gender text not null check (gender in ('male','female','unisex'))`
-  - [ ] `image_url text` / `thumbnail_url text` (Storage 경로)
-  - [ ] `season text` / `release_year integer` / `material text` / `cost_price numeric(14,2)` / `sale_price numeric(14,2)` / `sales_status text check (sales_status in ('on_sale','sold_out','discontinued'))` — **Task 023 ④ 확정 결과 반영**
-- [ ] `set_master_audit()` before-update 트리거 연결.
-- [ ] 인덱스: `(sub_item_id)`, `(brand_line_id)`, `(brand_color_id)`, `(brand_gender_size_id)`, `(gender)`, `(is_active, sort_order)` + FK 커버링 인덱스.
-- [ ] **교차 브랜드 방지 DB 제약 검토** — 앱 레벨 폼 검증(Task 039)만으로는 API 직접 호출을 막지 못하므로, `products` insert/update 시 서브아이템·라인·컬러·사이즈의 소속 브랜드가 동일한지 확인하는 `before insert or update` 트리거(`public.check_product_brand_consistency()`)를 추가한다. 브랜드 역추적 경로: `sub_item → item → item_type → small_brand → brand`, `brand_line → brand`, `brand_color → brand_color_type → brand`, `brand_gender_size → brand_gender_size_type → brand`.
-- [ ] RLS 활성화 — `select`는 authenticated 전체 허용. **INSERT/UPDATE/DELETE 정책은 Task 023 ③ 확정 결과를 따른다** (기본안: 로그인 사용자 전체 허용 유지 / 관리자 전용으로 좁히면 `public.is_admin()` 적용).
-- [ ] Storage 버킷 `product-images` 생성 — 실 DB 확인 결과 현재 버킷은 weeklyplan의 `weekly-log-attachments` 1개뿐이므로 **신규 생성 필요**. 상품 이미지는 쇼핑몰 노출용이라 `public = true`로 두되, 업로드(insert/update/delete) Storage 정책은 상품 CRUD 권한(③)과 동일 기준으로 건다.
-- [ ] 버킷 내 경로 규칙 확정 — `products/{product_id}/original.{ext}`, `products/{product_id}/thumb.{ext}`.
+- [x] `products` 테이블 생성 — 공통 컬럼 9종(PRD 6.2) + 아래 컬럼:
+  - [x] `sub_item_id uuid not null references public.sub_items(id) on delete restrict`
+  - [x] `brand_line_id uuid not null references public.brand_lines(id) on delete restrict`
+  - [x] `brand_color_id uuid not null references public.brand_colors(id) on delete restrict`
+  - [x] `brand_gender_size_id uuid not null references public.brand_gender_sizes(id) on delete restrict` — Task 023 ①이 단일 사이즈 유지로 확정되어 이 단일 FK 그대로 사용.
+  - [x] `gender text not null check (gender in ('male','female','unisex'))`
+  - [x] `image_url text` / `thumbnail_url text` (Storage 경로, nullable — 실제 업로드 폼은 Task 040)
+  - [x] `season text` / `release_year integer` / `material text` / `cost_price numeric(14,2)` / `sale_price numeric(14,2)` / `sales_status text check (sales_status in ('on_sale','sold_out','discontinued'))` — Task 023 ④ 확정 결과(PRD 제안값 그대로) 반영, 전부 nullable.
+- [x] `set_master_audit()` before-update 트리거 연결.
+- [x] 인덱스: `(sub_item_id)`, `(brand_line_id)`, `(brand_color_id)`, `(brand_gender_size_id)`, `(gender)`, `(is_active, sort_order)` + `created_by`/`updated_by` FK 커버링 인덱스.
+- [x] **교차 브랜드 방지 DB 제약** — `products` insert/update 시 서브아이템·라인·컬러·사이즈의 소속 브랜드가 동일한지 확인하는 `before insert or update` 트리거 `public.check_product_brand_consistency()` 추가(SECURITY DEFINER, 브랜드 역추적 4경로 전부 조인). 트리거 전용 함수라 `set_master_audit()`와 동일하게 PUBLIC 직접 RPC 실행 권한을 회수했다.
+- [x] RLS 활성화 — `select`는 authenticated 전체 허용. **INSERT/UPDATE/DELETE는 Task 023 ③ 확정 결과(로그인 사용자 전체 개방 유지)에 따라 `is_admin()` 제한 없이 `to authenticated using (true)/with check (true)`로 적용.**
+- [x] Storage 버킷 `product-images` 생성(`public = true`). 업로드(insert/update/delete) Storage 정책은 상품 CRUD 권한(③)과 동일하게 `to authenticated` 전체 허용으로 걸었다.
+- [x] 버킷 내 경로 규칙 확정 — `products/{product_id}/original.{ext}`, `products/{product_id}/thumb.{ext}` (실제 업로드 경로 적용은 Task 040에서 구현 — 이번 Task는 버킷/정책 구축까지).
 
 **수락 기준**
 
-- [ ] `products` 테이블이 생성되고 4개 FK + `gender` 체크 제약이 동작한다.
-- [ ] 서로 다른 브랜드의 서브아이템/라인 조합으로 insert 시 브랜드 일관성 트리거가 이를 거부한다.
-- [ ] `product-images` 버킷이 생성되고 정책이 적용되어 있다.
+- [x] `products` 테이블이 생성되고 4개 FK + `gender` 체크 제약이 동작한다.
+- [x] 서로 다른 브랜드의 서브아이템/라인 조합으로 insert 시 브랜드 일관성 트리거가 이를 거부한다.
+- [x] `product-images` 버킷이 생성되고 정책이 적용되어 있다.
 
 **테스트 체크리스트**
 
-- [ ] `execute_sql`로 동일 브랜드 조합의 상품 1건 insert 성공 확인.
-- [ ] 다른 브랜드(브랜드2 하위)의 `brand_line_id`를 섞은 insert → 브랜드 일관성 트리거 예외 확인. 컬러·사이즈에 대해서도 각각 1회씩 반복 확인(총 3개 교차 케이스).
-- [ ] `gender='mixed'` 같은 잘못된 값 → 체크 제약 위반 확인.
-- [ ] `sales_status`에 허용값 외 문자열 insert → 체크 제약 위반 확인.
-- [ ] Storage 버킷에 임시 파일 업로드/조회/삭제 1회 왕복 확인 후 정리.
-- [ ] Task 023 ③ 확정 결과에 맞춰 `role='user'` 세션의 상품 insert가 **의도한 대로** 허용/차단되는지 확인.
-- [ ] `TEST_%` 행 및 임시 파일 정리 후 잔존 0건 확인.
+- [x] `execute_sql`로 동일 브랜드 조합의 상품 1건 insert 성공 확인.
+- [x] 다른 브랜드(브랜드2 하위)의 `brand_line_id`를 섞은 insert → 브랜드 일관성 트리거 예외 확인. 컬러·사이즈에 대해서도 각각 1회씩 반복 확인(총 3개 교차 케이스) — 3건 모두 거부됨을 확인.
+- [x] `gender='mixed'` 같은 잘못된 값 → 체크 제약 위반(`23514`) 확인.
+- [x] `sales_status`에 허용값 외 문자열(`'preorder'`) insert → 체크 제약 위반(`23514`) 확인.
+- [x] Storage 버킷에 임시 파일 업로드/조회/삭제 1회 왕복 확인 후 정리 — 실제 이메일 가입으로 임시 인증 사용자를 만들어 access token으로 `product-images/TEST_task028/roundtrip.txt` 업로드 → 공개 URL로 내용 확인 → 삭제 → 404 확인(캐시로 보인 200은 cache-bust 재요청으로 404 재확인). 임시 유저는 `auth.users`에서 삭제.
+- [x] Task 023 ③ 확정 결과에 맞춰 `role='user'` 세션의 상품 insert가 **의도한 대로 허용**됨을 확인(로그인 사용자 전체 개방).
+- [x] `TEST_%` 행 및 임시 파일/임시 사용자 정리 후 잔존 0건 확인.
 
 ---
 
