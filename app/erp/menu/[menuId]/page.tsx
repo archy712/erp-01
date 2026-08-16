@@ -58,7 +58,10 @@ async function ErpMenuContent({
 
   const adminRoute = getAdminRouteForMenuPath(path.map((node) => node.name));
   if (adminRoute) {
-    redirect(adminRoute);
+    // `cat` 쿼리를 붙이지 않으면 좌측 레일/트리가 활성 상태를 잃는다
+    // (ErpCategoryRail/ErpMenuTree는 `?cat=`을 단일 소스로 사용, 대분류는
+    // path[0]).
+    redirect(`${adminRoute}?cat=${path[0].id}`);
   }
 
   const current = path[path.length - 1];
