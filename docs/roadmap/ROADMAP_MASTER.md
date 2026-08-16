@@ -258,7 +258,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 027: 코드 자동 채번 시퀀스 및 `next_master_code()` 구현
+### Task 027: 코드 자동 채번 시퀀스 및 `next_master_code()` 구현 ✅
 
 **목표**: PRD 6.1의 접두사/자릿수 규칙대로 등록 시 코드가 자동 생성되게 하고, 관리자가 코드를 수동 수정해도 이후 채번이 충돌하지 않게 한다.
 
@@ -269,30 +269,30 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] 엔티티별 시퀀스 12개 생성 — `master_code_company_seq`(start 1001), `..._brand_seq`(1001), `..._small_brand_seq`(1001), `..._brand_line_seq`(1001), `..._item_type_seq`(1001), `..._item_seq`(1001), `..._sub_item_seq`(1001), `..._brand_color_type_seq`(1001), `..._brand_color_seq`(**start 1000001**, 7자리), `..._brand_gender_size_type_seq`(1001), `..._brand_gender_size_seq`(1001), `..._product_seq`(**start 100000001**, 9자리). 각 시퀀스는 `minvalue`를 `start` 값과 동일하게 설정.
-- [ ] 채번 범위는 **부모와 무관한 전체 시퀀스**로 통일한다 (PRD 6.1 각주: 부모별로 끊으면 코드만으로 소속을 알 수 없어 혼동).
-- [ ] 공용 함수 `public.next_master_code(p_entity text) returns text` 구현:
-  - [ ] 엔티티명 → (접두사, 시퀀스명, 대상 테이블) 매핑을 `case` 문으로 내장하고, 알 수 없는 엔티티는 예외 발생.
-  - [ ] `nextval()` 값을 접두사와 결합해 코드 생성.
-  - [ ] **생성된 코드가 대상 테이블에 이미 존재하면(관리자가 수동으로 그 코드를 쓴 경우) 다음 `nextval`로 재시도**하는 루프(최대 100회, 초과 시 예외).
-  - [ ] `security definer` + `set search_path = ''` + 함수 내부에서 `public.is_admin()` 재확인(기존 `set_user_menu_permissions()`와 동일 컨벤션 — SECURITY DEFINER로 RLS를 우회하는 만큼 내부 권한 재확인으로 상쇄).
-- [ ] 서버 액션(Task 029)이 등록 시 `rpc("next_master_code", { p_entity })`를 호출해 코드를 받아 insert하도록 인터페이스를 확정한다. **`max(code)+1` 계산 방식은 채택하지 않는다**(동시 등록 시 경합).
-- [ ] `get_advisors` 확인 — 신규 SECURITY DEFINER 함수에 대한 경고는 기존 6개 함수와 동일 패턴(내부 권한 재확인)이므로 근거를 기록하고 유지한다.
+- [x] 엔티티별 시퀀스 12개 생성 — `master_code_company_seq`(start 1001), `..._brand_seq`(1001), `..._small_brand_seq`(1001), `..._brand_line_seq`(1001), `..._item_type_seq`(1001), `..._item_seq`(1001), `..._sub_item_seq`(1001), `..._brand_color_type_seq`(1001), `..._brand_color_seq`(**start 1000001**, 7자리), `..._brand_gender_size_type_seq`(1001), `..._brand_gender_size_seq`(1001), `..._product_seq`(**start 100000001**, 9자리). 각 시퀀스는 `minvalue`를 `start` 값과 동일하게 설정.
+- [x] 채번 범위는 **부모와 무관한 전체 시퀀스**로 통일한다 (PRD 6.1 각주: 부모별로 끊으면 코드만으로 소속을 알 수 없어 혼동).
+- [x] 공용 함수 `public.next_master_code(p_entity text) returns text` 구현:
+  - [x] 엔티티명(snake_case) → (접두사, 시퀀스명, 대상 테이블) 매핑을 `case` 문으로 내장하고, 알 수 없는 엔티티는 예외 발생. **주의**: DB 함수의 `p_entity`는 `company`/`brand_color`/`product`처럼 snake_case이고, `lib/erp/master/code.ts`의 `MasterCodeEntity`는 `company`/`brandColor`/`product`처럼 camelCase — Task 029의 서버 액션이 이 둘을 매핑해야 한다(동일 문자열이 아님).
+  - [x] `nextval()` 값을 접두사와 `lpad`로 결합해 코드 생성.
+  - [x] **생성된 코드가 대상 테이블에 이미 존재하면(관리자가 수동으로 그 코드를 쓴 경우) 다음 `nextval`로 재시도**하는 루프(최대 100회, 초과 시 예외). 대상 테이블이 아직 없으면(Task 028 이전의 `product`) `to_regclass()`로 감지해 중복 검사를 건너뛴다.
+  - [x] `security definer` + `set search_path = ''` + 함수 내부에서 `public.is_admin()` 재확인(기존 `set_user_menu_permissions()`와 동일 컨벤션 — SECURITY DEFINER로 RLS를 우회하는 만큼 내부 권한 재확인으로 상쇄).
+- [x] 서버 액션(Task 029)이 등록 시 `rpc("next_master_code", { p_entity })`를 호출해 코드를 받아 insert하도록 인터페이스를 확정한다. **`max(code)+1` 계산 방식은 채택하지 않는다**(동시 등록 시 경합).
+- [x] `get_advisors` 확인 — `next_master_code()`에 대한 신규 SECURITY DEFINER WARN이 나왔고, 기존 6개 함수와 동일 패턴(내부 `is_admin()` 재확인으로 상쇄)이므로 근거를 기록하고 유지했다(revoke 대상 아님 — 트리거 전용 함수인 `set_master_audit()`와는 다른 케이스).
 
 **수락 기준**
 
-- [ ] `select public.next_master_code('company')` → `C1001`, 재호출 시 `C1002` 형식으로 증가한다.
-- [ ] `next_master_code('brand_color')` → `BC1000001`, `next_master_code('product')` → `PM100000001` 형식이 나온다.
-- [ ] 이미 존재하는 코드와 충돌하면 자동으로 다음 번호를 반환한다.
-- [ ] `role='user'` 세션에서 호출 시 권한 예외가 발생한다.
+- [x] `select public.next_master_code('company')` → `C1001`, 재호출 시 `C1002` 형식으로 증가한다(admin 세션으로 실측 확인).
+- [x] `next_master_code('brand_color')` → `BC1000001`, `next_master_code('product')` → `PM100000001` 형식이 나온다.
+- [x] 이미 존재하는 코드와 충돌하면 자동으로 다음 번호를 반환한다.
+- [x] `role='user'` 세션에서 호출 시 권한 예외가 발생한다.
 
 **테스트 체크리스트**
 
-- [ ] `execute_sql`로 12개 엔티티 전부 `next_master_code()`를 1회씩 호출해 **PRD 6.1 표의 접두사·자릿수와 정확히 일치**하는지 대조한다.
-- [ ] `companies`에 `C1005`를 수동 insert한 뒤 시퀀스를 `setval(..., 1004)`로 되돌리고 `next_master_code('company')` 호출 → `C1005`를 건너뛰고 `C1006`이 반환되는지 확인.
-- [ ] `next_master_code('unknown_entity')` → 예외 발생 확인.
-- [ ] `set_config`로 `role='user'` 시뮬레이션 → 권한 예외 확인.
-- [ ] 검증에 사용한 행 정리 및 시퀀스 값 원복 확인.
+- [x] `execute_sql`로 12개 엔티티 전부 `next_master_code()`를 1회씩 호출해 **PRD 6.1 표의 접두사·자릿수와 정확히 일치**하는지 대조 — 12건 모두 일치 확인(`C1001`, `B1001`, `SB1001`, `BL1001`, `LC1001`, `MC1001`, `SC1001`, `BCT1001`, `BC1000001`, `BGST1001`, `BGS1001`, `PM100000001`).
+- [x] `companies`에 `C1005`를 수동 insert한 뒤 시퀀스를 `setval(..., 1004)`로 되돌리고 `next_master_code('company')` 호출 → `C1005`를 건너뛰고 `C1006`이 반환되는지 확인 — 확인됨.
+- [x] `next_master_code('unknown_entity')` → 예외 발생 확인(admin 세션에서 실행해 권한 예외가 아닌 "알 수 없는 엔티티" 예외임을 명확히 구분).
+- [x] `set local role authenticated` + `set_config`로 `role='user'` 시뮬레이션 → 권한 예외("코드 채번은 관리자만 할 수 있습니다") 확인.
+- [x] 검증에 사용한 행(`C1005`) 삭제 후 잔존 0건 확인, 12개 시퀀스 전부 `setval(..., start, false)`로 시작값 원복 확인(재조회 시 `nextval()`이 다시 시작값을 반환).
 
 ---
 
