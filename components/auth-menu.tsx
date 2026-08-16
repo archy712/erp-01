@@ -13,7 +13,6 @@ import {
   Moon,
   Settings,
   Shield,
-  SlidersHorizontal,
   Sun,
   UserRound,
 } from "lucide-react";
@@ -82,11 +81,6 @@ export function AuthMenu({
       href: "/erp/settings/profile",
       icon: UserRound,
       label: dict.erp.settings.navProfile,
-    },
-    {
-      href: "/erp/settings/preferences",
-      icon: SlidersHorizontal,
-      label: dict.erp.settings.navPreferences,
     },
     {
       href: "/erp/settings/security",

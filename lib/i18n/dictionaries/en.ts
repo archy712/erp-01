@@ -509,10 +509,8 @@ export const en: Dictionary = {
     settings: {
       rootLabel: "Settings",
       navProfile: "Profile",
-      navPreferences: "Preferences",
       navSecurity: "Security",
       navNotifications: "Notifications",
-      preferencesDescription: "Set your theme and language.",
       themeLabel: "Theme",
       languageLabel: "Language",
       navLanguage: "Language",

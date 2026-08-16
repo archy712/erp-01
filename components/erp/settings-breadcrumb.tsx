@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 import { PageHeader } from "@/components/erp/page-header";
 
-// 설정 화면 6개(프로필/환경설정/아바타/연락처/보안/알림)는 각자 카드 안에
+// 설정 화면 각각(프로필/보안/알림/언어/테마)은 자체 카드 안에
 // 이미 자체 타이틀(CardTitle)을 갖고 있어, PageHeader의 title까지 중복으로
 // 넣으면 같은 이름이 두 번 보인다. 그래서 여기서는 브레드크럼 한 줄만
 // 렌더링해 "설정 > 현재 섹션" 경로만 보여준다. 활성 섹션은 pathname으로

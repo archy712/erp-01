@@ -10,7 +10,6 @@ import {
   type LucideIcon,
   Moon,
   Shield,
-  SlidersHorizontal,
   Sun,
   UserRound,
 } from "lucide-react";
@@ -30,7 +29,6 @@ type SettingsNavItem = {
 // 규칙) 이 표에 넣지 않고 렌더링 시 별도 계산한다.
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/erp/settings/profile": UserRound,
-  "/erp/settings/preferences": SlidersHorizontal,
   "/erp/settings/security": Shield,
   "/erp/settings/notifications": Bell,
   "/erp/settings/language": Languages,

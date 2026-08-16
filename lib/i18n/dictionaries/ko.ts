@@ -507,10 +507,8 @@ export const ko: Dictionary = {
     settings: {
       rootLabel: "설정",
       navProfile: "프로필",
-      navPreferences: "환경설정",
       navSecurity: "보안",
       navNotifications: "알림",
-      preferencesDescription: "테마와 언어를 설정합니다.",
       themeLabel: "테마",
       languageLabel: "언어",
       navLanguage: "언어",

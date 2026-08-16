@@ -27,10 +27,6 @@ async function SettingsLayoutContent({
 
   const items = [
     { href: "/erp/settings/profile", label: dict.erp.settings.navProfile },
-    {
-      href: "/erp/settings/preferences",
-      label: dict.erp.settings.navPreferences,
-    },
     { href: "/erp/settings/security", label: dict.erp.settings.navSecurity },
     {
       href: "/erp/settings/notifications",

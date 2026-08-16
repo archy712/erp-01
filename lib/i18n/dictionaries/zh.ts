@@ -487,10 +487,8 @@ export const zh: Dictionary = {
     settings: {
       rootLabel: "设置",
       navProfile: "个人资料",
-      navPreferences: "偏好设置",
       navSecurity: "安全",
       navNotifications: "通知",
-      preferencesDescription: "设置主题和语言。",
       themeLabel: "主题",
       languageLabel: "语言",
       navLanguage: "语言",

@@ -408,10 +408,8 @@ export interface Dictionary {
     settings: {
       rootLabel: string;
       navProfile: string;
-      navPreferences: string;
       navSecurity: string;
       navNotifications: string;
-      preferencesDescription: string;
       themeLabel: string;
       languageLabel: string;
       navLanguage: string;

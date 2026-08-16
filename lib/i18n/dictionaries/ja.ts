@@ -512,10 +512,8 @@ export const ja: Dictionary = {
     settings: {
       rootLabel: "設定",
       navProfile: "プロフィール",
-      navPreferences: "環境設定",
       navSecurity: "セキュリティ",
       navNotifications: "通知",
-      preferencesDescription: "テーマと言語を設定します。",
       themeLabel: "テーマ",
       languageLabel: "言語",
       navLanguage: "言語",
