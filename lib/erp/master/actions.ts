@@ -184,7 +184,7 @@ function routeForEntity(entity: MasterCodeEntity): string {
 export async function createMasterAction(
   entity: MasterCodeEntity,
   input: MasterEntityInput,
-): Promise<ActionResult> {
+): Promise<ActionResult & { code?: string }> {
   await guardEntity(entity);
 
   const name = input.name.trim();
@@ -227,7 +227,9 @@ export async function createMasterAction(
   }
 
   revalidatePath(routeForEntity(entity));
-  return { success: true };
+  // MasterFormSheet(components/erp/master/*)가 등록 직후 자동 채번된 코드를
+  // 토스트로 보여주기 위해(PRD 6.3 "저장 결과 표시") code를 함께 반환한다.
+  return { success: true, code: code as string };
 }
 
 export async function updateMasterAction(
@@ -319,5 +321,111 @@ export async function setMasterActiveAction(
   }
 
   revalidatePath(routeForEntity(entity));
+  return { success: true };
+}
+
+// --- 정렬순서 이동(SortOrderCell, components/erp/master/sort-order-cell.tsx 전용) ---
+//
+// lib/erp/actions.ts의 moveMenuAction(Task 016)과 동일한 "같은 부모의 형제만
+// 조회 후 인접 형제와 sort_order를 교환"하는 방식을, 마스터 엔티티 11종(상품
+// 제외 — 상품은 이 화면 대상이 아니다)에 일반화했다. 엔티티마다 "형제"를
+// 가르는 컬럼 조합이 다르므로(예: 사이즈타입은 brand_id뿐 아니라 gender까지
+// 같아야 형제) 단일 parent_id가 아니라 컬럼 목록으로 스코프를 정의한다.
+const MASTER_SCOPE_COLUMNS: Record<MasterEntityKey, string[]> = {
+  company: [],
+  brand: ["company_id"],
+  smallBrand: ["brand_id"],
+  brandLine: ["brand_id"],
+  itemType: ["small_brand_id"],
+  item: ["item_type_id"],
+  subItem: ["item_id"],
+  brandColorType: ["brand_id"],
+  brandColor: ["brand_color_type_id"],
+  brandGenderSizeType: ["brand_id", "gender"],
+  brandGenderSize: ["brand_gender_size_type_id"],
+};
+
+type LooseSelectResult = {
+  data: Array<Record<string, unknown>> | null;
+  error: PostgrestErrorLike | null;
+};
+
+// Supabase의 PostgrestFilterBuilder는 실제로는 thenable(PromiseLike)이지만,
+// 이 파일 전반과 같은 이유(런타임에 결정되는 테이블명 하나로 11개 테이블을
+// 분기)로 정적 타입과 근본적으로 맞지 않아 느슨한 타입으로 캐스팅한다.
+type LooseSelectQuery = {
+  eq: (column: string, value: unknown) => LooseSelectQuery;
+  order: (column: string, opts: { ascending: boolean }) => LooseSelectQuery;
+} & PromiseLike<LooseSelectResult>;
+
+function selectMasterRows(
+  supabase: SupabaseServerClient,
+  entity: MasterEntityKey,
+  columns: string,
+): LooseSelectQuery {
+  return supabase
+    .from(MASTER_TABLES[entity])
+    .select(columns) as unknown as LooseSelectQuery;
+}
+
+export async function moveMasterEntityAction(
+  entity: MasterEntityKey,
+  id: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const scopeColumns = MASTER_SCOPE_COLUMNS[entity];
+  const columns = ["id", "sort_order", ...scopeColumns].join(", ");
+
+  const { data: targetRows, error: targetError } = await selectMasterRows(
+    supabase,
+    entity,
+    columns,
+  ).eq("id", id);
+
+  const target = targetRows?.[0];
+  if (targetError || !target) {
+    return { success: false, message: "대상을 찾을 수 없습니다." };
+  }
+
+  let siblingsQuery = selectMasterRows(supabase, entity, columns).order(
+    "sort_order",
+    { ascending: true },
+  );
+  for (const column of scopeColumns) {
+    siblingsQuery = siblingsQuery.eq(column, target[column]);
+  }
+
+  const { data: siblings, error: siblingsError } = await siblingsQuery;
+  if (siblingsError || !siblings) {
+    return { success: false, message: "형제 항목 조회에 실패했습니다." };
+  }
+
+  const index = siblings.findIndex((sibling) => sibling.id === id);
+  const swapIndex = direction === "up" ? index - 1 : index + 1;
+
+  if (index === -1 || swapIndex < 0 || swapIndex >= siblings.length) {
+    return { success: false, message: "더 이상 이동할 수 없습니다." };
+  }
+
+  const current = siblings[index];
+  const swapTarget = siblings[swapIndex];
+
+  const [{ error: currentError }, { error: swapError }] = await Promise.all([
+    getMasterTable(supabase, entity)
+      .update({ sort_order: swapTarget.sort_order })
+      .eq("id", current.id as string),
+    getMasterTable(supabase, entity)
+      .update({ sort_order: current.sort_order })
+      .eq("id", swapTarget.id as string),
+  ]);
+
+  if (currentError || swapError) {
+    return { success: false, message: "정렬순서 변경에 실패했습니다." };
+  }
+
+  revalidatePath(MASTER_ENTITIES[entity].route);
   return { success: true };
 }
