@@ -113,6 +113,41 @@ export async function getSmallBrands(
   return data.map((row) => ({ ...toCommonFields(row), brandId: row.brand_id }));
 }
 
+export type SmallBrandScope = {
+  smallBrand: SmallBrand;
+  brandId: string;
+  companyId: string;
+};
+
+/**
+ * 소브랜드 ID 하나로 상위 브랜드/법인까지 한 번에 역추적한다. 상품 분류 관리
+ * 화면(item-category-manager.tsx)이 `?smallBrandId=`만 있고 `?companyId=`/
+ * `?brandId=`가 없는 딥링크로 진입할 때도 3단 ScopeSelector를 채워야 하기
+ * 때문에 필요하다 — getBrandIdOfSubItem()과 같은 "역추적" 패턴이며,
+ * app/erp/master/brands/page.tsx가 brandId만으로 companyId를 역추적하는 것과도
+ * 같은 목적이다(그쪽은 브랜드 목록 전체를 이미 들고 있어 별도 함수가 필요 없었다).
+ */
+export async function getSmallBrandScope(
+  smallBrandId: string,
+): Promise<SmallBrandScope | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("small_brands")
+    .select("*, brands(company_id)")
+    .eq("id", smallBrandId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data || !data.brands) return null;
+
+  return {
+    smallBrand: { ...toCommonFields(data), brandId: data.brand_id },
+    brandId: data.brand_id,
+    companyId: data.brands.company_id,
+  };
+}
+
 export async function getBrandLines(
   brandId: string,
   options?: ActiveOnlyOption,

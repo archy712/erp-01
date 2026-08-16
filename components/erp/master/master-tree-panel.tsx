@@ -142,6 +142,15 @@ export function MasterTreePanel({
         </p>
       ) : (
         <TreeView
+          // components/ui/tree-view.tsx의 TreeNode는 펼침 상태(value)를
+          // `useState(expandedItemIds.includes(item.id) ? [item.id] : [])`로
+          // "마운트 시 1회"만 초기화하고 이후 expandedItemIds prop 변화를
+          // 반영하는 동기화 로직이 없다(제어 컴포넌트가 아님). 그래서 검색어를
+          // 입력해도 이미 접힌 채로 마운트돼 있던 조상 노드는 그대로 접힌
+          // 채로 남는다 — search 값으로 key를 줘서 검색어가 바뀔 때마다 트리
+          // 전체를 리마운트시켜, 새로 계산된 expandedItemIds(조상 자동 확장)가
+          // 각 노드의 초기 상태에 반영되게 한다.
+          key={query}
           data={items}
           expandAll={query.length > 0}
           initialSelectedItemId={selectedId ?? undefined}
