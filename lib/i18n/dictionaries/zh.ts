@@ -457,6 +457,9 @@ export const zh: Dictionary = {
     description: "按类别整理的构成本入门套件的框架、库和开发工具。",
   },
   erp: {
+    header: {
+      logoAriaLabel: "前往 ERP 首页",
+    },
     rail: {
       ariaLabel: "大类",
     },

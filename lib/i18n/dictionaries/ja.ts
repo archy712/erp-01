@@ -481,6 +481,9 @@ export const ja: Dictionary = {
       "このスターターキットを構成するフレームワーク、ライブラリ、開発ツールを分野別に整理しました。",
   },
   erp: {
+    header: {
+      logoAriaLabel: "ERPホームへ移動",
+    },
     rail: {
       ariaLabel: "大分類",
     },

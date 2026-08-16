@@ -331,6 +331,9 @@ export interface Dictionary {
     description: string;
   };
   erp: {
+    header: {
+      logoAriaLabel: string;
+    };
     rail: {
       ariaLabel: string;
     };

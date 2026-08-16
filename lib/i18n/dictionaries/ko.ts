@@ -476,6 +476,9 @@ export const ko: Dictionary = {
       "이 스타터킷을 구성하는 프레임워크, 라이브러리, 개발 도구를 분야별로 정리했습니다.",
   },
   erp: {
+    header: {
+      logoAriaLabel: "ERP 홈으로 이동",
+    },
     rail: {
       ariaLabel: "대분류",
     },

@@ -9,18 +9,18 @@ export function ErpShellSkeleton() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="flex h-16 w-full shrink-0 items-center justify-center border-b border-b-foreground/10">
-        <div className="flex w-full max-w-5xl items-center justify-between px-5">
-          <Skeleton className="h-5 w-40" />
-          <div className="flex items-center gap-3">
+        <div className="relative flex h-full w-full max-w-5xl items-center px-5">
+          <div className="flex flex-1 items-center">
+            <Skeleton className="h-6 w-6 rounded-md md:hidden" />
+            <Skeleton className="hidden h-9 w-9 rounded-md md:block" />
+          </div>
+          <Skeleton className="absolute inset-y-0 left-1/2 my-auto h-5 w-24 -translate-x-1/2" />
+          <div className="flex flex-1 items-center justify-end gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
       </header>
-
-      <div className="flex h-12 w-full shrink-0 items-center gap-2 border-b px-4 md:hidden">
-        <Skeleton className="h-6 w-6 rounded-md" />
-      </div>
 
       <div className="flex flex-1 overflow-hidden">
         <div className="hidden shrink-0 md:flex">

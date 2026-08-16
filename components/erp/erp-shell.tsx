@@ -29,8 +29,9 @@ type ErpShellProps = {
 // 반응형 브레이크포인트(Tailwind 기본값 기준):
 // - lg(1024px) 이상: 트리 패널 폭 w-64
 // - md(768px)~lg: 트리 패널 폭 w-48로 축소, 레일은 그대로 노출
-// - md 미만: 레일/트리 패널을 모두 숨기고 mobileNav(햄버거+Sheet, 대/중/소분류
-//   통합 트리)만 노출 — 모바일은 이 구조 변경 이전부터 이미 통합 트리였다.
+// - md 미만: 레일/트리 패널을 모두 숨기고 헤더 좌측의 mobileNav(햄버거+Sheet,
+//   대/중/소분류 통합 트리)만 노출 — 모바일은 이 구조 변경 이전부터 이미
+//   통합 트리였다.
 export function ErpShell({
   dict,
   rail,
@@ -41,15 +42,7 @@ export function ErpShell({
 }: ErpShellProps) {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ErpHeader dict={dict} />
-
-      <div className="flex h-12 w-full shrink-0 items-center gap-2 border-b px-4 md:hidden">
-        {mobileNav ?? (
-          <span className="text-sm text-muted-foreground">
-            모바일 메뉴 (Task 005에서 구현 예정)
-          </span>
-        )}
-      </div>
+      <ErpHeader dict={dict} mobileNav={mobileNav} />
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden shrink-0 md:flex">

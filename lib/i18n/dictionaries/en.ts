@@ -487,6 +487,9 @@ export const en: Dictionary = {
       "The frameworks, libraries, and dev tools that make up this starter kit, organized by category.",
   },
   erp: {
+    header: {
+      logoAriaLabel: "Go to ERP home",
+    },
     rail: {
       ariaLabel: "Categories",
     },
