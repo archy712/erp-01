@@ -86,7 +86,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 ## 개발 단계
 
 - **Phase 3** ✅ — 마스터 데이터 모델 구축 (Task 023~029)
-- **Phase 4** — 메뉴 재구성 및 역할 하드 게이트 (Task 030~031)
+- **Phase 4** ✅ — 메뉴 재구성 및 역할 하드 게이트 (Task 030~031)
 - **Phase 5** — 기준정보 관리 5개 화면 구현 (Task 032~037)
 - **Phase 6** — 상품(Product) 관리 화면 구현 (Task 038~040)
 - **Phase 7** — 더미 데이터 시드 및 통합 검증 (Task 041~042)
@@ -399,13 +399,15 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-## Phase 4: 메뉴 재구성 및 역할 하드 게이트
+## Phase 4: 메뉴 재구성 및 역할 하드 게이트 ✅
 
 > PRD 3장 / 4장.
 > 기존 `menus` 데이터를 PRD 4.3 매핑대로 갱신하고, 기준정보 5개 화면에 역할 기반 하드 게이트를 적용한다.
 > **Phase 3과 병렬 착수 가능하다** — 스키마와 무관한 메뉴/라우팅 작업이다.
 
-### Task 030: menus 데이터 마이그레이션 (6개 → 5개 재구성)
+### Task 030: menus 데이터 마이그레이션 (6개 → 5개 재구성) ✅
+
+> 완료(2026-08-17) — `restructure_master_reference_menus` 마이그레이션 1건으로 UPDATE 3건 + DELETE 1건 적용, "기준정보 관리" 하위가 6건 → 5건으로 재구성됨.
 
 **목표**: "마스터 관리 > 기준정보 관리" 하위 소분류를 PRD 4.3 매핑대로 이름 변경·삭제·재정렬한다.
 
@@ -416,7 +418,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] 착수 전 `execute_sql`로 현재 메뉴 id를 재확인한다(아래는 2026-08-16 실 DB 조회 기준 검증값 — PRD 4.3절 표의 축약 id와 대조할 것):
+- [x] 착수 전 `execute_sql`로 현재 메뉴 id를 재확인한다(아래는 2026-08-16 실 DB 조회 기준 검증값 — PRD 4.3절 표의 축약 id와 대조할 것): **2026-08-17 착수 직전 재조회 결과 6개 행의 id/name/sort_order/is_active가 아래 표와 100% 일치함을 확인**(추가로 부모 "기준정보 관리"(`f5a736ee-...`)의 parent가 "마스터 관리"(`d3346981-...`)인 것, 상품 관리 중분류(`c6907660-...`) 하위가 "상품 관리"(`9a24138f-...`)/"상품 정보 현황"(`e33f1017-...`)/"상품 정보 일괄 수정"(`2dc0ea47-...`) 3건인 것도 함께 재확인).
 
   | 기존 메뉴명            | id                                     | 처리       | 신규 메뉴명            | 신규 `sort_order` |
   | ---------------------- | -------------------------------------- | ---------- | ---------------------- | ----------------- |
@@ -429,29 +431,33 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   - 부모 노드 "기준정보 관리" = `f5a736ee-b72e-4379-97d9-385f04f1bf36` (level 2, 부모 "마스터 관리")
   - 상품 관리 중분류 = `c6907660-26f2-470a-b5f2-af62ac960854`, 그 하위 "상품 관리" 소분류 = `9a24138f-4e24-43ec-a41c-570d51b53960` — **이 3개 상품 메뉴는 손대지 않는다**(PRD 4.2)
 
-- [ ] UPDATE 3건 적용 (`name` + `sort_order` 동시 갱신).
-- [ ] "법인 관리" `sort_order`를 0으로 확정(현재 0, 변경 없음이면 그대로 기록).
-- [ ] DELETE 1건 적용 — "소브랜드 관리". **삭제 전 `user_menu_permissions`에 이 메뉴 권한이 부여된 사용자가 있는지 조회**하고, 있으면 "브랜드 구조 관리"(`c5d91f1a-...`) 권한으로 이관한 뒤 삭제한다(`menus`의 `on delete cascade`가 권한 행을 함께 지우므로 이관을 먼저 해야 함).
-- [ ] 마이그레이션은 **하나의 트랜잭션**으로 적용하고, 적용 전 대상 6개 행의 스냅샷을 마이그레이션 주석에 남긴다(롤백 근거).
-- [ ] 적용 후 `execute_sql`로 기준정보 관리 하위가 정확히 5건이고 `sort_order`가 0~4로 연속인지 확인.
+- [x] UPDATE 3건 적용 (`name` + `sort_order` 동시 갱신) — 적용 후 재조회로 `c5d91f1a-...`="브랜드 구조 관리"(1), `8bdbe430-...`="상품 분류 관리"(2), `48641dd2-...`="컬러 관리"(3) 확인.
+- [x] "법인 관리" `sort_order`를 0으로 확정(현재 0, 변경 없음이면 그대로 기록) — 조회 결과 0 유지 확인.
+- [x] DELETE 1건 적용 — "소브랜드 관리". **삭제 전 `user_menu_permissions`에 이 메뉴 권한이 부여된 사용자가 있는지 조회**하고, 있으면 "브랜드 구조 관리"(`c5d91f1a-...`) 권한으로 이관한 뒤 삭제한다(`menus`의 `on delete cascade`가 권한 행을 함께 지우므로 이관을 먼저 해야 함). **사전 조회 결과 `menu_id='dbbde663-...'` 권한 보유자 0건 — 이관 대상 없음**(마이그레이션 SQL에는 향후 재현성을 위해 조건부 이관 UPDATE를 no-op으로 포함). DELETE 후 해당 id로 재조회 시 0건 확인.
+- [x] 마이그레이션은 **하나의 트랜잭션**으로 적용하고, 적용 전 대상 6개 행의 스냅샷을 마이그레이션 주석에 남긴다(롤백 근거) — `mcp__supabase__apply_migration`(단일 SQL, 원자적 적용)으로 처리, 스냅샷+롤백 SQL을 마이그레이션 상단 주석에 기록.
+- [x] 적용 후 `execute_sql`로 기준정보 관리 하위가 정확히 5건이고 `sort_order`가 0~4로 연속인지 확인 — 5건, `sort_order` 0/1/2/3/4 연속 확인.
 
 **수락 기준**
 
-- [ ] "마스터 관리 > 기준정보 관리" 하위 소분류가 법인 관리 / 브랜드 구조 관리 / 상품 분류 관리 / 컬러 관리 / 사이즈 관리 5건이다.
-- [ ] "소브랜드 관리" 메뉴와 그에 딸린 `user_menu_permissions` 행이 남아 있지 않다(권한은 사전 이관됨).
-- [ ] 상품 관리 중분류 및 그 하위 3개 소분류는 이름·정렬·활성 상태가 그대로다.
+- [x] "마스터 관리 > 기준정보 관리" 하위 소분류가 법인 관리 / 브랜드 구조 관리 / 상품 분류 관리 / 컬러 관리 / 사이즈 관리 5건이다 — `execute_sql`로 재확인.
+- [x] "소브랜드 관리" 메뉴와 그에 딸린 `user_menu_permissions` 행이 남아 있지 않다(권한은 사전 이관됨) — 메뉴 0건, 권한 0건 확인(원래도 권한 보유자 0명이었음).
+- [x] 상품 관리 중분류 및 그 하위 3개 소분류는 이름·정렬·활성 상태가 그대로다 — 마이그레이션 전후 동일 쿼리로 대조, 변경 없음 확인.
 
 **테스트 체크리스트 (Playwright MCP)**
 
-- [ ] 관리자 계정 로그인 → `/erp` → 상단 Menubar "마스터 관리" → 좌측 트리 "기준정보 관리" 펼침 → 5개 메뉴가 PRD 4.2 순서대로 노출되는지 육안 확인.
-- [ ] 삭제된 "소브랜드 관리"의 기존 URL(`/erp/menu/dbbde663-9417-4fb8-9869-284dcc81fb82`)에 직접 접근 → `app/erp/not-found.tsx`(404 화면)가 뜨는지 확인 (PRD 13장 성공 기준의 "URL 직접 접근 시 정상 처리"에 해당).
-- [ ] "상품 관리" 중분류 하위 3개 메뉴가 회귀 없이 그대로 동작하는지 확인.
-- [ ] `execute_sql`로 마이그레이션 전/후 행 수를 대조(기준정보 관리 하위 6 → 5).
-- [ ] `browser_console_messages`로 콘솔 에러 0건 확인.
+- [x] 관리자 계정 로그인 → `/erp` → 상단 Menubar "마스터 관리" → 좌측 트리 "기준정보 관리" 펼침 → 5개 메뉴가 PRD 4.2 순서대로 노출되는지 육안 확인 — 임시 관리자 계정(`task030-erp-test@example.com`, 회원가입 후 `profiles.role`을 `admin`으로 SQL 승격)으로 로그인해 트리를 펼친 결과 "법인 관리 → 브랜드 구조 관리 → 상품 분류 관리 → 컬러 관리 → 사이즈 관리" 순서로 정확히 5건 노출 확인.
+- [x] 삭제된 "소브랜드 관리"의 기존 URL(`/erp/menu/dbbde663-9417-4fb8-9869-284dcc81fb82`)에 직접 접근 → `app/erp/not-found.tsx`(404 화면)가 뜨는지 확인 (PRD 13장 성공 기준의 "URL 직접 접근 시 정상 처리"에 해당) — 인증 세션 상태로 직접 접근 시 "메뉴를 찾을 수 없습니다" 화면(ErpShell 안, `dict.erp.notFound`) 렌더링 확인.
+- [x] "상품 관리" 중분류 하위 3개 메뉴가 회귀 없이 그대로 동작하는지 확인 — 트리에서 "상품 관리" 펼침 → "상품 관리"/"상품 정보 현황"/"상품 정보 일괄 수정" 3건 그대로 노출 확인.
+- [x] `execute_sql`로 마이그레이션 전/후 행 수를 대조(기준정보 관리 하위 6 → 5) — 전 6건 → 후 5건 확인.
+- [x] `browser_console_messages`로 콘솔 에러 0건 확인 — 로그인/트리 펼침/404 접근 전 시나리오에서 에러 0건.
+- [x] (추가) 임시 관리자 계정 및 관련 데이터 삭제 후 잔존 0건 확인 — `auth.users`/`profiles`/`user_menu_permissions` 전부 0건.
+- [x] (추가) `npm run check-all` 통과 확인 — typecheck/lint(기존 warning 7건만 유지, 신규 없음)/format:check 모두 통과(이번 Task는 순수 데이터 마이그레이션이라 코드 변경 없음).
 
 ---
 
-### Task 031: 기준정보 라우트 골격 및 역할 하드 게이트 적용
+### Task 031: 기준정보 라우트 골격 및 역할 하드 게이트 적용 ✅
+
+> 완료(2026-08-17) — `app/erp/master/layout.tsx` 신설로 5개 화면에 `requireAdmin()` 하드 게이트를 일괄 적용하고, `lib/erp/menu-routes.ts`를 `MENU_ROUTES`로 개명하며 6개 라우트 매핑을 추가함. 임시 계정 3개(superadmin/admin/user)로 Playwright 검증 후 전부 삭제, 콘솔 에러 0건, `npm run check-all` 통과.
 
 **목표**: 기준정보 5개 화면과 상품 화면의 라우트를 스캐폴딩하고, 메뉴 → 실제 라우트 매핑과 관리자 하드 게이트를 연결한다. **Phase 5의 5개 화면 Task가 서로 독립적으로 착수할 수 있게 하는 선행 작업이다.**
 
@@ -460,43 +466,45 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - `app/erp/master/layout.tsx` (신규 — `requireAdmin()` 가드)
 - `app/erp/master/companies/page.tsx`, `app/erp/master/brands/page.tsx`, `app/erp/master/item-categories/page.tsx`, `app/erp/master/colors/page.tsx`, `app/erp/master/sizes/page.tsx` (신규, 스텁)
 - `app/erp/products/page.tsx` (신규, 스텁 — **`requireAdmin()` 가드 없음**)
-- `lib/erp/menu-routes.ts` (기존 — `ADMIN_MENU_ROUTES` 확장)
+- `lib/erp/menu-routes.ts` (기존 — `ADMIN_MENU_ROUTES` → `MENU_ROUTES` 개명 + 6개 매핑 확장)
 - `lib/erp/auth.ts` (기존 재사용, 무수정)
 - `components/erp/page-header.tsx` (기존 재사용)
+- `lib/erp/master/entities.ts` (부수 수정 — Task 024의 가칭 route 값을 실제 라우트로 정정)
 
 **구현 체크리스트**
 
-- [ ] `app/erp/master/layout.tsx`를 얇은 `Layout` + `<Suspense>` + `async` 가드 컴포넌트 패턴으로 작성하고, 가드에서 **기존 `requireAdmin()`을 호출**한다. 새 가드 함수·새 DB 함수를 만들지 않는다. 이것으로 PRD 3.1의 "`user_menu_permissions` 부여 여부와 무관한 역할 하드 게이트"가 5개 화면 전체에 한 번에 적용된다.
-- [ ] 기준정보 5개 페이지를 스텁("Task 0NN에서 구현됩니다" 안내 문구 + `PageHeader`)으로 생성 — Task 014에서 관리자 3개 화면을 스텁으로 먼저 만들어 가드를 검증한 선례와 동일.
-- [ ] `app/erp/products/page.tsx` 스텁 생성 — **`app/erp/master/` 아래가 아닌 별도 세그먼트**에 두어 `requireAdmin()` 가드가 걸리지 않게 한다(PRD 1.2: 상품 권한은 기존 유지).
-- [ ] `lib/erp/menu-routes.ts`의 `ADMIN_MENU_ROUTES`에 6개 매핑 추가:
+- [x] `app/erp/master/layout.tsx`를 얇은 `Layout` + `<Suspense>` + `async` 가드 컴포넌트 패턴으로 작성하고, 가드에서 **기존 `requireAdmin()`을 호출**한다. 새 가드 함수·새 DB 함수를 만들지 않는다. 이것으로 PRD 3.1의 "`user_menu_permissions` 부여 여부와 무관한 역할 하드 게이트"가 5개 화면 전체에 한 번에 적용된다 — `app/erp/admin/layout.tsx`와 동일한 구조로 작성, `requireAdmin()`을 새로 만들지 않고 그대로 import해 재사용함을 확인.
+- [x] 기준정보 5개 페이지를 스텁("Task 0NN에서 구현됩니다" 안내 문구 + `PageHeader`)으로 생성 — Task 014에서 관리자 3개 화면을 스텁으로 먼저 만들어 가드를 검증한 선례와 동일. Task 번호는 각각 companies→033, brands→034, item-categories→035, colors→036, sizes→037로 표기.
+- [x] `app/erp/products/page.tsx` 스텁 생성 — **`app/erp/master/` 아래가 아닌 별도 세그먼트**에 두어 `requireAdmin()` 가드가 걸리지 않게 한다(PRD 1.2: 상품 권한은 기존 유지). "Task 038에서 구현됩니다" 문구 표기.
+- [x] `lib/erp/menu-routes.ts`의 매핑 테이블에 6개 매핑 추가 — 착수 전 `execute_sql`로 실 DB `menus` 이름 경로를 재확인(법인 관리/브랜드 구조 관리/상품 분류 관리/컬러 관리/사이즈 관리/상품 관리 6건 100% 일치 확인) 후 진행:
   - `"마스터 관리>기준정보 관리>법인 관리"` → `/erp/master/companies`
   - `"마스터 관리>기준정보 관리>브랜드 구조 관리"` → `/erp/master/brands`
   - `"마스터 관리>기준정보 관리>상품 분류 관리"` → `/erp/master/item-categories`
   - `"마스터 관리>기준정보 관리>컬러 관리"` → `/erp/master/colors`
   - `"마스터 관리>기준정보 관리>사이즈 관리"` → `/erp/master/sizes`
   - `"마스터 관리>상품 관리>상품 관리"` → `/erp/products`
-- [ ] 상수명 `ADMIN_MENU_ROUTES`가 이제 관리자 전용이 아닌 매핑도 담게 되므로 `MENU_ROUTES`로 개명하고, `getAdminRouteForMenuPath`/`getMenuPathForAdminRoute`도 `getRouteForMenuPath`/`getMenuPathForRoute`로 정리한다(호출부: `app/erp/menu/[menuId]/page.tsx`, `components/erp/page-header.tsx` — `grep`으로 전수 확인).
-- [ ] `app/erp/menu/[menuId]/page.tsx`의 기존 판정 순서("존재 여부 → `canAccessMenu` → 라우트 매핑 리다이렉트")를 **변경하지 않는다** — 새 매핑 6건이 그 흐름에 자연히 얹힌다.
-- [ ] 각 스텁 페이지에서 `PageHeader`로 breadcrumb("마스터 관리 > 기준정보 관리 > 법인 관리" 등)을 표시한다 — `getMenuPathForRoute()` 재사용으로 DB 왕복 없이.
+- [x] 상수명 `ADMIN_MENU_ROUTES`가 이제 관리자 전용이 아닌 매핑도 담게 되므로 `MENU_ROUTES`로 개명하고, `getAdminRouteForMenuPath`/`getMenuPathForAdminRoute`도 `getRouteForMenuPath`/`getMenuPathForRoute`로 정리했다(호출부: `app/erp/menu/[menuId]/page.tsx`, `app/erp/admin/{users,menus,permissions}/page.tsx` 4개 파일 — `grep`으로 전수 확인 후 갱신. `components/erp/page-header.tsx`는 실제로는 이 매핑을 직접 참조하지 않아 변경 불필요했음, 착수 시 재확인).
+- [x] `app/erp/menu/[menuId]/page.tsx`의 기존 판정 순서("존재 여부 → `canAccessMenu` → 라우트 매핑 리다이렉트")를 **변경하지 않았다** — 새 매핑 6건이 그 흐름에 자연히 얹히도록 함수명만 교체.
+- [x] 각 스텁 페이지에서 `PageHeader`로 breadcrumb("마스터 관리 > 기준정보 관리 > 법인 관리" 등)을 표시한다 — `getMenuPathForRoute()` 재사용으로 DB 왕복 없이 처리.
+- [x] **부수 수정**: `lib/erp/master/entities.ts`의 `MASTER_ENTITIES` route 필드가 Task 024 작성 당시의 가칭 라우트(`/erp/master/brand-structure`, `/erp/master/product-classification`)를 그대로 갖고 있어 이번 Task에서 확정된 실제 라우트(`/erp/master/brands`, `/erp/master/item-categories`)와 어긋나 있던 것을 발견해 함께 수정했다. `lib/erp/master/actions.ts`가 저장 후 이 `route` 값으로 `revalidatePath()`를 호출하므로 방치하면 Task 032 이후 캐시 무효화가 조용히 실패했을 것이다.
 
 **수락 기준**
 
-- [ ] 트리에서 기준정보 5개 메뉴 클릭 시 `MenuPlaceholder`가 아니라 각 실제 라우트로 이동한다.
-- [ ] `role='user'` 계정이 **`user_menu_permissions`로 해당 메뉴 권한을 부여받았더라도** `/erp/master/*` 5개 경로 전부에서 `/erp/forbidden`으로 차단된다 (PRD 13장 성공 기준 2번).
-- [ ] `role in ('admin','superadmin')` 계정은 별도 권한 부여 없이 5개 화면에 진입한다 (PRD 13장 성공 기준 3번).
-- [ ] `/erp/products`는 기존과 동일하게 `user_menu_permissions` 기반으로만 통제되고 `role='user'`도 권한이 있으면 진입한다.
+- [x] 트리에서 기준정보 5개 메뉴 클릭 시 `MenuPlaceholder`가 아니라 각 실제 라우트로 이동한다 — admin 계정으로 "브랜드 구조 관리" 트리 노드 클릭 → `/erp/master/brands?cat=...&menu=...`로 정상 리다이렉트 확인.
+- [x] `role='user'` 계정이 **`user_menu_permissions`로 해당 메뉴 권한을 부여받았더라도** `/erp/master/*` 5개 경로 전부에서 `/erp/forbidden`으로 차단된다 (PRD 13장 성공 기준 2번) — 5개 메뉴 권한을 모두 부여한 user 계정으로 트리 클릭 및 직접 URL 진입 모두 `/erp/forbidden` 확인.
+- [x] `role in ('admin','superadmin')` 계정은 별도 권한 부여 없이 5개 화면에 진입한다 (PRD 13장 성공 기준 3번) — admin/superadmin 두 계정 모두 `user_menu_permissions` 부여 없이 5개 URL 전부 정상 진입 확인.
+- [x] `/erp/products`는 기존과 동일하게 `user_menu_permissions` 기반으로만 통제되고 `role='user'`도 권한이 있으면 진입한다 — "상품 관리" 메뉴 권한만 가진 user 계정으로 `/erp/products` 정상 진입 확인.
 
 **테스트 체크리스트 (Playwright MCP)** — 임시 계정 3개(superadmin 1 / admin 1 / user 1)로 검증 후 즉시 삭제(`auth.users` 삭제 → `profiles` cascade, 잔존 0건 확인)
 
-- [ ] **일반 사용자에게 기준정보 5개 메뉴 권한을 전부 부여한 뒤** 로그인 → 트리에는 메뉴가 보이지만 클릭 시 5개 전부 `/erp/forbidden`으로 리다이렉트되는 것을 확인 (하드 게이트가 메뉴 권한을 이긴다는 핵심 시나리오).
-- [ ] 같은 일반 사용자로 `/erp/master/companies` 등 5개 URL 직접 입력 → 전부 `/erp/forbidden` 확인.
-- [ ] admin 계정으로 권한 부여 없이 5개 화면 진입 성공 확인.
-- [ ] superadmin 계정으로도 동일하게 진입 성공 확인(`is_admin()`이 superadmin을 포함하는지 앱 레벨에서 재확인).
-- [ ] 일반 사용자에게 "상품 관리" 메뉴 권한만 부여 → `/erp/products` 진입 성공 확인(상품은 하드 게이트 대상이 아님).
-- [ ] 미인증 상태로 `/erp/master/companies` 접근 → `/auth/login` 리다이렉트 확인(`proxy.ts` 회귀 없음).
-- [ ] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인.
-- [ ] `npm run check-all` 통과.
+- [x] **일반 사용자에게 기준정보 5개 메뉴 권한을 전부 부여한 뒤** 로그인 → 트리에는 메뉴가 보이지만 클릭 시 5개 전부 `/erp/forbidden`으로 리다이렉트되는 것을 확인 (하드 게이트가 메뉴 권한을 이긴다는 핵심 시나리오) — 트리에 5개 메뉴 모두 노출, "법인 관리" 클릭 시 `/erp/forbidden` 확인.
+- [x] 같은 일반 사용자로 `/erp/master/companies` 등 5개 URL 직접 입력 → 전부 `/erp/forbidden` 확인 — 5개 URL 전부 `/erp/forbidden`으로 리다이렉트됨을 개별 확인.
+- [x] admin 계정으로 권한 부여 없이 5개 화면 진입 성공 확인 — 5개 URL 전부 정상 렌더링(스텁 콘텐츠 + breadcrumb) 확인.
+- [x] superadmin 계정으로도 동일하게 진입 성공 확인(`is_admin()`이 superadmin을 포함하는지 앱 레벨에서 재확인) — `/erp/master/item-categories` 진입 성공으로 확인(`isAdminRole()`이 admin/superadmin 모두 true 판정, `prevent_unauthorized_role_change` 트리거로 인해 승격은 admin 경유 후 superadmin으로 2단계 처리해야 함을 확인).
+- [x] 일반 사용자에게 "상품 관리" 메뉴 권한만 부여 → `/erp/products` 진입 성공 확인(상품은 하드 게이트 대상이 아님) — 정상 진입 및 breadcrumb("마스터 관리 > 상품 관리") 확인.
+- [x] 미인증 상태로 `/erp/master/companies` 접근 → `/auth/login` 리다이렉트 확인(`proxy.ts` 회귀 없음) — 로그아웃 후 직접 접근 시 `/auth/login`으로 리다이렉트 확인, `proxy.ts`/`lib/supabase/proxy.ts`는 무수정.
+- [x] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인 — 전체 세션 누적 콘솔 메시지 중 error 0건.
+- [x] `npm run check-all` 통과 — typecheck 0 에러, lint는 기존 warning 7건만 유지(신규 없음), format:check 통과(이 Task가 건드린 파일 기준).
 
 ---
 
@@ -1070,13 +1078,13 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ## 진행 현황
 
-| Phase                                    | Task 범위    | 상태    |
-| ---------------------------------------- | ------------ | ------- |
-| **Phase 3 — 마스터 데이터 모델 구축** ✅ | Task 023~029 | ✅ 완료 |
-| Phase 4 — 메뉴 재구성 / 역할 하드 게이트 | Task 030~031 | ☐ 예정  |
-| Phase 5 — 기준정보 5개 화면              | Task 032~037 | ☐ 예정  |
-| Phase 6 — 상품 관리 화면                 | Task 038~040 | ☐ 예정  |
-| Phase 7 — 시드 및 통합 검증              | Task 041~042 | ☐ 예정  |
+| Phase                                           | Task 범위    | 상태    |
+| ----------------------------------------------- | ------------ | ------- |
+| **Phase 3 — 마스터 데이터 모델 구축** ✅        | Task 023~029 | ✅ 완료 |
+| **Phase 4 — 메뉴 재구성 / 역할 하드 게이트** ✅ | Task 030~031 | ✅ 완료 |
+| Phase 5 — 기준정보 5개 화면                     | Task 032~037 | ☐ 예정  |
+| Phase 6 — 상품 관리 화면                        | Task 038~040 | ☐ 예정  |
+| Phase 7 — 시드 및 통합 검증                     | Task 041~042 | ☐ 예정  |
 
 ### 사용자 확인 대기 항목 (착수 전 필수)
 
