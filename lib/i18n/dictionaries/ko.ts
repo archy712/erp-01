@@ -493,9 +493,14 @@ export const ko: Dictionary = {
       categoryNotFound: "존재하지 않는 대분류입니다.",
       noSubMenu: "하위 메뉴가 없습니다.",
       ariaLabel: "메뉴 트리",
+      collapseAriaLabel: "메뉴 트리 패널 접기",
+      expandAriaLabel: "메뉴 트리 패널 펼치기",
     },
     layout: {
       menuLoadError: "메뉴를 불러오지 못했습니다",
+    },
+    footer: {
+      copyright: "© {year} ERP",
     },
     placeholder: {
       description: "이 화면은 MVP 이후 단계에서 실제 기능이 구현될 예정입니다.",
@@ -539,6 +544,7 @@ export const ko: Dictionary = {
       errorFallback: "오류가 발생했습니다.",
     },
     settings: {
+      rootLabel: "설정",
       navProfile: "프로필",
       navPreferences: "환경설정",
       navAvatar: "아바타",

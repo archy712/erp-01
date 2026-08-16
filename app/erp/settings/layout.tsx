@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { SettingsBreadcrumb } from "@/components/erp/settings-breadcrumb";
 import { SettingsNav } from "@/components/erp/settings-nav";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -40,9 +41,17 @@ async function SettingsLayoutContent({
   ];
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6 sm:flex-row">
-      <SettingsNav items={items} />
-      <div className="min-w-0 flex-1">{children}</div>
+    <div className="flex flex-1 flex-col">
+      <Suspense fallback={null}>
+        <SettingsBreadcrumb
+          items={items}
+          rootLabel={dict.erp.settings.rootLabel}
+        />
+      </Suspense>
+      <div className="flex flex-1 flex-col gap-6 p-6 sm:flex-row">
+        <SettingsNav items={items} />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </div>
   );
 }

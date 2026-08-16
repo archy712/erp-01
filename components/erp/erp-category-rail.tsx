@@ -3,11 +3,6 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { getMenuIcon } from "@/lib/erp/menu-icons";
 import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -20,6 +15,12 @@ import { cn } from "@/lib/utils";
 // 단일 소스로 사용하므로, 새로고침/딥링크에도 선택이 그대로 유지된다. 하위
 // 노드가 없는 대분류는 트리를 거치지 않고 바로 플레이스홀더 화면
 // (`/erp/menu/[menuId]`)으로 이동한다.
+//
+// 아이콘 아래 라벨을 항상 표시한다(이전에는 hover 툴팁으로만 이름을 알 수
+// 있어 처음 쓰는 사용자가 아이콘만 보고 대분류를 구분하기 어려웠다). 동시에
+// components/erp/settings-nav.tsx와 동일한 hover/active 색상 규칙(hover:bg-accent,
+// 활성 시 bg-accent + font-medium)을 써서 ERP 안의 좌측 내비게이션들이 서로
+// 다른 시각 언어를 쓰지 않도록 맞췄다.
 //
 // `categories`는 서버(app/erp/layout.tsx)에서 `getVisibleMenuTree(userId)`로
 // 조회한 실 데이터를 그대로 내려받는다(Task 018 — 1차 방어: 노출 필터링).
@@ -47,24 +48,20 @@ export function ErpCategoryRail({
         const isActive = activeCategoryId === category.id;
 
         return (
-          <Tooltip key={category.id}>
-            <TooltipTrigger asChild>
-              <Link
-                href={href}
-                aria-current={isActive ? "true" : undefined}
-                className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-                  isActive && "bg-accent text-accent-foreground",
-                )}
-              >
-                <Icon className="size-5" />
-                <span className="sr-only">{category.name}</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
+          <Link
+            key={category.id}
+            href={href}
+            aria-current={isActive ? "true" : undefined}
+            className={cn(
+              "flex w-full shrink-0 flex-col items-center gap-0.5 rounded-md px-1 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+              isActive && "bg-accent font-medium text-accent-foreground",
+            )}
+          >
+            <Icon className="size-5 shrink-0" />
+            <span className="line-clamp-2 text-center text-[10px] leading-tight break-keep">
               {category.name}
-            </TooltipContent>
-          </Tooltip>
+            </span>
+          </Link>
         );
       })}
     </nav>

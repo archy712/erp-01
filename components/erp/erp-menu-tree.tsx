@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FolderTree } from "lucide-react";
+import { FolderTree, MousePointerClick } from "lucide-react";
 
 import {
   Empty,
@@ -35,9 +35,14 @@ export function ErpMenuTree({
 
   if (!categoryId) {
     return (
-      <p className="p-4 text-sm text-muted-foreground">
-        {dict.erp.tree.selectCategory}
-      </p>
+      <Empty className="flex-1 border-0 p-4">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <MousePointerClick />
+          </EmptyMedia>
+          <EmptyDescription>{dict.erp.tree.selectCategory}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -45,9 +50,14 @@ export function ErpMenuTree({
 
   if (!category) {
     return (
-      <p className="p-4 text-sm text-muted-foreground">
-        {dict.erp.tree.categoryNotFound}
-      </p>
+      <Empty className="flex-1 border-0 p-4">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FolderTree />
+          </EmptyMedia>
+          <EmptyDescription>{dict.erp.tree.categoryNotFound}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 

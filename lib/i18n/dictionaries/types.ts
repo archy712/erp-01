@@ -348,9 +348,15 @@ export interface Dictionary {
       categoryNotFound: string;
       noSubMenu: string;
       ariaLabel: string;
+      collapseAriaLabel: string;
+      expandAriaLabel: string;
     };
     layout: {
       menuLoadError: string;
+    };
+    footer: {
+      /** {year} 자리표시자 사용 */
+      copyright: string;
     };
     placeholder: {
       description: string;
@@ -391,6 +397,7 @@ export interface Dictionary {
       errorFallback: string;
     };
     settings: {
+      rootLabel: string;
       navProfile: string;
       navPreferences: string;
       navAvatar: string;

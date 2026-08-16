@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
+import { PageHeader } from "@/components/erp/page-header";
 import { MenuManager } from "@/components/erp/admin/menu-manager";
+import { getMenuPathForAdminRoute } from "@/lib/erp/menu-routes";
 import { getAllMenus } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -19,17 +21,15 @@ export default function AdminMenusPage() {
 async function AdminMenusContent() {
   const [menus, locale] = await Promise.all([getAllMenus(), getLocale()]);
   const dict = getDictionary(locale);
+  const breadcrumb = getMenuPathForAdminRoute("/erp/admin/menus")?.slice(0, -1);
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="px-6 pt-6">
-        <h1 className="text-lg font-medium tracking-tight">
-          {dict.admin.menus.pageTitle}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dict.admin.menus.pageDescription}
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb={breadcrumb}
+        title={dict.admin.menus.pageTitle}
+        description={dict.admin.menus.pageDescription}
+      />
       <MenuManager menus={menus} dict={dict} />
     </div>
   );

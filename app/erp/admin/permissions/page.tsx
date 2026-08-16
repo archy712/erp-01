@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
+import { PageHeader } from "@/components/erp/page-header";
 import { PermissionEditor } from "@/components/erp/admin/permission-editor";
+import { getMenuPathForAdminRoute } from "@/lib/erp/menu-routes";
 import { getAllMenus, getUsers } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -25,17 +27,18 @@ async function AdminPermissionsContent() {
     getLocale(),
   ]);
   const dict = getDictionary(locale);
+  const breadcrumb = getMenuPathForAdminRoute("/erp/admin/permissions")?.slice(
+    0,
+    -1,
+  );
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="px-6 pt-6">
-        <h1 className="text-lg font-medium tracking-tight">
-          {dict.admin.permissions.pageTitle}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dict.admin.permissions.pageDescription}
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb={breadcrumb}
+        title={dict.admin.permissions.pageTitle}
+        description={dict.admin.permissions.pageDescription}
+      />
       <PermissionEditor users={users} activeMenus={activeMenus} dict={dict} />
     </div>
   );

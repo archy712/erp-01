@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 
+import { PageHeader } from "@/components/erp/page-header";
 import { UserTable } from "@/components/erp/admin/user-table";
 import { getCurrentErpUser } from "@/lib/erp/auth";
+import { getMenuPathForAdminRoute } from "@/lib/erp/menu-routes";
 import { getUsers } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -27,17 +29,15 @@ async function AdminUsersContent() {
     getLocale(),
   ]);
   const dict = getDictionary(locale);
+  const breadcrumb = getMenuPathForAdminRoute("/erp/admin/users")?.slice(0, -1);
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="px-6 pt-6">
-        <h1 className="text-lg font-medium tracking-tight">
-          {dict.admin.users.pageTitle}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dict.admin.users.pageDescription}
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb={breadcrumb}
+        title={dict.admin.users.pageTitle}
+        description={dict.admin.users.pageDescription}
+      />
       <UserTable users={users} currentUserId={currentUser.id} dict={dict} />
     </div>
   );

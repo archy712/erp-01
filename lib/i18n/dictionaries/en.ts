@@ -504,9 +504,14 @@ export const en: Dictionary = {
       categoryNotFound: "This category does not exist.",
       noSubMenu: "No submenu items.",
       ariaLabel: "Menu tree",
+      collapseAriaLabel: "Collapse menu tree panel",
+      expandAriaLabel: "Expand menu tree panel",
     },
     layout: {
       menuLoadError: "Failed to load the menu",
+    },
+    footer: {
+      copyright: "© {year} ERP",
     },
     placeholder: {
       description: "This screen will be implemented in a later MVP phase.",
@@ -550,6 +555,7 @@ export const en: Dictionary = {
       errorFallback: "Something went wrong.",
     },
     settings: {
+      rootLabel: "Settings",
       navProfile: "Profile",
       navPreferences: "Preferences",
       navAvatar: "Avatar",

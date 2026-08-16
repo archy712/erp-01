@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { ErpFooter } from "./erp-footer";
 import { ErpHeader } from "./erp-header";
+import { ErpTreePanel } from "./erp-tree-panel";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 type ErpShellProps = {
@@ -12,8 +13,6 @@ type ErpShellProps = {
   mobileNav?: ReactNode;
   /** 데스크탑/태블릿(md 이상)에서 레일 옆에 노출되는 중/소분류 트리 패널 */
   tree?: ReactNode;
-  /** 대분류 > 중분류 > 소분류 경로 표시 슬롯 (Task 006 이후 페이지에서 채움) */
-  breadcrumb?: ReactNode;
   children: ReactNode;
 };
 
@@ -27,17 +26,26 @@ type ErpShellProps = {
 // 독립적으로 스크롤되도록 한다.
 //
 // 반응형 브레이크포인트(Tailwind 기본값 기준):
-// - lg(1024px) 이상: 트리 패널 폭 w-64
-// - md(768px)~lg: 트리 패널 폭 w-48로 축소, 레일은 그대로 노출
+// - lg(1024px) 이상: 레일 폭 w-20, 트리 패널 폭 w-64
+// - md(768px)~lg: 레일 폭 w-16, 트리 패널 폭 w-48로 축소
 // - md 미만: 레일/트리 패널을 모두 숨기고 헤더 좌측의 mobileNav(햄버거+Sheet,
 //   대/중/소분류 통합 트리)만 노출 — 모바일은 이 구조 변경 이전부터 이미
 //   통합 트리였다.
+//
+// 트리 패널은 ErpTreePanel로 감싸 접기/펼치기 토글을 붙인다 — 데이터 테이블이
+// 많은 업무 화면에서 좌측 내비 폭(레일+트리 최대 320px)을 접어 본문 폭을
+// 넓히고 싶은 요구를 반영했다. 레일은 항상 펼쳐진 채로 유지한다(1차 내비게이션
+// 수단이므로 VS Code Activity Bar처럼 접지 않는다).
+//
+// breadcrumb 표시는 더 이상 이 컴포넌트가 슬롯으로 받지 않는다 — 레이아웃
+// 레벨(app/erp/layout.tsx)에서는 페이지별 실제 경로를 알 수 없어 항상 빈
+// 슬롯이었다. 대신 각 페이지가 자신의 콘텐츠 상단에서 PageHeader를 직접
+// 렌더링한다(components/erp/page-header.tsx).
 export function ErpShell({
   dict,
   rail,
   mobileNav,
   tree,
-  breadcrumb,
   children,
 }: ErpShellProps) {
   return (
@@ -46,28 +54,23 @@ export function ErpShell({
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden shrink-0 md:flex">
-          <div className="flex w-14 shrink-0 flex-col overflow-y-auto border-r lg:w-16">
+          <div className="flex w-16 shrink-0 flex-col overflow-y-auto border-r lg:w-20">
             {rail ?? (
               <p className="p-2 text-center text-xs text-muted-foreground">
                 레일 (Task 004에서 구현 예정)
               </p>
             )}
           </div>
-          <div className="w-48 shrink-0 overflow-y-auto border-r lg:w-64">
+          <ErpTreePanel dict={dict}>
             {tree ?? (
               <p className="p-4 text-sm text-muted-foreground">
                 좌측 트리 영역 (Task 005에서 구현 예정)
               </p>
             )}
-          </div>
+          </ErpTreePanel>
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-          {breadcrumb ? (
-            <div className="border-b px-4 py-2 text-sm text-muted-foreground">
-              {breadcrumb}
-            </div>
-          ) : null}
           <div className="flex flex-1 flex-col">{children}</div>
         </main>
       </div>

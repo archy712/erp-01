@@ -14,3 +14,16 @@ const ADMIN_MENU_ROUTES: Record<string, string> = {
 export function getAdminRouteForMenuPath(names: string[]): string | undefined {
   return ADMIN_MENU_ROUTES[names.join(">")];
 }
+
+/**
+ * 관리자 라우트(예: "/erp/admin/users")에 대응하는 메뉴 이름 경로(대→중→소)를
+ * 반환한다. PageHeader의 브레드크럼은 실제 menus 테이블을 다시 조회하지 않고
+ * 이 정적 매핑을 그대로 재사용한다 — 어차피 메뉴명 자체는 다국어화 범위 밖이라
+ * (menu-placeholder.tsx 참고) DB 왕복 없이도 항상 최신 표시 이름과 같다.
+ */
+export function getMenuPathForAdminRoute(route: string): string[] | undefined {
+  const entry = Object.entries(ADMIN_MENU_ROUTES).find(
+    ([, adminRoute]) => adminRoute === route,
+  );
+  return entry?.[0].split(">");
+}

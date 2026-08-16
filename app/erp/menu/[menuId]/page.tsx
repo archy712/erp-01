@@ -71,7 +71,7 @@ async function ErpMenuContent({
   return (
     <MenuPlaceholder
       title={current.name}
-      breadcrumb={path.map((node) => node.name)}
+      breadcrumb={path.slice(0, -1).map((node) => node.name)}
       dict={dict}
     />
   );

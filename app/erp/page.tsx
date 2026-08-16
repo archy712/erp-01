@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { PageHeader } from "@/components/erp/page-header";
 import { AchievementGauges } from "@/components/erp/dashboard/achievement-gauges";
 import { BrandRevenueChart } from "@/components/erp/dashboard/brand-revenue-chart";
 import { CategoryRevenueChart } from "@/components/erp/dashboard/category-revenue-chart";
@@ -30,40 +31,40 @@ async function ErpHomeContent() {
   const dict = getDictionary(locale);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <PasswordChangeBanner dict={dict} />
+    <div className="flex flex-1 flex-col">
+      <PageHeader
+        title={dict.erpHome.title}
+        description={dict.erpHome.description}
+      />
 
-      <div>
-        <h1 className="text-2xl font-semibold">{dict.erpHome.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dict.erpHome.description}
-        </p>
-      </div>
+      <div className="flex flex-1 flex-col gap-6 p-6">
+        <PasswordChangeBanner dict={dict} />
 
-      <div className="flex items-center gap-2">
-        <Badge variant="outline">{dict.erpHome.sampleDataBadge}</Badge>
-        <span className="text-xs text-muted-foreground">
-          {dict.erpHome.sampleDataNote}
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{dict.erpHome.sampleDataBadge}</Badge>
+          <span className="text-xs text-muted-foreground">
+            {dict.erpHome.sampleDataNote}
+          </span>
+        </div>
 
-      <KpiSummary dict={dict} />
+        <KpiSummary dict={dict} />
 
-      <RevenueProfitChart dict={dict} />
+        <RevenueProfitChart dict={dict} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AchievementGauges dict={dict} />
-        <CustomerMetricsChart dict={dict} />
-      </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <AchievementGauges dict={dict} />
+          <CustomerMetricsChart dict={dict} />
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <BrandRevenueChart dict={dict} />
-        <ChannelRevenueChart dict={dict} />
-      </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <BrandRevenueChart dict={dict} />
+          <ChannelRevenueChart dict={dict} />
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <CategoryRevenueChart dict={dict} />
-        <WeeklyRevenueChart dict={dict} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <CategoryRevenueChart dict={dict} />
+          <WeeklyRevenueChart dict={dict} />
+        </div>
       </div>
     </div>
   );

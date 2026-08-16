@@ -474,9 +474,14 @@ export const zh: Dictionary = {
       categoryNotFound: "该大类不存在。",
       noSubMenu: "没有下级菜单。",
       ariaLabel: "菜单树",
+      collapseAriaLabel: "折叠菜单树面板",
+      expandAriaLabel: "展开菜单树面板",
     },
     layout: {
       menuLoadError: "菜单加载失败",
+    },
+    footer: {
+      copyright: "© {year} ERP",
     },
     placeholder: {
       description: "此画面将在 MVP 之后的阶段实现实际功能。",
@@ -517,6 +522,7 @@ export const zh: Dictionary = {
       errorFallback: "发生错误。",
     },
     settings: {
+      rootLabel: "设置",
       navProfile: "个人资料",
       navPreferences: "偏好设置",
       navAvatar: "头像",

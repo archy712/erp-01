@@ -498,9 +498,14 @@ export const ja: Dictionary = {
       categoryNotFound: "存在しない大分類です。",
       noSubMenu: "下位メニューがありません。",
       ariaLabel: "メニューツリー",
+      collapseAriaLabel: "メニューツリーパネルを折りたたむ",
+      expandAriaLabel: "メニューツリーパネルを展開する",
     },
     layout: {
       menuLoadError: "メニューを読み込めませんでした",
+    },
+    footer: {
+      copyright: "© {year} ERP",
     },
     placeholder: {
       description: "この画面はMVP以降の段階で実際の機能が実装される予定です。",
@@ -545,6 +550,7 @@ export const ja: Dictionary = {
       errorFallback: "エラーが発生しました。",
     },
     settings: {
+      rootLabel: "設定",
       navProfile: "プロフィール",
       navPreferences: "環境設定",
       navAvatar: "アバター",
