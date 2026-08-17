@@ -468,16 +468,13 @@ const TreeLeaf = React.forwardRef<
         {...props}
       >
         {renderItem ? (
-          <>
-            <div className="mr-1 h-4 w-4 shrink-0" />
-            {renderItem({
-              item,
-              level,
-              isLeaf: true,
-              isSelected,
-              hasChildren: false,
-            })}
-          </>
+          renderItem({
+            item,
+            level,
+            isLeaf: true,
+            isSelected,
+            hasChildren: false,
+          })
         ) : (
           <>
             <TreeIcon
