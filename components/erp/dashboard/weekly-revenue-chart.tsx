@@ -30,7 +30,7 @@ export function WeeklyRevenueChart({ dict }: { dict: Dictionary }) {
   const t = dict.erpHome.weeklyRevenue;
 
   const chartConfig = {
-    revenue: { label: t.valueLabel, color: "hsl(var(--chart-1))" },
+    revenue: { label: t.valueLabel, color: "hsl(var(--chart-4))" },
   } satisfies ChartConfig;
 
   return (

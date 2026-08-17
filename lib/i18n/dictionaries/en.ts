@@ -168,12 +168,22 @@ export const en: Dictionary = {
       revenueLabel: "Revenue",
       profitLabel: "Profit",
     },
-    achievement: {
-      title: "Goal Achievement",
-      description: "Daily and monthly revenue goal achievement",
-      dailyLabel: "Daily Achievement",
-      monthlyLabel: "Monthly Achievement",
+    groupAchievement: {
+      title: "This Month's Group Expected Revenue Achievement",
+      description:
+        "This month's group-wide expected revenue vs. goal achievement",
       detail: "{actual} / {target}",
+    },
+    companyAchievement: {
+      title: "This Month's Expected Revenue Achievement by Entity",
+      description:
+        "This month's expected revenue goal achievement by legal entity (descending)",
+      valueLabel: "Achievement",
+    },
+    companyRevenueComposition: {
+      title: "Revenue Composition by Entity",
+      description: "Each entity's share of this month's group-wide revenue",
+      valueLabel: "Revenue",
     },
     customerMetrics: {
       title: "Transactions & Avg. Order Value",

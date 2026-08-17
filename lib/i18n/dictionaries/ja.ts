@@ -173,12 +173,20 @@ export const ja: Dictionary = {
       revenueLabel: "売上",
       profitLabel: "損益",
     },
-    achievement: {
-      title: "目標達成率",
-      description: "日次・月次の売上目標達成状況",
-      dailyLabel: "日次達成率",
-      monthlyLabel: "月次達成率",
+    groupAchievement: {
+      title: "当月グループ予想売上達成率",
+      description: "今月のグループ全体予想売上目標達成状況",
       detail: "{actual} / {target}",
+    },
+    companyAchievement: {
+      title: "当月法人別予想売上達成率",
+      description: "今月の法人別予想売上目標達成率(降順)",
+      valueLabel: "達成率",
+    },
+    companyRevenueComposition: {
+      title: "法人別売上構成比",
+      description: "今月のグループ全体売上に占める法人別の割合",
+      valueLabel: "売上",
     },
     customerMetrics: {
       title: "客数・客単価推移",

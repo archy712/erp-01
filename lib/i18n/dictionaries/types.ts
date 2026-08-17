@@ -144,13 +144,21 @@ export interface Dictionary {
       revenueLabel: string;
       profitLabel: string;
     };
-    achievement: {
+    groupAchievement: {
       title: string;
       description: string;
-      dailyLabel: string;
-      monthlyLabel: string;
       /** {actual}, {target} 자리표시자 */
       detail: string;
+    };
+    companyAchievement: {
+      title: string;
+      description: string;
+      valueLabel: string;
+    };
+    companyRevenueComposition: {
+      title: string;
+      description: string;
+      valueLabel: string;
     };
     customerMetrics: {
       title: string;

@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/erp/page-header";
-import { AchievementGauges } from "@/components/erp/dashboard/achievement-gauges";
 import { BrandRevenueChart } from "@/components/erp/dashboard/brand-revenue-chart";
 import { CategoryRevenueChart } from "@/components/erp/dashboard/category-revenue-chart";
 import { ChannelRevenueChart } from "@/components/erp/dashboard/channel-revenue-chart";
+import { CompanyAchievementChart } from "@/components/erp/dashboard/company-achievement-chart";
+import { CompanyRevenueCompositionChart } from "@/components/erp/dashboard/company-revenue-composition-chart";
 import { CustomerMetricsChart } from "@/components/erp/dashboard/customer-metrics-chart";
+import { GroupAchievementGauge } from "@/components/erp/dashboard/group-achievement-gauge";
 import { KpiSummary } from "@/components/erp/dashboard/kpi-summary";
 import { RevenueProfitChart } from "@/components/erp/dashboard/revenue-profit-chart";
 import { WeeklyRevenueChart } from "@/components/erp/dashboard/weekly-revenue-chart";
@@ -49,22 +51,25 @@ async function ErpHomeContent() {
 
         <KpiSummary dict={dict} />
 
+        <div className="grid gap-4 lg:grid-cols-3">
+          <GroupAchievementGauge dict={dict} />
+          <CompanyAchievementChart dict={dict} />
+          <CompanyRevenueCompositionChart dict={dict} />
+        </div>
+
         <RevenueProfitChart dict={dict} />
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <AchievementGauges dict={dict} />
           <CustomerMetricsChart dict={dict} />
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
           <BrandRevenueChart dict={dict} />
-          <ChannelRevenueChart dict={dict} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
+          <ChannelRevenueChart dict={dict} />
           <CategoryRevenueChart dict={dict} />
-          <WeeklyRevenueChart dict={dict} />
         </div>
+
+        <WeeklyRevenueChart dict={dict} />
       </div>
     </div>
   );

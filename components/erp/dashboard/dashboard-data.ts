@@ -4,7 +4,7 @@
 // 객수·객단가)에서 계산해 서로 앞뒤가 맞도록 구성했다.
 
 /** 최근 12개월 매출·손익 (단위: 백만원) */
-export const monthlyFinance = [
+const monthlyFinance = [
   { month: "1", revenue: 812, profit: 122 },
   { month: "2", revenue: 894, profit: 148 },
   { month: "3", revenue: 856, profit: 129 },
@@ -57,7 +57,6 @@ export const categoryRevenue = [
 ] as const;
 
 /** 목표 매출 (실적은 아래 실데이터에서 파생) */
-const DAILY_TARGET_REVENUE = 20_000_000; // 원
 const MONTHLY_TARGET_REVENUE_M = 1200; // 백만원
 
 const today = dailyCustomerMetrics[dailyCustomerMetrics.length - 1];
@@ -116,20 +115,98 @@ export const dashboardKpi = {
   monthlyAchievementRate: `${((thisMonth.revenue / MONTHLY_TARGET_REVENUE_M) * 100).toFixed(1)}%`,
 };
 
-/** 목표 달성률 게이지 2종에 필요한 값 */
-export const achievementGauges = {
-  daily: {
-    rate: Math.round((todayRevenue / DAILY_TARGET_REVENUE) * 1000) / 10,
-    actual: formatCompactKRW(todayRevenue),
-    target: formatCompactKRW(DAILY_TARGET_REVENUE),
-  },
-  monthly: {
-    rate:
-      Math.round((thisMonth.revenue / MONTHLY_TARGET_REVENUE_M) * 1000) / 10,
-    actual: formatCompactKRW(thisMonth.revenue * 1_000_000),
-    target: formatCompactKRW(MONTHLY_TARGET_REVENUE_M * 1_000_000),
-  },
+/** 그룹사 전체 이번 달 예상 매출 목표 달성률 게이지에 필요한 값 */
+export const groupAchievement = {
+  rate: Math.round((thisMonth.revenue / MONTHLY_TARGET_REVENUE_M) * 1000) / 10,
+  actual: formatCompactKRW(thisMonth.revenue * 1_000_000),
+  target: formatCompactKRW(MONTHLY_TARGET_REVENUE_M * 1_000_000),
 };
+
+// 실제 companies 테이블에 등록된 법인명(M2/M2 Safety/MIDER/Mynafit/Mordisk/Miretti)을
+// 그대로 쓰되, weight(그룹 매출 내 비중)·actualThisMonth(이번 달 실적, 단위: 백만원)는
+// 레이아웃 확인용 더미 값이다. weight 합은 1, actualThisMonth 합은 thisMonth.revenue와
+// 일치하도록 구성해 그룹 합계와 법인별 합계가 서로 어긋나지 않게 했다. color는 법인별
+// 매출 달성률·매출 구성비·월별 매출 스택 차트 3곳에서 동일 법인은 항상 같은 색으로
+// 표시되게 하는 공용 팔레트다.
+export const companies = [
+  {
+    name: "M2",
+    weight: 0.3,
+    actualThisMonth: 414,
+    color: "hsl(var(--chart-1))",
+  },
+  {
+    name: "M2 Safety",
+    weight: 0.1,
+    actualThisMonth: 110,
+    color: "hsl(var(--chart-2))",
+  },
+  {
+    name: "MIDER",
+    weight: 0.2,
+    actualThisMonth: 259,
+    color: "hsl(var(--chart-3))",
+  },
+  {
+    name: "Mynafit",
+    weight: 0.15,
+    actualThisMonth: 153,
+    color: "hsl(var(--chart-4))",
+  },
+  {
+    name: "Mordisk",
+    weight: 0.15,
+    actualThisMonth: 216,
+    color: "hsl(var(--chart-5))",
+  },
+  {
+    name: "Miretti",
+    weight: 0.1,
+    actualThisMonth: 132,
+    color: "hsl(var(--chart-6))",
+  },
+] as const;
+
+/** 법인별 예상 매출 달성률 차트에 필요한 값 (달성률 내림차순) */
+export const companyAchievement = companies
+  .map((company) => {
+    const target = Math.round(company.weight * MONTHLY_TARGET_REVENUE_M);
+    return {
+      name: company.name,
+      color: company.color,
+      rate: Math.round((company.actualThisMonth / target) * 1000) / 10,
+      actual: formatCompactKRW(company.actualThisMonth * 1_000_000),
+      target: formatCompactKRW(target * 1_000_000),
+    };
+  })
+  .sort((a, b) => b.rate - a.rate);
+
+/** 법인별 매출 구성비 차트에 필요한 값 (그룹 전체 매출 대비 비중, 내림차순) */
+export const companyRevenueComposition = companies
+  .map((company) => ({
+    name: company.name,
+    color: company.color,
+    revenue: company.actualThisMonth,
+    percent:
+      Math.round((company.actualThisMonth / thisMonth.revenue) * 1000) / 10,
+  }))
+  .sort((a, b) => b.revenue - a.revenue);
+
+/** 매출·손익 추이 차트의 월별 매출을 법인별로 나눈 값 (합계는 monthlyFinance.revenue와 일치) */
+export const monthlyRevenueByCompany = monthlyFinance.map((entry) => {
+  const shares = companies.map((company) =>
+    Math.round(entry.revenue * company.weight),
+  );
+  const roundingDiff = entry.revenue - shares.reduce((sum, v) => sum + v, 0);
+  shares[0] += roundingDiff; // 반올림 오차는 비중이 가장 큰 법인(M2)에 합산
+
+  return {
+    month: entry.month,
+    revenue: entry.revenue,
+    profit: entry.profit,
+    ...Object.fromEntries(companies.map((c, i) => [c.name, shares[i]])),
+  };
+});
 
 /** 최근 7일 일별 매출 (단위: 백만원, 객수 × 객단가에서 파생) */
 export const weeklyRevenue = dailyCustomerMetrics.map(

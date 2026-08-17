@@ -169,12 +169,20 @@ export const ko: Dictionary = {
       revenueLabel: "매출",
       profitLabel: "손익",
     },
-    achievement: {
-      title: "목표 달성률",
-      description: "일간·월간 매출 목표 대비 달성 현황",
-      dailyLabel: "일간 달성률",
-      monthlyLabel: "월간 달성률",
+    groupAchievement: {
+      title: "당월 그룹사 예상 매출 달성률",
+      description: "이번 달 그룹 전체 예상 매출 목표 대비 달성 현황",
       detail: "{actual} / {target}",
+    },
+    companyAchievement: {
+      title: "당월 법인별 예상 매출 달성률",
+      description: "이번 달 법인별 예상 매출 목표 대비 달성률 (내림차순)",
+      valueLabel: "달성률",
+    },
+    companyRevenueComposition: {
+      title: "법인별 매출 구성비",
+      description: "이번 달 그룹 전체 매출에서 법인별로 차지하는 비중",
+      valueLabel: "매출",
     },
     customerMetrics: {
       title: "객수 · 객단가 추이",

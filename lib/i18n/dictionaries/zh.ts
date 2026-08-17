@@ -159,12 +159,20 @@ export const zh: Dictionary = {
       revenueLabel: "营收",
       profitLabel: "损益",
     },
-    achievement: {
-      title: "目标达成率",
-      description: "日度、月度营收目标达成情况",
-      dailyLabel: "日度达成率",
-      monthlyLabel: "月度达成率",
+    groupAchievement: {
+      title: "当月集团预计营收达成率",
+      description: "本月集团整体预计营收目标达成情况",
       detail: "{actual} / {target}",
+    },
+    companyAchievement: {
+      title: "当月各法人预计营收达成率",
+      description: "本月各法人预计营收目标达成率(降序)",
+      valueLabel: "达成率",
+    },
+    companyRevenueComposition: {
+      title: "各法人营收构成比",
+      description: "本月各法人在集团整体营收中所占的比重",
+      valueLabel: "营收",
     },
     customerMetrics: {
       title: "客数・客单价趋势",
