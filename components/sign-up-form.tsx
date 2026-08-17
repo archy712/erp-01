@@ -20,6 +20,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function SignUpForm({
   className,
@@ -54,7 +55,10 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
+      toast.success(dict.signUpSuccess.title, {
+        description: dict.signUpSuccess.message,
+      });
+      router.push("/auth/login");
     } catch (error: unknown) {
       setError(getAuthErrorMessage(error, dict));
     } finally {

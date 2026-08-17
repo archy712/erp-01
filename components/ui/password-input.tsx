@@ -32,6 +32,7 @@ function PasswordInput({
           type="button"
           size="icon-xs"
           variant="ghost"
+          tabIndex={-1}
           aria-label={visible ? hideLabel : showLabel}
           aria-pressed={visible}
           onClick={() => setVisible((v) => !v)}
