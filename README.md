@@ -102,5 +102,5 @@ npm run check-all     # typecheck + lint + format:check 순차 실행
 
 - [`CLAUDE.md`](./CLAUDE.md) — 이 저장소의 아키텍처, 관례, Claude Code 커스텀 설정 가이드
 - [`docs/guides/`](./docs/guides) — 컴포넌트 패턴, React Hook Form, Next.js 16, 프로젝트 구조, 스타일링 가이드
-- [`docs/prd/`](./docs/prd) — 기능별 PRD (`PRD_MVP.md`: ERP 뼈대·인증·메뉴/권한, `PRD_MASTER.md`: 마스터 관리/기준정보)
-- [`docs/roadmap/`](./docs/roadmap) — 기능별 구현 로드맵 (`ROADMAP_MVP.md`: 완료, `ROADMAP_MASTER.md`: 계획 단계)
+- [`docs/prd/`](./docs/prd) — 기능별 PRD (`PRD_MVP.md`: ERP 뼈대·인증·메뉴/권한, `PRD_MASTER.md`: 마스터 관리/기준정보, `PRD_ORG.md`: 조직도 관리)
+- [`docs/roadmap/`](./docs/roadmap) — 기능별 구현 로드맵 (`ROADMAP_MVP.md`: 완료, `ROADMAP_MASTER.md`: 완료, `ROADMAP_ORG.md`: 계획 단계)

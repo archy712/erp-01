@@ -62,7 +62,7 @@ npm run check-all     # typecheck + lint + format:check 순차 실행
 - **`lib/erp/`**: `auth.ts`(`getCurrentErpUser()`/`requireAdmin()`/`canAccessMenu()` — 전부 `cookies()`를 쓰므로 Suspense 경계 필요, `react`의 `cache()`로 요청 단위 dedupe됨), `queries.ts`(메뉴 트리/사용자 목록 등 조회), `actions.ts`(Server Actions, 진입부에서 반드시 `requireAdmin()` 먼저 호출하는 규약), `types.ts`, `menu-tree.ts`/`menu-routes.ts`/`menu-icons.ts`(메뉴 데이터 ↔ 라우트/아이콘 매핑), `role-labels.ts`(`isAdminRole()` 등).
 - **관리자 전용 CRUD**: `/erp/admin/{users,menus,permissions}` — 사용자 관리·메뉴 관리(대/중/소 등록·정렬·사용여부)·사용자별 메뉴 권한 부여. `app/erp/admin/layout.tsx`가 `requireAdmin()`으로 가드하며, 권한 없는 접근은 `/erp/forbidden`(`components/erp/access-denied.tsx`)으로 이동합니다.
 - **ERP 메인 화면(`/erp`)**: 매출/손익/객수 등 경영정보를 카드+recharts 차트로 보여주는 대시보드이지만, `components/erp/dashboard/dashboard-data.ts`의 **더미 데이터**만 사용합니다(실 데이터 연동은 범위 밖, `ROADMAP_MVP.md` "범위 제외" 참고).
-- **기능 단위 PRD/로드맵 문서 컨벤션**: `docs/prd/PRD_<기능>.md`(요구사항) → `docs/roadmap/ROADMAP_<기능>.md`(Task 단위 구현 계획, `development-planner` 에이전트가 생성) 쌍으로 관리합니다. 지금까지 `MVP`(ERP 뼈대, 완료) → `MASTER`(마스터 관리/기준정보 5화면 + 상품 관리, 계획 단계)가 있습니다. 로드맵의 Task는 이전 문서의 마지막 Task 번호에 이어서 연속 채번합니다.
+- **기능 단위 PRD/로드맵 문서 컨벤션**: `docs/prd/PRD_<기능>.md`(요구사항) → `docs/roadmap/ROADMAP_<기능>.md`(Task 단위 구현 계획, `development-planner` 에이전트가 생성) 쌍으로 관리합니다. 지금까지 `MVP`(ERP 뼈대, 완료) → `MASTER`(마스터 관리/기준정보 5화면 + 상품 관리, 완료) → `ORG`(조직도 관리, 계획 단계 — Task 043의 사용자 확인 대기 중이라 아직 미구현)가 있습니다. 로드맵의 Task는 이전 문서의 마지막 Task 번호에 이어서 연속 채번합니다(`ORG`는 `MASTER`의 Task 042에 이어 043부터).
 
 ### Next.js 16 관련 특이사항
 
