@@ -457,9 +457,11 @@ export type ProductDetail = {
   subItemName: string;
   brandLineId: string;
   brandLineName: string;
+  brandColorTypeId: string;
   brandColorId: string;
   brandColorName: string;
   brandColorRgbHex: string;
+  brandGenderSizeTypeId: string;
   brandGenderSizeId: string;
   brandGenderSizeName: string;
   gender: GenderValue;
@@ -485,8 +487,8 @@ export async function getProductById(
       `*,
       sub_items(name),
       brand_lines!inner(name),
-      brand_colors!inner(name, rgb_hex),
-      brand_gender_sizes!inner(name)`,
+      brand_colors!inner(name, rgb_hex, brand_color_type_id),
+      brand_gender_sizes!inner(name, brand_gender_size_type_id)`,
     )
     .eq("id", productId)
     .maybeSingle();
@@ -509,9 +511,11 @@ export async function getProductById(
     subItemName: data.sub_items?.name ?? "",
     brandLineId: data.brand_line_id,
     brandLineName: data.brand_lines.name,
+    brandColorTypeId: data.brand_colors.brand_color_type_id,
     brandColorId: data.brand_color_id,
     brandColorName: data.brand_colors.name,
     brandColorRgbHex: data.brand_colors.rgb_hex,
+    brandGenderSizeTypeId: data.brand_gender_sizes.brand_gender_size_type_id,
     brandGenderSizeId: data.brand_gender_size_id,
     brandGenderSizeName: data.brand_gender_sizes.name,
     gender: data.gender as GenderValue,
@@ -559,6 +563,68 @@ export async function getBrandIdOfSubItem(
 
   const chain = data as SubItemBrandChain | null;
   return chain?.items?.item_types?.small_brands?.brand_id ?? null;
+}
+
+type SubItemScopeChain = Tables<"sub_items"> & {
+  items:
+    | (Tables<"items"> & {
+        item_types:
+          | (Tables<"item_types"> & {
+              small_brands:
+                | (Pick<Tables<"small_brands">, "id" | "brand_id"> & {
+                    brands: Pick<Tables<"brands">, "id" | "company_id"> | null;
+                  })
+                | null;
+            })
+          | null;
+      })
+    | null;
+};
+
+export type SubItemScope = {
+  subItemId: string;
+  itemId: string;
+  itemTypeId: string;
+  smallBrandId: string;
+  brandId: string;
+  companyId: string;
+};
+
+/**
+ * 서브아이템 하나로 6단 분류 캐스케이드(법인~서브아이템) 전체를 역추적한다.
+ * 상품 수정 폼(Task 039)이 진입 시 `ScopeSelector` 6단을 전부 복원하는 데 쓴다
+ * (getBrandIdOfSubItem()의 확장판 — 여기서는 브랜드 하나가 아니라 경로 전체가 필요).
+ */
+export async function getSubItemScope(
+  subItemId: string,
+): Promise<SubItemScope | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("sub_items")
+    .select(
+      "*, items(*, item_types(*, small_brands(id, brand_id, brands(id, company_id))))",
+    )
+    .eq("id", subItemId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  const chain = data as SubItemScopeChain | null;
+  const item = chain?.items;
+  const itemType = item?.item_types;
+  const smallBrand = itemType?.small_brands;
+  const brand = smallBrand?.brands;
+  if (!chain || !item || !itemType || !smallBrand || !brand) return null;
+
+  return {
+    subItemId: chain.id,
+    itemId: item.id,
+    itemTypeId: itemType.id,
+    smallBrandId: smallBrand.id,
+    brandId: smallBrand.brand_id,
+    companyId: brand.company_id,
+  };
 }
 
 export type SubItemFilterOption = { id: string; code: string; name: string };

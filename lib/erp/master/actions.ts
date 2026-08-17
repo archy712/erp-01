@@ -9,6 +9,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import type { MasterCodeEntity } from "./code";
 import { MASTER_ENTITIES, type MasterEntityKey } from "./entities";
 import type { GenderValue } from "./gender";
+import { getBrandIdOfSubItem } from "./queries";
 import type { SalesStatus } from "./types";
 
 // 마스터/상품 공용 Server Action 규약.
@@ -181,6 +182,63 @@ function routeForEntity(entity: MasterCodeEntity): string {
   return MASTER_ENTITIES[entity as MasterEntityKey].route;
 }
 
+/**
+ * Task 039의 교차 브랜드 방지 3중 방어 중 서버 액션 단(클라이언트 검증 + 이 함수 +
+ * Task 028의 DB 트리거 `check_product_brand_consistency()`) — 라인/컬러/사이즈가
+ * 서브아이템과 같은 브랜드인지 재확인한다. `getBrandIdOfSubItem()`은 Task 028 트리거와
+ * 같은 5단 역추적 경로를 앱 레벨에서 이미 미러링해두고 있어 그대로 재사용한다.
+ * 4개 FK가 전부 갖춰진 입력(=상품 폼의 전체 저장)에서만 검증하고, `sortOrder`만
+ * 바꾸는 부분 업데이트 등은 대상이 아니다.
+ */
+async function assertProductBrandConsistency(
+  supabase: SupabaseServerClient,
+  input: Partial<MasterEntityInput>,
+): Promise<string | null> {
+  if (
+    !input.subItemId ||
+    !input.brandLineId ||
+    !input.brandColorId ||
+    !input.brandGenderSizeId
+  ) {
+    return null;
+  }
+
+  const [subItemBrandId, line, color, size] = await Promise.all([
+    getBrandIdOfSubItem(input.subItemId),
+    supabase
+      .from("brand_lines")
+      .select("brand_id")
+      .eq("id", input.brandLineId)
+      .maybeSingle(),
+    supabase
+      .from("brand_colors")
+      .select("brand_color_types(brand_id)")
+      .eq("id", input.brandColorId)
+      .maybeSingle(),
+    supabase
+      .from("brand_gender_sizes")
+      .select("brand_gender_size_types(brand_id)")
+      .eq("id", input.brandGenderSizeId)
+      .maybeSingle(),
+  ]);
+
+  const lineBrandId = line.data?.brand_id ?? null;
+  const colorBrandId = color.data?.brand_color_types?.brand_id ?? null;
+  const sizeBrandId = size.data?.brand_gender_size_types?.brand_id ?? null;
+
+  if (!subItemBrandId || !lineBrandId || !colorBrandId || !sizeBrandId) {
+    return "선택한 분류/속성 데이터를 찾을 수 없습니다.";
+  }
+  if (
+    lineBrandId !== subItemBrandId ||
+    colorBrandId !== subItemBrandId ||
+    sizeBrandId !== subItemBrandId
+  ) {
+    return "라인/컬러/사이즈는 서브아이템과 같은 브랜드여야 합니다.";
+  }
+  return null;
+}
+
 export async function createMasterAction(
   entity: MasterCodeEntity,
   input: MasterEntityInput,
@@ -193,6 +251,13 @@ export async function createMasterAction(
   }
 
   const supabase = await createClient();
+
+  if (entity === "product") {
+    const brandError = await assertProductBrandConsistency(supabase, input);
+    if (brandError) {
+      return { success: false, message: brandError };
+    }
+  }
 
   const { data: code, error: codeError } = await supabase.rpc(
     "next_master_code",
@@ -240,6 +305,13 @@ export async function updateMasterAction(
   await guardEntity(entity);
 
   const supabase = await createClient();
+
+  if (entity === "product") {
+    const brandError = await assertProductBrandConsistency(supabase, input);
+    if (brandError) {
+      return { success: false, message: brandError };
+    }
+  }
 
   const row: Record<string, unknown> = buildEntityFields(
     entity,
