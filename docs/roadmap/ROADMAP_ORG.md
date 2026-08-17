@@ -335,7 +335,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 048: `org_unit_leaders` 테이블 생성 (5레벨 공용 리더 + 레벨별 RLS)
+### Task 048: `org_unit_leaders` 테이블 생성 (5레벨 공용 리더 + 레벨별 RLS) ✅
 
 **목표**: 그룹사/법인/부문/**부서**/팀 5개 레벨의 "장(長)"을 하나의 테이블로 통일해 저장하고, PRD 3.1의 레벨별 권한 차이를 RLS로 정확히 표현한다.
 
@@ -346,18 +346,18 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] 테이블 생성 (PRD 5.6):
-  - [ ] `id uuid primary key default gen_random_uuid()`
-  - [ ] `org_group_id uuid references public.org_groups(id) on delete cascade`
-  - [ ] `org_company_id uuid references public.org_companies(id) on delete cascade`
-  - [ ] `organization_id uuid references public.organizations(id) on delete cascade`
-  - [ ] **`org_section_id uuid references public.org_sections(id) on delete cascade`**
-  - [ ] `department_id uuid references public.departments(id) on delete cascade`
-  - [ ] `profile_id uuid not null references public.profiles(id) on delete cascade`
-  - [ ] `title text not null`
-  - [ ] `created_at`/`updated_at timestamptz not null default now()`, `updated_by uuid references public.profiles(id)`
-  - [ ] **FK 삭제 정책은 `cascade`** — 마스터 도메인의 `restrict` 관례와 반대다. 리더 지정은 "부속 정보"라 조직/구성원이 사라지면 함께 사라지는 것이 옳고, `restrict`로 두면 이 신규 테이블이 기존 `departments`/`organizations`/`profiles` 삭제를 막게 되어 **기존 테이블의 동작을 바꾸는 셈**이 된다(무변경 원칙 위배). 이 결정 근거를 마이그레이션 주석에 남긴다.
-- [ ] 제약 추가 (PRD 5.6 SQL 그대로, **5개 컬럼 기준**):
+- [x] 테이블 생성 (PRD 5.6):
+  - [x] `id uuid primary key default gen_random_uuid()`
+  - [x] `org_group_id uuid references public.org_groups(id) on delete cascade`
+  - [x] `org_company_id uuid references public.org_companies(id) on delete cascade`
+  - [x] `organization_id uuid references public.organizations(id) on delete cascade`
+  - [x] **`org_section_id uuid references public.org_sections(id) on delete cascade`**
+  - [x] `department_id uuid references public.departments(id) on delete cascade`
+  - [x] `profile_id uuid not null references public.profiles(id) on delete cascade`
+  - [x] `title text not null`
+  - [x] `created_at`/`updated_at timestamptz not null default now()`, `updated_by uuid references public.profiles(id)`
+  - [x] **FK 삭제 정책은 `cascade`** — 마스터 도메인의 `restrict` 관례와 반대다. 리더 지정은 "부속 정보"라 조직/구성원이 사라지면 함께 사라지는 것이 옳고, `restrict`로 두면 이 신규 테이블이 기존 `departments`/`organizations`/`profiles` 삭제를 막게 되어 **기존 테이블의 동작을 바꾸는 셈**이 된다(무변경 원칙 위배). 이 결정 근거를 마이그레이션 주석에 남겼다.
+- [x] 제약 추가 (PRD 5.6 SQL 그대로, **5개 컬럼 기준**):
   ```sql
   alter table public.org_unit_leaders
     add constraint org_unit_leaders_exactly_one_target
@@ -369,11 +369,11 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   create unique index org_unit_leaders_section_uk  on public.org_unit_leaders(org_section_id)  where org_section_id is not null;
   create unique index org_unit_leaders_team_uk     on public.org_unit_leaders(department_id)   where department_id is not null;
   ```
-- [ ] `before update` 트리거로 기존 `public.set_master_audit()` 연결(`updated_at` + `updated_by`). `created_by` 컬럼이 없으므로 트리거가 설정하는 `updated_by`만 사용한다.
-- [ ] 인덱스: `profile_id` FK 커버링 인덱스(리더로 지정된 사람 역조회용) + `updated_by` 커버링 인덱스.
-- [ ] RLS 활성화 + 정책:
-  - [ ] `select` — `to authenticated using (true)` (조직도 조회는 전 구성원)
-  - [ ] `insert` — `with check`에 **레벨별 분기**를 그대로 표현(부서 분기 추가):
+- [x] `before update` 트리거로 기존 `public.set_master_audit()` 연결(`updated_at` + `updated_by`). `created_by` 컬럼이 없으므로 트리거가 설정하는 `updated_by`만 사용한다.
+- [x] 인덱스: `profile_id` FK 커버링 인덱스(리더로 지정된 사람 역조회용) + `updated_by` 커버링 인덱스.
+- [x] RLS 활성화 + 정책:
+  - [x] `select` — `to authenticated using (true)` (조직도 조회는 전 구성원)
+  - [x] `insert` — `with check`에 **레벨별 분기**를 그대로 표현(부서 분기 추가):
     ```sql
     public.is_superadmin()
     or (
@@ -396,29 +396,29 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
     )
     ```
     → 팀·부서 리더만 `is_admin()` + 스코프 일치로 허용, 그룹사/법인/부문 리더는 `superadmin` 전용(PRD 3.1 표).
-  - [ ] `update` — 같은 식을 `using`과 `with check` 양쪽에 적용(리더 교체 시 대상 팀/부서를 바꿔 스코프를 우회하지 못하게).
-  - [ ] `delete` — 같은 식을 `using`에 적용.
-  - [ ] 정책 이름은 기존 관례를 따라 `org_unit_leaders_select_authenticated` / `org_unit_leaders_insert_admin` / `_update_admin` / `_delete_admin`.
-- [ ] `get_advisors`(security + performance) 확인 — 신규 경고 유무와 대응을 기록한다.
-- [ ] **마이그레이션 SQL에 `alter table public.departments` / `public.profiles` / `public.organizations`가 없음을 재확인**(FK로 참조만 한다).
+  - [x] `update` — 같은 식을 `using`과 `with check` 양쪽에 적용(리더 교체 시 대상 팀/부서를 바꿔 스코프를 우회하지 못하게).
+  - [x] `delete` — 같은 식을 `using`에 적용.
+  - [x] 정책 이름은 기존 관례를 따라 `org_unit_leaders_select_authenticated` / `org_unit_leaders_insert_admin` / `_update_admin` / `_delete_admin`.
+- [x] `get_advisors`(security + performance) 확인 — **신규 실질 경고 없음.** `org_unit_leaders` 관련 SECURITY DEFINER 함수를 새로 만들지 않았고(기존 `is_admin()`/`is_superadmin()`/`current_organization_id()`/`set_master_audit()`만 재사용), RLS 4개 정책이 모두 반영되어 security/performance 리스트 어디에도 이 테이블이 새로 등장하지 않았다(테스트로 만든 데이터를 전부 정리한 뒤 조회한 빈 테이블 기준).
+- [x] **마이그레이션 SQL에 `alter table public.departments` / `public.profiles` / `public.organizations`가 없음을 재확인**(FK로 참조만 한다).
 
 **수락 기준**
 
-- [ ] 5개 FK 중 2개 이상에 값을 넣은 insert가 CHECK 위반(`23514`)으로 거부된다. 5개 전부 null인 insert도 거부된다.
-- [ ] 같은 팀/부서에 리더 2명을 넣으려 하면 partial unique index 위반(`23505`)으로 거부된다(5개 레벨 각각 확인).
-- [ ] `role='admin'`이면서 `current_organization_id()`가 일치하는 팀·부서에는 리더를 지정할 수 있고, 부문/법인/그룹사 리더 지정은 거부된다.
-- [ ] `role='superadmin'`은 5개 레벨 전부 지정 가능하다.
+- [x] 5개 FK 중 2개 이상에 값을 넣은 insert가 CHECK 위반(`23514`)으로 거부된다. 5개 전부 null인 insert도 거부된다.
+- [x] 같은 팀/부서에 리더 2명을 넣으려 하면 partial unique index 위반(`23505`)으로 거부된다(5개 레벨 각각 확인).
+- [x] `role='admin'`이면서 `current_organization_id()`가 일치하는 팀·부서에는 리더를 지정할 수 있고, 부문/법인/그룹사 리더 지정은 거부된다.
+- [x] `role='superadmin'`은 5개 레벨 전부 지정 가능하다.
 
 **테스트 체크리스트 (execute_sql)**
 
-- [ ] `num_nonnulls` CHECK 검증 — 0개/2개/5개 타깃 조합 insert 3건 전부 `23514` 확인, 1개만 채운 insert는 성공 확인.
-- [ ] 5개 partial unique index 각각에 대해 중복 지정 시도 → `23505` 확인(그룹사/법인/부문/부서/팀 5회).
-- [ ] `role='admin'` 세션 시뮬레이션 — 자기 부문 소속 팀·부서 리더 insert 성공, 다른 부문 팀·부서(있다면 임시 생성) 및 부문/법인/그룹사 리더 insert 차단 확인.
-- [ ] `role='superadmin'` 세션 시뮬레이션 — 5개 레벨 전부 insert 성공 확인.
-- [ ] `role='user'` 세션 — select 성공, insert `42501` 차단 확인.
-- [ ] `profiles` 행 삭제 시 리더 행이 cascade로 함께 삭제되고 **`profiles` 삭제 자체는 막히지 않는지** 확인(임시 계정으로 검증 — 기존 테이블 동작 무변경 확인의 핵심).
-- [ ] 리더 교체(UPDATE)를 실행해 `updated_at`/`updated_by`가 갱신되는지 확인.
-- [ ] 테스트 행 전부 삭제 후 잔존 0건 확인.
+- [x] `num_nonnulls` CHECK 검증 — 0개/2개/5개 타깃 조합 insert 3건 전부 `23514` 확인.
+- [x] 5개 partial unique index 각각에 대해 중복 지정 시도 → `23505` 확인(그룹사/법인/부문/부서/팀 5회, 사전에 1개 타깃만 채운 insert 5건이 정상 성공함도 함께 확인).
+- [x] `role='admin'`(홍길동, IT부문) 세션 시뮬레이션 — 자기 부문 소속 팀(IT기획팀)·부서(임시 부서) 리더 insert 성공, 다른 부문(임시 `TEST_다른부문`)의 팀·부서 및 부문/법인/그룹사 리더 insert 전부 `42501` 차단 확인.
+- [x] `role='superadmin'`(나승규) 세션 시뮬레이션 — 법인/부문/부서/팀 4개 레벨은 새 타깃에 insert 성공, 그룹사는 이미 점유된 타깃에 insert 시도 시 RLS를 통과해 `23505`(unique 위반, `42501` 아님)로 거부되어 권한 자체는 허용됨을 확인 — 5개 레벨 전부 허용.
+- [x] `role='user'`(표유진) 세션 — select 성공(당시 11건 조회), insert `42501` 차단 확인.
+- [x] `profiles` 행 삭제 시 리더 행이 cascade로 함께 삭제되고 **`profiles` 삭제 자체는 막히지 않는지** 확인 — 임시 `auth.users` 계정(트리거로 `profiles` 자동 생성)을 리더로 지정한 뒤 `auth.users`를 delete → `profiles`/`org_unit_leaders` 둘 다 cascade로 0건, `auth.users` delete 자체는 에러 없이 성공.
+- [x] 리더 교체(UPDATE)를 실행해 `updated_at`/`updated_by`가 갱신되는지 확인(나승규 세션으로 확인).
+- [x] 테스트 행(리더 11건 + 임시 부서 3건 + 임시 법인 1건 + 임시 팀 1건 + 임시 부문 1건) 전부 삭제 후 잔존 0건 확인, 기존 데이터(법인 1/그룹사 1/팀 8/부문 1/구성원 63) 원상 유지 확인.
 
 ---
 
@@ -1047,13 +1047,13 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ### 사용자 확인 완료 항목 (2026-08-17 확정)
 
-| 항목                                    | 관련 Task      | 확정 결과                                                                                                    | 상태    |
-| --------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
-| ① 그룹사 실제 이름                      | 043 → 046, 058 | "OO그룹"(가안 그대로 채택)                                                                                     | ✅ 확정 |
-| ② 법인 실제 이름                        | 043 → 046, 058 | "OO 법인"(가안 그대로 채택)                                                                                    | ✅ 확정 |
-| ③ 부서 구성(부서명, 소속 팀)            | 043 → 058      | 부서 1건 생성 — "개발부서"에 `ERP시스템팀`/`Commerce시스템팀`/`IT기획팀` 3개 편입, 나머지 5개 팀은 부문 직속 | ✅ 확정 |
-| ④ 초기 리더 지정자 / 팀 리더 지정 개수  | 043 → 058      | **전체 미지정으로 시작** — 5개 레벨 전부 리더를 시드하지 않고 관리 화면에서 직접 지정하도록 비워둠            | ✅ 확정 |
-| ⑤ 레벨별 기본 직책명                    | 043 → 044, 057 | PRD 제안값 그대로 — 회장님 / 대표이사 / 부문장 / **부서장** / 팀장                                            | ✅ 확정 |
+| 항목                                   | 관련 Task      | 확정 결과                                                                                                    | 상태    |
+| -------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------ | ------- |
+| ① 그룹사 실제 이름                     | 043 → 046, 058 | "OO그룹"(가안 그대로 채택)                                                                                   | ✅ 확정 |
+| ② 법인 실제 이름                       | 043 → 046, 058 | "OO 법인"(가안 그대로 채택)                                                                                  | ✅ 확정 |
+| ③ 부서 구성(부서명, 소속 팀)           | 043 → 058      | 부서 1건 생성 — "개발부서"에 `ERP시스템팀`/`Commerce시스템팀`/`IT기획팀` 3개 편입, 나머지 5개 팀은 부문 직속 | ✅ 확정 |
+| ④ 초기 리더 지정자 / 팀 리더 지정 개수 | 043 → 058      | **전체 미지정으로 시작** — 5개 레벨 전부 리더를 시드하지 않고 관리 화면에서 직접 지정하도록 비워둠           | ✅ 확정 |
+| ⑤ 레벨별 기본 직책명                   | 043 → 044, 057 | PRD 제안값 그대로 — 회장님 / 대표이사 / 부문장 / **부서장** / 팀장                                           | ✅ 확정 |
 
 ### 실 DB 확인값 (2026-08-17 조회 기준 — 착수 시 재확인할 것)
 

@@ -1001,6 +1001,98 @@ export type Database = {
           },
         ];
       };
+      org_unit_leaders: {
+        Row: {
+          created_at: string;
+          department_id: string | null;
+          id: string;
+          org_company_id: string | null;
+          org_group_id: string | null;
+          org_section_id: string | null;
+          organization_id: string | null;
+          profile_id: string;
+          title: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          department_id?: string | null;
+          id?: string;
+          org_company_id?: string | null;
+          org_group_id?: string | null;
+          org_section_id?: string | null;
+          organization_id?: string | null;
+          profile_id: string;
+          title: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          department_id?: string | null;
+          id?: string;
+          org_company_id?: string | null;
+          org_group_id?: string | null;
+          org_section_id?: string | null;
+          organization_id?: string | null;
+          profile_id?: string;
+          title?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_unit_leaders_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_unit_leaders_org_company_id_fkey";
+            columns: ["org_company_id"];
+            isOneToOne: false;
+            referencedRelation: "org_companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_unit_leaders_org_group_id_fkey";
+            columns: ["org_group_id"];
+            isOneToOne: false;
+            referencedRelation: "org_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_unit_leaders_org_section_id_fkey";
+            columns: ["org_section_id"];
+            isOneToOne: false;
+            referencedRelation: "org_sections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_unit_leaders_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_unit_leaders_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_unit_leaders_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           archived_at: string | null;
