@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createMasterAction,
@@ -69,6 +70,7 @@ import type {
   SmallBrand,
   SubItem,
 } from "@/lib/erp/master/types";
+import { cn } from "@/lib/utils";
 
 export type ProductFormInitialData = {
   product: ProductDetail;
@@ -95,6 +97,9 @@ const SALES_STATUS_OPTIONS: { value: SalesStatus; label: string }[] = [
   { value: "sold_out", label: "품절" },
   { value: "discontinued", label: "단종" },
 ];
+
+type ProductFormTab =
+  "classification" | "attributes" | "image" | "general" | "common";
 
 // PRD 7.6.2의 6단 분류 캐스케이드(법인→...→서브아이템)는 다른 5개 마스터
 // 화면(Task 032~037)과 달리 URL 쿼리 → 서버 컴포넌트 재조회 패턴을 쓰지
@@ -124,6 +129,11 @@ export function ProductForm(props: ProductFormProps) {
     initial?.product.thumbnailUrl ?? null,
   );
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // 필드가 5개 탭(분류/속성/이미지/일반/공통)에 나뉘어 있으므로, 저장 시 검증에
+  // 실패하면 화면 스크롤 순서와 같은 우선순위(분류→속성→일반→공통)로 첫 오류가
+  // 있는 탭으로 자동 전환한다 — 그렇지 않으면 비활성 탭에 숨은 오류 메시지를
+  // 사용자가 못 보고 "저장이 안 되는 이유"를 알 수 없다.
+  const [activeTab, setActiveTab] = useState<ProductFormTab>("classification");
 
   // --- 분류 캐스케이드(6단) ---
   const [companyId, setCompanyId] = useState(initial?.scope.companyId ?? "");
@@ -363,15 +373,9 @@ export function ProductForm(props: ProductFormProps) {
   }
 
   function handleSubmit() {
-    let hasError = false;
-
     const trimmedName = name.trim();
-    if (!trimmedName) {
-      setNameError("상품명을 입력해주세요.");
-      hasError = true;
-    } else {
-      setNameError(null);
-    }
+    const nameInvalid = !trimmedName;
+    setNameError(nameInvalid ? "상품명을 입력해주세요." : null);
 
     // 라인/컬러/사이즈 드롭다운은 항상 현재 브랜드로 스코프된 목록에서만
     // 채워지고(브랜드가 바뀌면 resetAttributeScope()가 즉시 값을 비운다),
@@ -379,60 +383,67 @@ export function ProductForm(props: ProductFormProps) {
     // 구조적으로 이미 보장된다. 여기서는 필수 항목 누락만 확인하고, 실제
     // 교차 브랜드 방어는 서버 액션(assertProductBrandConsistency)과 DB
     // 트리거(check_product_brand_consistency)가 담당한다.
-    if (!subItemId) {
-      setClassificationError("법인부터 서브아이템까지 전부 선택해주세요.");
-      hasError = true;
-    } else {
-      setClassificationError(null);
-    }
+    const classificationInvalid = !subItemId;
+    setClassificationError(
+      classificationInvalid
+        ? "법인부터 서브아이템까지 전부 선택해주세요."
+        : null,
+    );
 
-    if (!brandLineId) {
-      setLineError("라인을 선택해주세요.");
-      hasError = true;
-    } else {
-      setLineError(null);
-    }
+    const lineInvalid = !brandLineId;
+    setLineError(lineInvalid ? "라인을 선택해주세요." : null);
 
-    if (!brandColorId) {
-      setColorError("컬러를 선택해주세요.");
-      hasError = true;
-    } else {
-      setColorError(null);
-    }
+    const colorInvalid = !brandColorId;
+    setColorError(colorInvalid ? "컬러를 선택해주세요." : null);
 
-    if (!brandGenderSizeId) {
-      setSizeError("사이즈를 선택해주세요.");
-      hasError = true;
-    } else {
-      setSizeError(null);
-    }
+    const sizeInvalid = !brandGenderSizeId;
+    setSizeError(sizeInvalid ? "사이즈를 선택해주세요." : null);
 
     let normalizedCode: string | undefined;
+    let codeInvalid = false;
     if (isEdit) {
       normalizedCode = code.trim().toUpperCase();
-      if (!isValidCode("product", normalizedCode)) {
-        setCodeError("상품 코드 형식이 올바르지 않습니다. (예: PM100000001)");
-        hasError = true;
-      } else {
-        setCodeError(null);
-      }
+      codeInvalid = !isValidCode("product", normalizedCode);
+      setCodeError(
+        codeInvalid
+          ? "상품 코드 형식이 올바르지 않습니다. (예: PM100000001)"
+          : null,
+      );
+    } else {
+      setCodeError(null);
     }
 
     const parsedReleaseYear = releaseYear.trim() ? Number(releaseYear) : null;
     const parsedCostPrice = costPrice.trim() ? Number(costPrice) : null;
     const parsedSalePrice = salePrice.trim() ? Number(salePrice) : null;
-    if (
+    const numberInvalid = Boolean(
       (releaseYear.trim() && Number.isNaN(parsedReleaseYear)) ||
       (costPrice.trim() && Number.isNaN(parsedCostPrice)) ||
-      (salePrice.trim() && Number.isNaN(parsedSalePrice))
-    ) {
-      setNumberError("출시연도/원가/판매가는 숫자로 입력해주세요.");
-      hasError = true;
-    } else {
-      setNumberError(null);
-    }
+      (salePrice.trim() && Number.isNaN(parsedSalePrice)),
+    );
+    setNumberError(
+      numberInvalid ? "출시연도/원가/판매가는 숫자로 입력해주세요." : null,
+    );
 
-    if (hasError) return;
+    if (
+      nameInvalid ||
+      classificationInvalid ||
+      lineInvalid ||
+      colorInvalid ||
+      sizeInvalid ||
+      codeInvalid ||
+      numberInvalid
+    ) {
+      // 탭에 나뉜 필드라 비활성 탭의 오류는 화면에 보이지 않으므로, 원래
+      // 세로 스크롤 순서(분류→속성→일반→공통)와 같은 우선순위로 첫 오류가
+      // 있는 탭으로 옮겨준다.
+      if (classificationInvalid) setActiveTab("classification");
+      else if (lineInvalid || colorInvalid || sizeInvalid)
+        setActiveTab("attributes");
+      else if (numberInvalid) setActiveTab("general");
+      else setActiveTab("common");
+      return;
+    }
 
     const input: Partial<MasterEntityInput> = {
       name: trimmedName,
@@ -548,6 +559,13 @@ export function ProductForm(props: ProductFormProps) {
     },
   ];
 
+  // 탭 라벨에 오류 표시를 하기 위한 탭별 유효성 상태 — handleSubmit의 검증
+  // 로직과 별개로, 필드가 바뀌어 개별 에러가 사라지면 여기서도 즉시 반영된다.
+  const classificationTabInvalid = Boolean(classificationError);
+  const attributesTabInvalid = Boolean(lineError || colorError || sizeError);
+  const generalTabInvalid = Boolean(numberError);
+  const commonTabInvalid = Boolean(nameError || codeError);
+
   return (
     <div className="flex flex-1 flex-col">
       <PageHeader
@@ -555,319 +573,348 @@ export function ProductForm(props: ProductFormProps) {
         title={isEdit ? "상품 수정" : "상품 등록"}
       />
 
-      <div className="flex flex-1 flex-col gap-8 overflow-y-auto p-4 sm:p-6">
-        <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-medium">분류</h2>
-          <ScopeSelector levels={classificationLevels} />
-          {classificationError ? (
-            <p className="text-sm text-destructive">{classificationError}</p>
-          ) : null}
-        </section>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as ProductFormTab)}
+        className="flex-1 overflow-hidden"
+      >
+        <div className="overflow-x-auto border-b px-4 py-2 sm:px-6">
+          <TabsList>
+            <TabsTrigger
+              value="classification"
+              className={cn(classificationTabInvalid && "text-destructive")}
+            >
+              분류
+            </TabsTrigger>
+            <TabsTrigger
+              value="attributes"
+              className={cn(attributesTabInvalid && "text-destructive")}
+            >
+              속성
+            </TabsTrigger>
+            <TabsTrigger value="image">이미지</TabsTrigger>
+            <TabsTrigger
+              value="general"
+              className={cn(generalTabInvalid && "text-destructive")}
+            >
+              일반
+            </TabsTrigger>
+            <TabsTrigger
+              value="common"
+              className={cn(commonTabInvalid && "text-destructive")}
+            >
+              공통
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <section className="flex flex-col gap-4 border-t pt-6">
-          <h2 className="text-sm font-medium">속성</h2>
-
-          <ScopeSelector
-            levels={[
-              {
-                key: "brandLine",
-                label: "라인",
-                value: brandLineId,
-                onChange: (id) => {
-                  setBrandLineId(id);
-                  if (lineError) setLineError(null);
-                },
-                options: brandLineOptions.map((l) => ({
-                  id: l.id,
-                  name: l.name,
-                })),
-                disabled: !brandId,
-              },
-            ]}
-          />
-          {lineError ? (
-            <p className="text-sm text-destructive">{lineError}</p>
-          ) : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="flex flex-col gap-1.5 sm:w-52">
-              <Label htmlFor="product-color-type">컬러타입</Label>
-              <Select
-                value={brandColorTypeId}
-                onValueChange={handleColorTypeChange}
-                disabled={!brandId || colorTypeOptions.length === 0}
-              >
-                <SelectTrigger id="product-color-type" className="w-full">
-                  <SelectValue placeholder="컬러타입 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colorTypeOptions.map((ct) => (
-                    <SelectItem key={ct.id} value={ct.id}>
-                      {ct.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5 sm:w-52">
-              <Label htmlFor="product-color">컬러</Label>
-              <Select
-                value={brandColorId}
-                onValueChange={(id) => {
-                  setBrandColorId(id);
-                  if (colorError) setColorError(null);
-                }}
-                disabled={!brandColorTypeId || colorOptions.length === 0}
-              >
-                <SelectTrigger id="product-color" className="w-full">
-                  <SelectValue placeholder="컬러 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colorOptions.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="size-3 shrink-0 rounded-full border"
-                          style={{ backgroundColor: `#${c.rgbHex}` }}
-                          aria-hidden="true"
-                        />
-                        {c.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {colorError ? (
-            <p className="text-sm text-destructive">{colorError}</p>
-          ) : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="flex flex-col gap-1.5 sm:w-40">
-              <Label htmlFor="product-gender">성별</Label>
-              <Select value={gender} onValueChange={handleGenderChange}>
-                <SelectTrigger id="product-gender" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GENDERS.map((g) => (
-                    <SelectItem key={g.value} value={g.value}>
-                      {g.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5 sm:w-52">
-              <Label htmlFor="product-size-type">사이즈타입</Label>
-              <Select
-                value={brandGenderSizeTypeId}
-                onValueChange={handleSizeTypeChange}
-                disabled={!brandId || sizeTypeOptions.length === 0}
-              >
-                <SelectTrigger id="product-size-type" className="w-full">
-                  <SelectValue placeholder="사이즈타입 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sizeTypeOptions.map((st) => (
-                    <SelectItem key={st.id} value={st.id}>
-                      {st.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5 sm:w-40">
-              <Label htmlFor="product-size">사이즈</Label>
-              <Select
-                value={brandGenderSizeId}
-                onValueChange={(id) => {
-                  setBrandGenderSizeId(id);
-                  if (sizeError) setSizeError(null);
-                }}
-                disabled={!brandGenderSizeTypeId || sizeOptions.length === 0}
-              >
-                <SelectTrigger id="product-size" className="w-full">
-                  <SelectValue placeholder="사이즈 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sizeOptions.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {sizeError ? (
-            <p className="text-sm text-destructive">{sizeError}</p>
-          ) : null}
-        </section>
-
-        <section className="flex flex-col gap-4 border-t pt-6">
-          <h2 className="text-sm font-medium">이미지</h2>
-          <ProductImageUploader
-            productId={productId}
-            imageUrl={imageUrl}
-            onUploaded={(result) => {
-              setImageUrl(result.imageUrl);
-              setThumbnailUrl(result.thumbnailUrl);
-            }}
-          />
-        </section>
-
-        <section className="flex flex-col gap-4 border-t pt-6">
-          <h2 className="text-sm font-medium">일반</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-season">시즌</Label>
-              <Input
-                id="product-season"
-                value={season}
-                onChange={(event) => setSeason(event.target.value)}
-                placeholder="예: 26SS"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-release-year">출시연도</Label>
-              <Input
-                id="product-release-year"
-                inputMode="numeric"
-                value={releaseYear}
-                onChange={(event) => setReleaseYear(event.target.value)}
-                placeholder="예: 2026"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-material">소재</Label>
-              <Input
-                id="product-material"
-                value={material}
-                onChange={(event) => setMaterial(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-cost-price">원가</Label>
-              <Input
-                id="product-cost-price"
-                inputMode="decimal"
-                value={costPrice}
-                onChange={(event) => setCostPrice(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-sale-price">판매가</Label>
-              <Input
-                id="product-sale-price"
-                inputMode="decimal"
-                value={salePrice}
-                onChange={(event) => setSalePrice(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-sales-status">판매상태</Label>
-              <Select
-                value={salesStatus === "" ? "__none__" : salesStatus}
-                onValueChange={(value) =>
-                  setSalesStatus(
-                    value === "__none__" ? "" : (value as SalesStatus),
-                  )
-                }
-              >
-                <SelectTrigger id="product-sales-status" className="w-full">
-                  <SelectValue placeholder="선택 안 함" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">선택 안 함</SelectItem>
-                  {SALES_STATUS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {numberError ? (
-            <p className="text-sm text-destructive">{numberError}</p>
-          ) : null}
-        </section>
-
-        <section className="flex flex-col gap-4 border-t pt-6">
-          <h2 className="text-sm font-medium">공통</h2>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-code">상품코드</Label>
-            {isEdit ? (
-              <>
-                <Input
-                  id="product-code"
-                  value={code}
-                  onChange={(event) => {
-                    setCode(event.target.value.toUpperCase());
-                    if (codeError) setCodeError(null);
-                  }}
-                  aria-invalid={codeError ? true : undefined}
-                />
-                {codeError ? (
-                  <p className="text-sm text-destructive">{codeError}</p>
-                ) : null}
-              </>
-            ) : (
-              <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                저장 시 자동으로 채번됩니다.
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-name">상품명</Label>
-            <Input
-              id="product-name"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                if (nameError) setNameError(null);
-              }}
-              aria-invalid={nameError ? true : undefined}
-            />
-            {nameError ? (
-              <p className="text-sm text-destructive">{nameError}</p>
+        <div className="h-full overflow-y-auto p-4 sm:p-6">
+          <TabsContent value="classification" className="flex flex-col gap-4">
+            <ScopeSelector levels={classificationLevels} />
+            {classificationError ? (
+              <p className="text-sm text-destructive">{classificationError}</p>
             ) : null}
-          </div>
+          </TabsContent>
 
-          <div className="flex flex-col gap-1.5 sm:w-40">
-            <Label htmlFor="product-sort-order">정렬순서</Label>
-            <Input
-              id="product-sort-order"
-              type="number"
-              value={sortOrder}
-              onChange={(event) => setSortOrder(Number(event.target.value))}
+          <TabsContent value="attributes" className="flex flex-col gap-4">
+            <ScopeSelector
+              levels={[
+                {
+                  key: "brandLine",
+                  label: "라인",
+                  value: brandLineId,
+                  onChange: (id) => {
+                    setBrandLineId(id);
+                    if (lineError) setLineError(null);
+                  },
+                  options: brandLineOptions.map((l) => ({
+                    id: l.id,
+                    name: l.name,
+                  })),
+                  disabled: !brandId,
+                },
+              ]}
             />
-          </div>
+            {lineError ? (
+              <p className="text-sm text-destructive">{lineError}</p>
+            ) : null}
 
-          <div className="flex items-center justify-between rounded-md border px-3 py-2 sm:w-80">
-            <Label htmlFor="product-is-active">사용여부</Label>
-            <Switch
-              id="product-is-active"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-          </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex flex-col gap-1.5 sm:w-52">
+                <Label htmlFor="product-color-type">컬러타입</Label>
+                <Select
+                  value={brandColorTypeId}
+                  onValueChange={handleColorTypeChange}
+                  disabled={!brandId || colorTypeOptions.length === 0}
+                >
+                  <SelectTrigger id="product-color-type" className="w-full">
+                    <SelectValue placeholder="컬러타입 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colorTypeOptions.map((ct) => (
+                      <SelectItem key={ct.id} value={ct.id}>
+                        {ct.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5 sm:w-52">
+                <Label htmlFor="product-color">컬러</Label>
+                <Select
+                  value={brandColorId}
+                  onValueChange={(id) => {
+                    setBrandColorId(id);
+                    if (colorError) setColorError(null);
+                  }}
+                  disabled={!brandColorTypeId || colorOptions.length === 0}
+                >
+                  <SelectTrigger id="product-color" className="w-full">
+                    <SelectValue placeholder="컬러 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colorOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="size-3 shrink-0 rounded-full border"
+                            style={{ backgroundColor: `#${c.rgbHex}` }}
+                            aria-hidden="true"
+                          />
+                          {c.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {colorError ? (
+              <p className="text-sm text-destructive">{colorError}</p>
+            ) : null}
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-note">비고</Label>
-            <Textarea
-              id="product-note"
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              rows={3}
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex flex-col gap-1.5 sm:w-40">
+                <Label htmlFor="product-gender">성별</Label>
+                <Select value={gender} onValueChange={handleGenderChange}>
+                  <SelectTrigger id="product-gender" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENDERS.map((g) => (
+                      <SelectItem key={g.value} value={g.value}>
+                        {g.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5 sm:w-52">
+                <Label htmlFor="product-size-type">사이즈타입</Label>
+                <Select
+                  value={brandGenderSizeTypeId}
+                  onValueChange={handleSizeTypeChange}
+                  disabled={!brandId || sizeTypeOptions.length === 0}
+                >
+                  <SelectTrigger id="product-size-type" className="w-full">
+                    <SelectValue placeholder="사이즈타입 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizeTypeOptions.map((st) => (
+                      <SelectItem key={st.id} value={st.id}>
+                        {st.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5 sm:w-40">
+                <Label htmlFor="product-size">사이즈</Label>
+                <Select
+                  value={brandGenderSizeId}
+                  onValueChange={(id) => {
+                    setBrandGenderSizeId(id);
+                    if (sizeError) setSizeError(null);
+                  }}
+                  disabled={!brandGenderSizeTypeId || sizeOptions.length === 0}
+                >
+                  <SelectTrigger id="product-size" className="w-full">
+                    <SelectValue placeholder="사이즈 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizeOptions.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {sizeError ? (
+              <p className="text-sm text-destructive">{sizeError}</p>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="image" className="flex flex-col gap-4">
+            <ProductImageUploader
+              productId={productId}
+              imageUrl={imageUrl}
+              onUploaded={(result) => {
+                setImageUrl(result.imageUrl);
+                setThumbnailUrl(result.thumbnailUrl);
+              }}
             />
-          </div>
-        </section>
-      </div>
+          </TabsContent>
+
+          <TabsContent value="general" className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-season">시즌</Label>
+                <Input
+                  id="product-season"
+                  value={season}
+                  onChange={(event) => setSeason(event.target.value)}
+                  placeholder="예: 26SS"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-release-year">출시연도</Label>
+                <Input
+                  id="product-release-year"
+                  inputMode="numeric"
+                  value={releaseYear}
+                  onChange={(event) => setReleaseYear(event.target.value)}
+                  placeholder="예: 2026"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-material">소재</Label>
+                <Input
+                  id="product-material"
+                  value={material}
+                  onChange={(event) => setMaterial(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-cost-price">원가</Label>
+                <Input
+                  id="product-cost-price"
+                  inputMode="decimal"
+                  value={costPrice}
+                  onChange={(event) => setCostPrice(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-sale-price">판매가</Label>
+                <Input
+                  id="product-sale-price"
+                  inputMode="decimal"
+                  value={salePrice}
+                  onChange={(event) => setSalePrice(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-sales-status">판매상태</Label>
+                <Select
+                  value={salesStatus === "" ? "__none__" : salesStatus}
+                  onValueChange={(value) =>
+                    setSalesStatus(
+                      value === "__none__" ? "" : (value as SalesStatus),
+                    )
+                  }
+                >
+                  <SelectTrigger id="product-sales-status" className="w-full">
+                    <SelectValue placeholder="선택 안 함" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">선택 안 함</SelectItem>
+                    {SALES_STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {numberError ? (
+              <p className="text-sm text-destructive">{numberError}</p>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="common" className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-code">상품코드</Label>
+              {isEdit ? (
+                <>
+                  <Input
+                    id="product-code"
+                    value={code}
+                    onChange={(event) => {
+                      setCode(event.target.value.toUpperCase());
+                      if (codeError) setCodeError(null);
+                    }}
+                    aria-invalid={codeError ? true : undefined}
+                  />
+                  {codeError ? (
+                    <p className="text-sm text-destructive">{codeError}</p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                  저장 시 자동으로 채번됩니다.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-name">상품명</Label>
+              <Input
+                id="product-name"
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (nameError) setNameError(null);
+                }}
+                aria-invalid={nameError ? true : undefined}
+              />
+              {nameError ? (
+                <p className="text-sm text-destructive">{nameError}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-1.5 sm:w-40">
+              <Label htmlFor="product-sort-order">정렬순서</Label>
+              <Input
+                id="product-sort-order"
+                type="number"
+                value={sortOrder}
+                onChange={(event) => setSortOrder(Number(event.target.value))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-md border px-3 py-2 sm:w-80">
+              <Label htmlFor="product-is-active">사용여부</Label>
+              <Switch
+                id="product-is-active"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-note">비고</Label>
+              <Textarea
+                id="product-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={3}
+              />
+            </div>
+          </TabsContent>
+        </div>
+      </Tabs>
 
       <div className="flex items-center justify-between gap-2 border-t px-4 py-4 sm:px-6">
         {isEdit ? (
