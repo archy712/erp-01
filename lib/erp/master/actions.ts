@@ -93,6 +93,14 @@ export type MasterEntityInput = {
   note?: string | null;
   /** 등록 시에는 무시된다(자동 채번). 수정 시에만 관리자가 직접 코드를 바꿀 수 있다(PRD 6.1). */
   code?: string;
+  /**
+   * 등록 시 DB의 `gen_random_uuid()` 기본값 대신 이 id로 강제한다. 상품만
+   * 쓴다(Task 040) — 이미지 업로드가 상품 저장보다 먼저 일어날 수 있어(폼이
+   * 아직 미저장 상태에서도 Storage 폴더가 필요), 클라이언트가 폼 마운트 시
+   * 미리 발급한 id를 Storage 경로와 최종 insert 양쪽에 동일하게 써야 한다.
+   * 다른 11종 엔티티는 이 필드를 채우지 않으므로 기존처럼 DB 기본값을 그대로 쓴다.
+   */
+  id?: string;
   // 분류/속성 축 부모 FK — 대상 엔티티에 해당하는 필드만 사용된다.
   companyId?: string;
   brandId?: string;
@@ -268,6 +276,7 @@ export async function createMasterAction(
   }
 
   const row = {
+    ...(input.id ? { id: input.id } : {}),
     code,
     name,
     sort_order: input.sortOrder ?? 0,
@@ -372,8 +381,33 @@ export async function deleteMasterAction(
     return { success: false, message: "삭제에 실패했습니다." };
   }
 
+  // Task 040: 상품 삭제 시 Storage의 원본/썸네일도 함께 정리한다(고아 파일
+  // 방지). DB 행은 이미 삭제됐으므로 Storage 정리가 실패해도 삭제 자체는
+  // 성공으로 처리한다(best-effort — 재시도 UI가 없어 여기서 실패를 사용자에게
+  // 되돌려줘도 할 수 있는 일이 없다).
+  if (entity === "product") {
+    await removeProductImageFiles(supabase, id);
+  }
+
   revalidatePath(routeForEntity(entity));
   return { success: true };
+}
+
+const PRODUCT_IMAGES_BUCKET = "product-images";
+
+async function removeProductImageFiles(
+  supabase: SupabaseServerClient,
+  productId: string,
+): Promise<void> {
+  const folder = `products/${productId}`;
+  const { data: files } = await supabase.storage
+    .from(PRODUCT_IMAGES_BUCKET)
+    .list(folder);
+  if (files && files.length > 0) {
+    await supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .remove(files.map((file) => `${folder}/${file.name}`));
+  }
 }
 
 export async function setMasterActiveAction(

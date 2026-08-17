@@ -10,6 +10,18 @@ import {
   ScopeSelector,
   type ScopeSelectorLevel,
 } from "@/components/erp/master/scope-selector";
+import { ProductImageUploader } from "@/components/erp/products/product-image-uploader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +36,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createMasterAction,
+  deleteMasterAction,
   updateMasterAction,
   type MasterEntityInput,
 } from "@/lib/erp/master/actions";
@@ -97,6 +110,20 @@ export function ProductForm(props: ProductFormProps) {
   const initial = props.mode === "edit" ? props.initial : null;
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // 이미지 업로드(Task 040)는 상품이 저장되기 전에도 Storage 경로가
+  // 필요하므로(등록 폼에서 저장 전에 미리 올려볼 수 있어야 함), 등록 모드는
+  // 마운트 시 id를 미리 발급해 Storage 폴더와 최종 insert 양쪽에 동일하게
+  // 쓴다(createMasterAction의 input.id, lib/erp/master/actions.ts 참고).
+  // 수정 모드는 이미 있는 상품 id를 그대로 쓴다.
+  const [productId] = useState(
+    () => initial?.product.id ?? crypto.randomUUID(),
+  );
+  const [imageUrl, setImageUrl] = useState(initial?.product.imageUrl ?? null);
+  const [thumbnailUrl, setThumbnailUrl] = useState(
+    initial?.product.thumbnailUrl ?? null,
+  );
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // --- 분류 캐스케이드(6단) ---
   const [companyId, setCompanyId] = useState(initial?.scope.companyId ?? "");
@@ -417,13 +444,15 @@ export function ProductForm(props: ProductFormProps) {
       brandColorId,
       brandGenderSizeId,
       gender,
+      imageUrl,
+      thumbnailUrl,
       season: season.trim() ? season.trim() : null,
       releaseYear: parsedReleaseYear,
       material: material.trim() ? material.trim() : null,
       costPrice: parsedCostPrice,
       salePrice: parsedSalePrice,
       salesStatus: salesStatus === "" ? null : salesStatus,
-      ...(isEdit ? { code: normalizedCode } : {}),
+      ...(isEdit ? { code: normalizedCode } : { id: productId }),
     };
 
     startTransition(async () => {
@@ -449,6 +478,22 @@ export function ProductForm(props: ProductFormProps) {
             ? `상품을 등록했습니다. (코드: ${generatedCode})`
             : "상품을 등록했습니다.",
       );
+      router.push("/erp/products");
+    });
+  }
+
+  // deleteMasterAction("product", ...)이 DB 행 삭제 후 Storage의 원본/썸네일도
+  // 함께 정리한다(Task 040, lib/erp/master/actions.ts의 removeProductImageFiles).
+  function handleDelete(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    if (!initial) return;
+    startTransition(async () => {
+      const result = await deleteMasterAction("product", initial.product.id);
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+      toast.success("상품을 삭제했습니다.");
       router.push("/erp/products");
     });
   }
@@ -662,6 +707,18 @@ export function ProductForm(props: ProductFormProps) {
         </section>
 
         <section className="flex flex-col gap-4 border-t pt-6">
+          <h2 className="text-sm font-medium">이미지</h2>
+          <ProductImageUploader
+            productId={productId}
+            imageUrl={imageUrl}
+            onUploaded={(result) => {
+              setImageUrl(result.imageUrl);
+              setThumbnailUrl(result.thumbnailUrl);
+            }}
+          />
+        </section>
+
+        <section className="flex flex-col gap-4 border-t pt-6">
           <h2 className="text-sm font-medium">일반</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col gap-1.5">
@@ -812,13 +869,41 @@ export function ProductForm(props: ProductFormProps) {
         </section>
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t px-4 py-4 sm:px-6">
-        <Button variant="outline" asChild>
-          <Link href="/erp/products">취소</Link>
-        </Button>
-        <Button onClick={handleSubmit} disabled={isPending}>
-          {isEdit ? "저장" : "등록"}
-        </Button>
+      <div className="flex items-center justify-between gap-2 border-t px-4 py-4 sm:px-6">
+        {isEdit ? (
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="destructive" disabled={isPending}>
+                삭제
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>상품 삭제</AlertDialogTitle>
+                <AlertDialogDescription>
+                  &apos;{name}&apos;을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수
+                  없습니다.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isPending}>
+                  삭제
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <span />
+        )}
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/erp/products">취소</Link>
+          </Button>
+          <Button onClick={handleSubmit} disabled={isPending}>
+            {isEdit ? "저장" : "등록"}
+          </Button>
+        </div>
       </div>
     </div>
   );
