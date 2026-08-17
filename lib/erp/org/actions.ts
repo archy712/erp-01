@@ -1,0 +1,685 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentErpUser,
+  requireAdmin,
+  requireSuperadmin,
+} from "@/lib/erp/auth";
+import type { ActionResult } from "@/lib/erp/actions";
+import type { Database } from "@/lib/supabase/database.types";
+import type { ErpUser } from "@/lib/erp/types";
+import { ORG_CODE_DB_ENTITY } from "./code";
+import { getOrgChartMembers, getOrgLeaders, getOrgTree } from "./queries";
+import type { OrgLeader, OrgLevel, OrgMember, OrgTreeNode } from "./types";
+
+// 조직도 관리 화면(Task 053) 전용 Server Action 규약.
+//
+// 편집 액션은 전부 첫 줄에서 requireAdmin() 또는 requireSuperadmin()을
+// 호출한다(app/erp/admin/layout.tsx의 라우트 가드와 별개의 액션 레벨 이중
+// 방어, lib/erp/actions.ts의 기존 규약을 그대로 계승). 그룹사/법인 CRUD와
+// 부문·법인·그룹사 리더 지정은 superadmin 전용, 부서 CRUD와 부서·팀 리더
+// 지정은 admin(부문 스코프)까지 허용한다(PRD_ORG.md 3.1절).
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+type TableName = keyof Database["public"]["Tables"];
+type PostgrestErrorLike = { code?: string; message: string };
+
+// Supabase 생성 타입은 update()/insert()에 정확한 컬럼 집합만 허용하는
+// RejectExcessProperties를 강제해, "부분 필드만 채운 Record<string, unknown>"이나
+// "레벨에 따라 컬럼명이 바뀌는 동적 키" 같은 이 파일의 패턴과 근본적으로 맞지
+// 않는다(lib/erp/master/actions.ts의 LooseMasterTable과 동일한 이유). 컬럼
+// 매핑의 정확성은 각 함수가 스스로 보장하므로, DB 왕복 지점만 이 느슨한
+// 타입으로 캐스팅한다.
+type LooseTable = {
+  insert: (
+    row: Record<string, unknown>,
+  ) => Promise<{ error: PostgrestErrorLike | null }>;
+  update: (row: Record<string, unknown>) => {
+    eq: (
+      column: string,
+      value: string,
+    ) => Promise<{ error: PostgrestErrorLike | null }>;
+  };
+};
+
+function looseTable(
+  supabase: SupabaseServerClient,
+  table: TableName,
+): LooseTable {
+  return supabase.from(table) as unknown as LooseTable;
+}
+
+/**
+ * admin(비superadmin)이 다른 부문 데이터를 건드리지 못하도록 앱 레벨에서
+ * 1차 확인한다(최종 판정은 RLS). superadmin은 항상 통과.
+ */
+async function assertDivisionScope(
+  supabase: SupabaseServerClient,
+  user: ErpUser,
+  organizationId: string,
+): Promise<string | null> {
+  if (user.role === "superadmin") return null;
+
+  const { data: currentOrganizationId, error } = await supabase.rpc(
+    "current_organization_id",
+  );
+  if (error) throw error;
+
+  if (currentOrganizationId !== organizationId) {
+    return "권한이 없습니다.";
+  }
+  return null;
+}
+
+// --- 그룹사 ---
+
+/** 그룹사는 싱글턴이라 등록/삭제 액션을 두지 않는다 — 이름/비고/사용여부 수정만 제공(PRD_ORG.md 6.2절). */
+export async function updateOrgGroupAction(
+  id: string,
+  input: { name?: string; note?: string | null; isActive?: boolean },
+): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const row: Record<string, unknown> = {};
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (!name) {
+      return { success: false, message: "이름을 입력해 주세요." };
+    }
+    row.name = name;
+  }
+  if (input.note !== undefined) row.note = input.note;
+  if (input.isActive !== undefined) row.is_active = input.isActive;
+
+  const supabase = await createClient();
+  const { error } = await looseTable(supabase, "org_groups")
+    .update(row)
+    .eq("id", id);
+  if (error) {
+    return { success: false, message: "수정에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+// --- 법인 ---
+
+export type OrgCompanyInput = {
+  orgGroupId: string;
+  name: string;
+  sortOrder?: number;
+  isActive?: boolean;
+  note?: string | null;
+};
+
+export async function createOrgCompanyAction(
+  input: OrgCompanyInput,
+): Promise<ActionResult & { code?: string }> {
+  await requireSuperadmin();
+
+  const name = input.name.trim();
+  if (!name) {
+    return { success: false, message: "이름을 입력해 주세요." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: code, error: codeError } = await supabase.rpc(
+    "next_master_code",
+    { p_entity: ORG_CODE_DB_ENTITY.orgCompany },
+  );
+  if (codeError || !code) {
+    return { success: false, message: "코드 채번에 실패했습니다." };
+  }
+
+  const { error } = await supabase.from("org_companies").insert({
+    code,
+    name,
+    org_group_id: input.orgGroupId,
+    sort_order: input.sortOrder ?? 0,
+    is_active: input.isActive ?? true,
+    note: input.note ?? null,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      return { success: false, message: "이미 사용 중인 코드입니다." };
+    }
+    if (error.code === "23503") {
+      return {
+        success: false,
+        message: "참조한 상위 데이터가 존재하지 않습니다.",
+      };
+    }
+    return { success: false, message: "등록에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true, code: code as string };
+}
+
+export async function updateOrgCompanyAction(
+  id: string,
+  input: Partial<Omit<OrgCompanyInput, "orgGroupId">> & { code?: string },
+): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const row: Record<string, unknown> = {};
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (!name) {
+      return { success: false, message: "이름을 입력해 주세요." };
+    }
+    row.name = name;
+  }
+  if (input.sortOrder !== undefined) row.sort_order = input.sortOrder;
+  if (input.isActive !== undefined) row.is_active = input.isActive;
+  if (input.note !== undefined) row.note = input.note;
+  if (input.code !== undefined) row.code = input.code;
+
+  const supabase = await createClient();
+  const { error } = await looseTable(supabase, "org_companies")
+    .update(row)
+    .eq("id", id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { success: false, message: "이미 사용 중인 코드입니다." };
+    }
+    return { success: false, message: "수정에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+/** 하위 부문 매핑이 있으면 FK restrict(23503)로 막힌다 — 먼저 부문 연결을 해제해야 한다. */
+export async function deleteOrgCompanyAction(
+  id: string,
+): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("org_companies").delete().eq("id", id);
+
+  if (error) {
+    if (error.code === "23503") {
+      return {
+        success: false,
+        message: "하위 데이터가 있어 삭제할 수 없습니다.",
+      };
+    }
+    return { success: false, message: "삭제에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+/** 같은 그룹사(싱글턴이라 사실상 전체) 안에서 법인끼리 정렬순서를 한 칸 바꾼다. */
+export async function moveOrgCompanyAction(
+  id: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const supabase = await createClient();
+
+  const { data: target, error: targetError } = await supabase
+    .from("org_companies")
+    .select("id, sort_order, org_group_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (targetError || !target) {
+    return { success: false, message: "대상을 찾을 수 없습니다." };
+  }
+
+  const { data: siblings, error: siblingsError } = await supabase
+    .from("org_companies")
+    .select("id, sort_order")
+    .eq("org_group_id", target.org_group_id)
+    .order("sort_order", { ascending: true });
+  if (siblingsError || !siblings) {
+    return { success: false, message: "형제 항목 조회에 실패했습니다." };
+  }
+
+  const index = siblings.findIndex((sibling) => sibling.id === id);
+  const swapIndex = direction === "up" ? index - 1 : index + 1;
+  if (index === -1 || swapIndex < 0 || swapIndex >= siblings.length) {
+    return { success: false, message: "더 이상 이동할 수 없습니다." };
+  }
+
+  const current = siblings[index];
+  const swapTarget = siblings[swapIndex];
+
+  const [{ error: currentError }, { error: swapError }] = await Promise.all([
+    supabase
+      .from("org_companies")
+      .update({ sort_order: swapTarget.sort_order })
+      .eq("id", current.id),
+    supabase
+      .from("org_companies")
+      .update({ sort_order: current.sort_order })
+      .eq("id", swapTarget.id),
+  ]);
+  if (currentError || swapError) {
+    return { success: false, message: "정렬순서 변경에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+// --- 법인 ↔ 부문 매핑 ---
+
+/**
+ * 부문을 법인에 연결(또는 재연결)한다. organization_id가 org_company_divisions에서
+ * 유일해 upsert(onConflict: "organization_id")로 "부문당 1곳만 소속" 제약을
+ * 그대로 활용한다(부분 unique 인덱스가 아니라 완전한 unique 제약이라 upsert가 안전하다).
+ */
+export async function setDivisionCompanyAction(
+  organizationId: string,
+  orgCompanyId: string,
+): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("org_company_divisions")
+    .upsert(
+      { organization_id: organizationId, org_company_id: orgCompanyId },
+      { onConflict: "organization_id" },
+    );
+
+  if (error) {
+    return { success: false, message: "법인 연결에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+// --- 부서 ---
+
+export type OrgSectionInput = {
+  organizationId: string;
+  name: string;
+  sortOrder?: number;
+  isActive?: boolean;
+  note?: string | null;
+};
+
+export async function createOrgSectionAction(
+  input: OrgSectionInput,
+): Promise<ActionResult & { code?: string }> {
+  const user = await requireAdmin();
+
+  const name = input.name.trim();
+  if (!name) {
+    return { success: false, message: "이름을 입력해 주세요." };
+  }
+
+  const supabase = await createClient();
+
+  const scopeError = await assertDivisionScope(
+    supabase,
+    user,
+    input.organizationId,
+  );
+  if (scopeError) {
+    return { success: false, message: scopeError };
+  }
+
+  const { data: code, error: codeError } = await supabase.rpc(
+    "next_master_code",
+    { p_entity: ORG_CODE_DB_ENTITY.orgSection },
+  );
+  if (codeError || !code) {
+    return { success: false, message: "코드 채번에 실패했습니다." };
+  }
+
+  const { error } = await supabase.from("org_sections").insert({
+    code,
+    name,
+    organization_id: input.organizationId,
+    sort_order: input.sortOrder ?? 0,
+    is_active: input.isActive ?? true,
+    note: input.note ?? null,
+  });
+
+  if (error) {
+    if (error.code === "42501") {
+      return { success: false, message: "권한이 없습니다." };
+    }
+    return { success: false, message: "등록에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true, code: code as string };
+}
+
+export async function updateOrgSectionAction(
+  id: string,
+  input: Partial<Omit<OrgSectionInput, "organizationId"> & { code: string }>,
+): Promise<ActionResult> {
+  const user = await requireAdmin();
+
+  const supabase = await createClient();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("org_sections")
+    .select("organization_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (existingError || !existing) {
+    return { success: false, message: "대상을 찾을 수 없습니다." };
+  }
+
+  const scopeError = await assertDivisionScope(
+    supabase,
+    user,
+    existing.organization_id,
+  );
+  if (scopeError) {
+    return { success: false, message: scopeError };
+  }
+
+  const row: Record<string, unknown> = {};
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (!name) {
+      return { success: false, message: "이름을 입력해 주세요." };
+    }
+    row.name = name;
+  }
+  if (input.sortOrder !== undefined) row.sort_order = input.sortOrder;
+  if (input.isActive !== undefined) row.is_active = input.isActive;
+  if (input.note !== undefined) row.note = input.note;
+  if (input.code !== undefined) row.code = input.code;
+
+  const { error } = await looseTable(supabase, "org_sections")
+    .update(row)
+    .eq("id", id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { success: false, message: "이미 사용 중인 코드입니다." };
+    }
+    return { success: false, message: "수정에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+/** org_sections 삭제 시 org_section_teams는 cascade로 함께 삭제된다(팀은 부문 직속으로 자연히 복귀). */
+export async function deleteOrgSectionAction(
+  id: string,
+): Promise<ActionResult> {
+  const user = await requireAdmin();
+
+  const supabase = await createClient();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("org_sections")
+    .select("organization_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (existingError || !existing) {
+    return { success: false, message: "대상을 찾을 수 없습니다." };
+  }
+
+  const scopeError = await assertDivisionScope(
+    supabase,
+    user,
+    existing.organization_id,
+  );
+  if (scopeError) {
+    return { success: false, message: scopeError };
+  }
+
+  const { error } = await supabase.from("org_sections").delete().eq("id", id);
+  if (error) {
+    return { success: false, message: "삭제에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+// --- 부서 ↔ 팀 매핑 ---
+
+/**
+ * 팀을 부서에 배정(또는 다른 부서로 이관)한다. department_id가
+ * org_section_teams에서 유일해 upsert(onConflict: "department_id")로
+ * "팀은 부서 1곳에만 소속" 제약을 그대로 활용한다. 부서-팀의 소속 부문이
+ * 다르면 DB 트리거(check_org_section_team_consistency, P0001)가 막는다.
+ */
+export async function assignTeamToSectionAction(
+  departmentId: string,
+  sectionId: string,
+): Promise<ActionResult> {
+  const user = await requireAdmin();
+
+  const supabase = await createClient();
+
+  const { data: section, error: sectionError } = await supabase
+    .from("org_sections")
+    .select("organization_id")
+    .eq("id", sectionId)
+    .maybeSingle();
+  if (sectionError || !section) {
+    return { success: false, message: "대상 부서를 찾을 수 없습니다." };
+  }
+
+  const scopeError = await assertDivisionScope(
+    supabase,
+    user,
+    section.organization_id,
+  );
+  if (scopeError) {
+    return { success: false, message: scopeError };
+  }
+
+  const { error } = await supabase
+    .from("org_section_teams")
+    .upsert(
+      { department_id: departmentId, section_id: sectionId },
+      { onConflict: "department_id" },
+    );
+
+  if (error) {
+    if (error.code === "P0001") {
+      return { success: false, message: error.message };
+    }
+    return { success: false, message: "부서 배정에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+/** 부서-팀 매핑을 삭제한다(=팀이 부문 직속으로 되돌아간다). departments 자체는 변경되지 않는다. */
+export async function removeTeamFromSectionAction(
+  departmentId: string,
+): Promise<ActionResult> {
+  const user = await requireAdmin();
+
+  const supabase = await createClient();
+
+  const { data: mapping, error: mappingError } = await supabase
+    .from("org_section_teams")
+    .select("id, org_sections(organization_id)")
+    .eq("department_id", departmentId)
+    .maybeSingle();
+  const organizationId = mapping?.org_sections?.organization_id;
+  if (mappingError || !mapping || !organizationId) {
+    return { success: false, message: "부서 소속 정보를 찾을 수 없습니다." };
+  }
+
+  const scopeError = await assertDivisionScope(supabase, user, organizationId);
+  if (scopeError) {
+    return { success: false, message: scopeError };
+  }
+
+  const { error } = await supabase
+    .from("org_section_teams")
+    .delete()
+    .eq("id", mapping.id);
+  if (error) {
+    return { success: false, message: "부서 소속 해제에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+// --- 리더(org_unit_leaders) ---
+//
+// 5개 partial unique index(org_unit_leaders_group_uk 등, WHERE 절 포함)는
+// PostgREST의 upsert(onConflict: 컬럼명)가 매칭할 수 있는 "완전한" unique
+// 제약이 아니다(ON CONFLICT 대상이 WHERE 절까지 일치해야 함) — 그래서 다른
+// 매핑 액션과 달리 select 후 존재 여부로 분기하는 수동 upsert 패턴을 쓴다.
+
+const LEADER_TARGET_COLUMN: Record<Exclude<OrgLevel, "member">, string> = {
+  group: "org_group_id",
+  company: "org_company_id",
+  division: "organization_id",
+  section: "org_section_id",
+  team: "department_id",
+};
+
+async function findLeaderRowId(
+  supabase: SupabaseServerClient,
+  level: Exclude<OrgLevel, "member">,
+  targetId: string,
+): Promise<string | null> {
+  const column = LEADER_TARGET_COLUMN[level];
+  const { data, error } = await supabase
+    .from("org_unit_leaders")
+    .select("id")
+    .eq(column, targetId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+export type SetOrgLeaderInput = {
+  level: Exclude<OrgLevel, "member">;
+  targetId: string;
+  profileId: string;
+  title: string;
+};
+
+/**
+ * 리더를 지정(이미 있으면 교체)한다. team/section은 requireAdmin() 후
+ * DB RLS가 스코프(current_organization_id() 일치)까지 최종 판정하므로
+ * 여기서는 앱 레벨 스코프 재확인을 하지 않는다. 그 외 3개 레벨은
+ * superadmin 전용(PRD_ORG.md 3.1절).
+ */
+export async function setOrgLeaderAction(
+  input: SetOrgLeaderInput,
+): Promise<ActionResult> {
+  if (input.level === "team" || input.level === "section") {
+    await requireAdmin();
+  } else {
+    await requireSuperadmin();
+  }
+
+  const title = input.title.trim();
+  if (!title) {
+    return { success: false, message: "직책명을 입력해 주세요." };
+  }
+
+  const supabase = await createClient();
+  const column = LEADER_TARGET_COLUMN[input.level];
+  const existingId = await findLeaderRowId(
+    supabase,
+    input.level,
+    input.targetId,
+  );
+
+  const { error } = existingId
+    ? await supabase
+        .from("org_unit_leaders")
+        .update({ profile_id: input.profileId, title })
+        .eq("id", existingId)
+    : await looseTable(supabase, "org_unit_leaders").insert({
+        [column]: input.targetId,
+        profile_id: input.profileId,
+        title,
+      });
+
+  if (error) {
+    if (error.code === "23505") {
+      return {
+        success: false,
+        message: "해당 조직에는 이미 리더가 지정되어 있습니다.",
+      };
+    }
+    if (error.code === "42501") {
+      return { success: false, message: "권한이 없습니다." };
+    }
+    return { success: false, message: "리더 지정에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+export async function clearOrgLeaderAction(input: {
+  level: Exclude<OrgLevel, "member">;
+  targetId: string;
+}): Promise<ActionResult> {
+  if (input.level === "team" || input.level === "section") {
+    await requireAdmin();
+  } else {
+    await requireSuperadmin();
+  }
+
+  const supabase = await createClient();
+  const column = LEADER_TARGET_COLUMN[input.level];
+  const { error } = await supabase
+    .from("org_unit_leaders")
+    .delete()
+    .eq(column, input.targetId);
+
+  if (error) {
+    if (error.code === "42501") {
+      return { success: false, message: "권한이 없습니다." };
+    }
+    return { success: false, message: "리더 해제에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
+}
+
+// --- 헤더 팝업(Task 054) 전용 읽기 전용 액션 ---
+
+export type OrgChartPopupData = {
+  tree: OrgTreeNode[];
+  leaders: OrgLeader[];
+  members: OrgMember[];
+};
+
+/**
+ * 헤더 팝업 전용 읽기 전용 액션. role 가드를 두지 않는다 — RLS/RPC가 이미
+ * 로그인 사용자 전체를 허용하므로 인증 여부 외 추가 체크가 불필요하다
+ * (PRD_ORG.md 8.4절). 조회만 하므로 revalidatePath도 호출하지 않는다.
+ */
+export async function getOrgChartPopupDataAction(): Promise<OrgChartPopupData> {
+  await getCurrentErpUser();
+
+  const [{ tree }, members] = await Promise.all([
+    getOrgTree(),
+    getOrgChartMembers(),
+  ]);
+  const leaders = await getOrgLeaders(members);
+
+  return { tree, leaders: Array.from(leaders.values()), members };
+}

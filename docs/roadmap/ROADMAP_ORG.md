@@ -110,7 +110,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-## Phase 8: 조직 데이터 모델 구축
+## Phase 8: 조직 데이터 모델 구축 ✅
 
 > PRD 3장 / 4장 / 5장 / 6장.
 > **목표는 화면이 아니라 신규 테이블 5개 + 채번 확장 + RPC 1개 + 데이터 액세스 계층의 완성이다.**
@@ -475,7 +475,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 050: 타입 재생성 및 조직도 데이터 액세스 계층 구현
+### Task 050: 타입 재생성 및 조직도 데이터 액세스 계층 구현 ✅
 
 **목표**: 관리 화면(Task 053)과 헤더 팝업(Task 054)이 공유할 서버 측 조회 함수와 Server Action을 한 곳에 모은다. **화면이 각자 조인을 짜지 않도록 하는 것, 그리고 "부서 있으면 부서 아래 / 없으면 부문 직속"이라는 트리 조립 규칙을 한 곳에만 구현하는 것이 이 Task의 존재 이유다.**
 
@@ -490,61 +490,61 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — Task 045/047/048의 5개 테이블 블록과 Task 049의 함수 시그니처(`Functions.get_org_chart_members`)가 반영됨을 확인.
-- [ ] `lib/erp/auth.ts`에 `requireSuperadmin()` 추가 — `getCurrentErpUser()` 결과의 `role !== "superadmin"`이면 `redirect("/erp/forbidden")`. **기존 `requireAdmin()`은 수정하지 않는다**(추가만).
-- [ ] `lib/erp/org/queries.ts` — 조회 함수(전부 함수 내부에서 `await createClient()` 호출, 전역 변수 없음). **관리 화면·헤더 팝업 둘 다 이 함수들만 호출한다(각자 조인을 새로 짜지 않는다).**
-  - [ ] `getOrgTree()` — `org_groups` / `org_companies` / `org_company_divisions` / `org_sections` / `org_section_teams` + `organizations` + `departments`를 조회해 **가변 깊이** `OrgTreeNode[]`를 반환. 구성원은 트리에 포함하지 않는다(PRD 6.3).
-    - [ ] **부문 노드의 자식 조립 규칙**(PRD 4.2절 그대로 구현): 그 부문 소속 `org_sections` 전부를 자식으로 두고, 그 부문 소속 `departments` 중 `org_section_teams`에 매핑이 **없는** 것만 부문의 직접 자식으로 추가한다(부서에 매핑된 팀은 그 부서의 자식으로만 나타나고 부문에 중복 노출되지 않는다).
-    - [ ] 부문/팀의 `isActive`는 `archived_at is null`로 매핑(PRD 6.5).
-    - [ ] 정렬: 그룹사·법인·부서는 `sort_order` → `name`, 부문은 `org_company_divisions.sort_order` → `organizations.name`, 팀은 부서 소속이면 `org_section_teams.sort_order`, 부문 직속이면 `departments.name` 가나다순.
-    - [ ] **매핑되지 않은 부문(고아)이 있으면 트리에서 누락되므로**, 개발 편의를 위해 고아 부문 수를 함께 반환하거나 서버 로그로 경고한다(Task 046 이후에는 0건이어야 함).
-  - [ ] `getOrgLeaders()` — `org_unit_leaders`를 한 번에 조회해 `Map<"level:targetId", OrgLeader>` 형태로 반환. 리더 이름/아바타는 `profiles` 직접 조인이 아니라 **`get_org_chart_members()` 결과와 앱에서 매칭**한다(일반 사용자 세션에서도 리더 이름이 보여야 하므로 — `profiles` 조인은 RLS에 막힌다). **이 점이 이 Task에서 가장 놓치기 쉬운 함정이다.**
-  - [ ] `getOrgChartMembers()` — `supabase.rpc("get_org_chart_members")` 호출 결과를 `OrgMember[]`로 매핑.
-  - [ ] `getMembersByDepartment(departmentId)` — 위 결과를 필터링(RPC를 팀별로 반복 호출하지 않는다).
-  - [ ] `getUnmappedDivisions()` — 아직 법인에 연결되지 않은 `organizations` 목록(Task 055의 매핑 관리 UI용).
-  - [ ] **`getUnmappedTeamsInDivision(organizationId)`** — 특정 부문 안에서 아직 어떤 부서에도 매핑되지 않은 `departments` 목록(Task 056의 부서-팀 소속 관리 UI용).
-  - [ ] 파일 상단에 "`cookies()`를 쓰는 `createClient()`에 의존하므로 호출하는 컴포넌트는 `<Suspense>` 경계가 필요하다"를 명시(기존 관례).
-- [ ] `lib/erp/org/tree.ts` — 평면 행 배열을 `OrgTreeNode[]`로 조립하는 **순수 함수**(`buildOrgTree`). `lib/erp/menu-tree.ts`의 `buildMenuTree` 패턴을 따르되 레벨 이름이 다르고 **부서 유무에 따른 가변 분기가 있으므로** 재사용은 하지 않는다. 순수 함수라 단위 검증이 쉽다 — "부서 0개인 부문", "부서 1개 + 직속 팀 혼재하는 부문" 두 케이스를 반드시 단위 검증한다.
-- [ ] `lib/erp/org/actions.ts` — Server Actions (편집용은 전부 진입부에서 권한 가드 먼저 호출):
-  - [ ] `createOrgCompanyAction(input)` / `updateOrgCompanyAction(id, input)` / `deleteOrgCompanyAction(id)` — 첫 줄에서 `requireSuperadmin()`. 등록 시 `rpc("next_master_code", { p_entity: "org_company" })`로 채번.
-  - [ ] `updateOrgGroupAction(id, input)` — 그룹사는 **이름/비고/사용여부 수정만** 제공(생성·삭제 액션을 만들지 않는다, PRD 6.2).
-  - [ ] `setDivisionCompanyAction(organizationId, orgCompanyId)` — `org_company_divisions` upsert(부문당 1건 unique). `requireSuperadmin()`.
-  - [ ] `moveOrgCompanyAction(id, direction)` — 형제 간 `sort_order` 교환(`moveMasterEntityAction` 로직 참고, 마스터 액션을 수정하지 않고 조직용으로 별도 구현).
-  - [ ] `createOrgSectionAction(input)` / `updateOrgSectionAction(id, input)` / `deleteOrgSectionAction(id)` — 첫 줄에서 `requireAdmin()` 호출 후, 대상 부문이 `current_organization_id()`와 일치하는지 앱에서도 1차 확인(최종 판정은 RLS). `superadmin`은 통과. 등록 시 `next_master_code("org_section")`로 채번.
-  - [ ] `assignTeamToSectionAction(departmentId, sectionId)` — `org_section_teams` upsert(팀당 1건 unique, 이미 다른 부서 소속이면 이관). 부서 기준 스코프로 `requireAdmin()` + 검증.
-  - [ ] `removeTeamFromSectionAction(departmentId)` — `org_section_teams`에서 해당 팀 매핑 delete(=부문 직속으로 되돌림). 삭제 전 기존 매핑의 부서 기준으로 스코프 검증.
-  - [ ] `setOrgLeaderAction({ level, targetId, profileId, title })` — 레벨에 따라 가드 분기: `team`/`section`이면 `requireAdmin()`(DB RLS가 스코프까지 최종 판정), 그 외는 `requireSuperadmin()`. 내부적으로 해당 레벨 컬럼 하나만 채워 upsert한다(partial unique index가 1명 제한을 보장).
-  - [ ] `clearOrgLeaderAction({ level, targetId })` — 동일 가드 분기 후 delete.
-  - [ ] **`getOrgChartPopupDataAction()`** — 헤더 팝업(Task 054) 전용. `getOrgTree()`/`getOrgLeaders()`/`getOrgChartMembers()`를 한 번에 호출해 `{ tree, leaders, members }`로 묶어 반환하는 **읽기 전용** 액션. **역할 가드를 두지 않는다**(PRD 8.4 — RLS가 이미 로그인 사용자 전체 허용이므로 인증 여부 외 추가 체크 불필요). 이 액션은 다른 편집 액션과 달리 `revalidatePath`도 호출하지 않는다(변경이 없으므로).
-  - [ ] 에러 변환: FK `restrict` 위반(`23503`) → "하위 데이터가 있어 삭제할 수 없습니다.", unique 위반(`23505`) → 상황별 한국어 메시지("이미 사용 중인 코드입니다." / "해당 조직에는 이미 리더가 지정되어 있습니다." / "이 부문은 이미 다른 법인에 소속되어 있습니다." / "이 팀은 이미 다른 부서에 소속되어 있습니다."), 트리거 예외(부서-팀 부문 불일치) → "부서와 팀의 소속 부문이 달라 연결할 수 없습니다.", RLS 차단(`42501`) → "권한이 없습니다."
-  - [ ] 반환 타입은 기존 `lib/erp/actions.ts`의 `ActionResult`를 import해 재사용한다(단, `getOrgChartPopupDataAction()`은 단순 조회라 별도의 조회 결과 타입을 반환해도 무방).
-  - [ ] 편집 액션 성공 후 `revalidatePath("/erp/admin/org")` 호출.
-- [ ] **`lib/erp/master/**` 파일을 수정하지 않았는지 `git diff`로 확인**한다.
+- [x] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — Task 045/047/048의 5개 테이블 블록과 Task 049의 함수 시그니처(`Functions.get_org_chart_members`)가 반영됨을 확인(이번 Task에서는 스키마 변경 없이 재생성만 재확인).
+- [x] `lib/erp/auth.ts`에 `requireSuperadmin()` 추가 — `getCurrentErpUser()` 결과의 `role !== "superadmin"`이면 `redirect("/erp/forbidden")`. **기존 `requireAdmin()`은 수정하지 않았다**(추가만).
+- [x] `lib/erp/org/queries.ts` — 조회 함수(전부 함수 내부에서 `await createClient()` 호출, 전역 변수 없음). **관리 화면·헤더 팝업 둘 다 이 함수들만 호출한다(각자 조인을 새로 짜지 않는다).**
+  - [x] `getOrgTree()` — `org_groups` / `org_companies` / `org_company_divisions` / `org_sections` / `org_section_teams` + `organizations` + `departments`를 조회해 **가변 깊이** `OrgTreeNode[]`를 반환. 구성원은 트리에 포함하지 않는다(PRD 6.3).
+    - [x] **부문 노드의 자식 조립 규칙**(PRD 4.2절 그대로 구현): 그 부문 소속 `org_sections` 전부를 자식으로 두고, 그 부문 소속 `departments` 중 `org_section_teams`에 매핑이 **없는** 것만 부문의 직접 자식으로 추가한다(부서에 매핑된 팀은 그 부서의 자식으로만 나타나고 부문에 중복 노출되지 않는다). — `buildOrgTree()`(`tree.ts`)에 구현, 단위 검증 통과.
+    - [x] 부문/팀의 `isActive`는 `archived_at is null`로 매핑(PRD 6.5).
+    - [x] 정렬: 그룹사·법인·부서는 `sort_order` → `name`, 부문은 `org_company_divisions.sort_order` → `organizations.name`, 팀은 부서 소속이면 `org_section_teams.sort_order`, 부문 직속이면 `departments.name` 가나다순.
+    - [x] **매핑되지 않은 부문(고아)이 있으면 트리에서 누락되므로**, `getOrgTree()`가 `orphanDivisionCount`를 함께 반환하고 0보다 크면 `console.warn`으로도 알린다(Task 046 이후 실제 값 0 확인).
+  - [x] `getOrgLeaders(members)` — `org_unit_leaders`를 한 번에 조회해 `Map<"level:targetId", OrgLeader>` 형태로 반환. 리더 이름/아바타는 `profiles` 직접 조인이 아니라 **`get_org_chart_members()` 결과와 앱에서 매칭**한다(일반 사용자 세션에서도 리더 이름이 보여야 하므로 — `profiles` 조인은 RLS에 막힌다). **로드맵 원안과 달리 members 배열을 인자로 받는다** — `getOrgChartPopupDataAction()`처럼 트리/멤버/리더를 한 번에 조회하는 호출부가 RPC를 두 번 부르지 않도록 하기 위함(내부에서 자체적으로 `getOrgChartMembers()`를 다시 호출하지 않음).
+  - [x] `getOrgChartMembers()` — `supabase.rpc("get_org_chart_members")` 호출 결과를 `OrgMember[]`로 매핑.
+  - [x] `getMembersByDepartment(members, departmentId)` — 이미 조회한 결과를 필터링하는 순수 함수로 구현(RPC를 팀별로 반복 호출하지 않는다).
+  - [x] `getUnmappedDivisions()` — 아직 법인에 연결되지 않은 `organizations` 목록(Task 055의 매핑 관리 UI용).
+  - [x] **`getUnmappedTeamsInDivision(organizationId)`** — 특정 부문 안에서 아직 어떤 부서에도 매핑되지 않은 `departments` 목록(Task 056의 부서-팀 소속 관리 UI용).
+  - [x] 파일 상단에 "`cookies()`를 쓰는 `createClient()`에 의존하므로 호출하는 컴포넌트는 `<Suspense>` 경계가 필요하다"를 명시(기존 관례).
+- [x] `lib/erp/org/tree.ts` — 평면 행 배열을 `OrgTreeNode[]`로 조립하는 **순수 함수**(`buildOrgTree`). `lib/erp/menu-tree.ts`의 `buildMenuTree` 패턴을 따르되 레벨 이름이 다르고 **부서 유무에 따른 가변 분기가 있으므로** 재사용하지 않고 별도 구현했다. `npx tsx`로 실행한 임시 검증 스크립트로 "부서 0개인 부문", "부서 1개 + 직속 팀 혼재하는 부문" 두 케이스를 확인 후 스크립트는 삭제했다(검증 로그는 아래 테스트 체크리스트 참고).
+- [x] `lib/erp/org/actions.ts` — Server Actions (편집용은 전부 진입부에서 권한 가드 먼저 호출):
+  - [x] `createOrgCompanyAction(input)` / `updateOrgCompanyAction(id, input)` / `deleteOrgCompanyAction(id)` — 첫 줄에서 `requireSuperadmin()`. 등록 시 `rpc("next_master_code", { p_entity: "org_company" })`로 채번.
+  - [x] `updateOrgGroupAction(id, input)` — 그룹사는 **이름/비고/사용여부 수정만** 제공(생성·삭제 액션을 만들지 않았다, PRD 6.2).
+  - [x] `setDivisionCompanyAction(organizationId, orgCompanyId)` — `org_company_divisions` upsert(부문당 1건 unique, **완전한 unique 제약**이라 PostgREST `upsert(onConflict: "organization_id")`를 그대로 사용). `requireSuperadmin()`.
+  - [x] `moveOrgCompanyAction(id, direction)` — 형제 간 `sort_order` 교환(`moveMasterEntityAction` 로직 참고, 마스터 액션을 수정하지 않고 조직용으로 별도 구현).
+  - [x] `createOrgSectionAction(input)` / `updateOrgSectionAction(id, input)` / `deleteOrgSectionAction(id)` — 첫 줄에서 `requireAdmin()` 호출 후, 대상 부문이 `current_organization_id()`와 일치하는지 앱에서도 1차 확인(최종 판정은 RLS). `superadmin`은 통과. 등록 시 `next_master_code("org_section")`로 채번.
+  - [x] `assignTeamToSectionAction(departmentId, sectionId)` — `org_section_teams` upsert(팀당 1건 unique, **완전한 unique 제약**이라 `upsert(onConflict: "department_id")`로 이미 다른 부서 소속이면 이관까지 자연히 처리). 부서 기준 스코프로 `requireAdmin()` + 검증.
+  - [x] `removeTeamFromSectionAction(departmentId)` — `org_section_teams`에서 해당 팀 매핑 delete(=부문 직속으로 되돌림). 삭제 전 기존 매핑의 부서 기준으로 스코프 검증.
+  - [x] `setOrgLeaderAction({ level, targetId, profileId, title })` — 레벨에 따라 가드 분기: `team`/`section`이면 `requireAdmin()`(DB RLS가 스코프까지 최종 판정), 그 외는 `requireSuperadmin()`. **`org_unit_leaders`의 5개 unique 인덱스가 `WHERE ... IS NOT NULL` 조건이 붙은 partial index라 PostgREST `upsert(onConflict: 컬럼명)`이 매칭하지 못함을 발견**(ON CONFLICT 대상이 인덱스의 WHERE 절까지 일치해야 함) — 대신 대상 행 존재 여부를 먼저 `select`한 뒤 있으면 `update`, 없으면 `insert`하는 수동 패턴으로 구현했다(레이스 컨디션 시 두 번째 `insert`가 `23505`로 실패하는 것은 정상 동작이자 의도된 안전망).
+  - [x] `clearOrgLeaderAction({ level, targetId })` — 동일 가드 분기 후 delete.
+  - [x] **`getOrgChartPopupDataAction()`** — 헤더 팝업(Task 054) 전용. `getOrgTree()`/`getOrgLeaders()`/`getOrgChartMembers()`를 한 번에 호출해 `{ tree, leaders, members }`로 묶어 반환하는 **읽기 전용** 액션(`leaders`는 RSC 직렬화 호환을 위해 `Map`을 `Array.from()`으로 변환해 반환). **역할 가드를 두지 않는다**(PRD 8.4 — RLS가 이미 로그인 사용자 전체 허용이므로 인증 여부 외 추가 체크 불필요, `getCurrentErpUser()`로 인증만 확인). 이 액션은 다른 편집 액션과 달리 `revalidatePath`도 호출하지 않는다(변경이 없으므로).
+  - [x] 에러 변환: FK `restrict` 위반(`23503`) → "하위 데이터가 있어 삭제할 수 없습니다.", unique 위반(`23505`) → 상황별 한국어 메시지("이미 사용 중인 코드입니다." / "해당 조직에는 이미 리더가 지정되어 있습니다." / "이 팀은 이미 다른 부서에 소속되어 있습니다." — org_company_divisions/org_section_teams는 upsert로 흡수되어 이 메시지들의 발생 빈도는 낮지만 안전망으로 유지), 트리거 예외(부서-팀 부문 불일치, `P0001`) → 트리거 자체가 이미 한국어 메시지("부서와 팀이 서로 다른 부문에 속해 있어 연결할 수 없습니다.")를 던지므로 `error.message`를 그대로 전달(중복 문자열 방지), RLS 차단(`42501`) → "권한이 없습니다."
+  - [x] 반환 타입은 기존 `lib/erp/actions.ts`의 `ActionResult`를 import해 재사용했다(`getOrgChartPopupDataAction()`은 단순 조회라 별도의 `OrgChartPopupData` 타입을 반환).
+  - [x] 편집 액션 성공 후 `revalidatePath("/erp/admin/org")` 호출.
+- [x] **`lib/erp/master/**` 파일을 수정하지 않았는지 `git diff`로 확인**했다(`app/erp/admin/layout.tsx` 포함 — 둘 다 무변경).
 
 **수락 기준**
 
-- [ ] `npm run check-all` 통과 (재생성된 타입 기준).
-- [ ] `getOrgTree()`가 그룹사 1 → 법인 1 → 부문 1 → 팀 8(부서 아직 없음)의 트리를 반환한다(Task 046까지만 적용된 상태 기준).
-- [ ] `getOrgChartMembers()`가 일반 사용자 세션에서도 63건을 반환한다.
-- [ ] 일반 사용자 세션에서 `setOrgLeaderAction`(부문 레벨) 호출 시 `/erp/forbidden`으로 리다이렉트된다.
-- [ ] 일반 사용자 세션에서 `getOrgChartPopupDataAction()` 호출은 **성공**한다(가드가 없으므로).
-- [ ] `buildOrgTree` 단위 테스트가 "부서 0개인 부문"과 "부서 1개 + 직속 팀 혼재" 두 케이스 모두에서 올바른 트리를 만든다.
+- [x] `npm run check-all` 통과 (재생성된 타입 기준). Supabase 생성 타입의 `RejectExcessProperties` 제약 때문에 `lib/erp/master/actions.ts`의 `LooseMasterTable`과 동일한 `LooseTable`/`looseTable()` 캐스팅 패턴을 `actions.ts`에 추가해 해결했다.
+- [x] `getOrgTree()`가 그룹사 1 → 법인 1 → 부문 1 → 팀 8(부서 아직 없음)의 트리를 반환한다(Task 046까지만 적용된 상태 기준) — user 세션에서 `treeRootLevel: "group"`, `treeRootChildrenCount: 1`(법인 1개), `orphanDivisionCount: 0` 확인.
+- [x] `getOrgChartMembers()`가 일반 사용자 세션에서도 63건(+테스트 계정 자신 포함이라 실측은 64건)을 반환한다.
+- [x] 일반 사용자 세션에서 `setOrgLeaderAction`(부문 레벨) 호출 시 `/erp/forbidden`으로 리다이렉트된다 — `NEXT_REDIRECT;replace;/erp/forbidden;307;` 확인.
+- [x] 일반 사용자 세션에서 `getOrgChartPopupDataAction()` 호출은 **성공**한다(가드가 없으므로).
+- [x] `buildOrgTree` 단위 테스트가 "부서 0개인 부문"과 "부서 1개 + 직속 팀 혼재" 두 케이스 모두에서 올바른 트리를 만든다(10개 assertion 전부 통과).
 
 **테스트 체크리스트 (Playwright MCP + execute_sql)**
 
-검증 방법: `lib/erp/org/*`는 서버 전용이라 브라우저에서 직접 호출할 수 없으므로 ROADMAP_MVP Task 013 / ROADMAP_MASTER Task 029의 선례대로 **임시 디버그 라우트**(`app/api/debug-task050/route.ts`)를 만들어 실제 로그인 세션으로 검증한 뒤 **검증 완료 즉시 삭제**한다(`git status`로 잔존 없음 확인).
+검증 방법: `lib/erp/org/*`는 서버 전용이라 브라우저에서 직접 호출할 수 없으므로 ROADMAP_MVP Task 013 / ROADMAP_MASTER Task 029의 선례대로 **임시 디버그 라우트**(`app/api/debug-task050/route.ts`, `?step=` 쿼리로 시나리오 분기하는 GET 핸들러)를 만들어 실제 로그인 세션으로 검증한 뒤 **검증 완료 즉시 삭제**했다(`git status`로 잔존 없음 확인, 커밋되지 않음).
 
-- [ ] 임시 계정 3개(superadmin / admin / user)를 회원가입 → `execute_sql`로 role 승격(`prevent_unauthorized_role_change` 때문에 superadmin은 admin 경유 2단계 승격 필요 — ROADMAP_MASTER Task 031 기록 참고)해 준비.
-- [ ] user 세션에서 `getOrgChartMembers()` → 63건 반환 확인. 같은 세션에서 `getOrgTree()` → 정상 트리 반환 확인.
-- [ ] user 세션에서 `getOrgChartPopupDataAction()` 호출 → 성공 확인(가드 없음 재검증).
-- [ ] user 세션에서 `getOrgLeaders()`가 **리더 이름을 정상 반환**하는지 확인(`profiles` 직접 조인이었다면 null이 되었을 지점 — RPC 매칭 구현이 맞는지 검증).
-- [ ] superadmin 세션에서 `createOrgCompanyAction` → 코드가 `OC####`로 자동 채번되어 저장됨을 `execute_sql`로 확인.
-- [ ] admin 세션에서 `createOrgSectionAction`(자기 부문) 성공 → `execute_sql`로 `OS####` 채번 확인. 임시로 다른 부문을 만들어 그 부문에 `createOrgSectionAction` 시도 → `/erp/forbidden` 또는 RLS 차단 확인 후 정리.
-- [ ] admin 세션에서 `assignTeamToSectionAction`(자기 부문 소속 팀 → 방금 만든 부서) 성공 → `getOrgTree()` 재조회 시 그 팀이 부서 하위로 이동했는지 확인. `removeTeamFromSectionAction` 호출 → 다시 부문 직속으로 돌아오는지 확인.
-- [ ] admin 세션에서 `setOrgLeaderAction({ level: "team", ... })`(자기 부문 팀) 성공, `{ level: "division", ... }`은 `/erp/forbidden` 리다이렉트 확인.
-- [ ] admin 세션에서 `createOrgCompanyAction` 호출 → `/erp/forbidden` 리다이렉트 확인(superadmin 전용).
-- [ ] 같은 조직에 리더 2명 지정 시도 → "해당 조직에는 이미 리더가 지정되어 있습니다." 메시지 확인.
-- [ ] 임시 디버그 라우트, 테스트 데이터, 임시 계정 3개, 임시 부문/부서 삭제 및 소비된 시퀀스 원복 후 잔존 0건 확인.
+- [x] 임시 계정 3개(`task050-{user,admin,superadmin}@example.com`)를 회원가입(이메일 확인 불필요, 즉시 로그인 가능한 프로젝트 설정 확인) → `execute_sql`로 role 승격(`prevent_unauthorized_role_change`가 `auth.uid()` 세션 여부와 무관하게 "superadmin은 이미 admin인 사용자만" 조건을 검사하므로, 원안 그대로 superadmin은 admin 경유 2단계 승격 필요 — ROADMAP_MASTER Task 031 기록과 일치) 완료. admin 계정은 `department_id`를 `ERP시스템팀`(IT부문 소속)으로 설정해 `current_organization_id()`가 IT부문을 가리키게 했다.
+- [x] user 세션에서 `getOrgChartMembers()` → 64건(63 seed + 테스트 계정 자신) 반환 확인. 같은 세션에서 `getOrgTree()` → 정상 트리 반환 확인.
+- [x] user 세션에서 `getOrgChartPopupDataAction()` 호출 → 성공 확인(가드 없음 재검증, `popupMembersCount: 64`).
+- [x] user 세션에서 `getOrgLeaders()`가 **리더 이름을 정상 반환**하는지 확인 — superadmin 세션에서 미리 팀 리더로 지정해 둔 테스트 계정 이름(`TEST_리더이름050`)이 user 세션의 `getOrgLeaders()` 결과에도 그대로 나타남을 확인(`profiles` 직접 조인이었다면 RLS로 null이 되었을 지점 — RPC 매칭 구현이 맞음을 실증).
+- [x] superadmin 세션에서 `createOrgCompanyAction` → 코드 `OC0002`로 자동 채번되어 저장됨을 확인.
+- [x] admin 세션에서 `createOrgSectionAction`(자기 부문, IT부문) 성공 → 코드 `OS0001` 채번 확인. 임시로 다른 부문(`TEST_다른부문050`)을 만들어 그 부문에 `createOrgSectionAction` 시도 → `{ success: false, message: "권한이 없습니다." }`로 앱 레벨 스코프 확인이 정상 차단함을 확인("또는 RLS 차단"에 해당 — `assertDivisionScope()`가 DB RLS와 동일한 판정을 미리 반환).
+- [x] admin 세션에서 `assignTeamToSectionAction`(자기 부문 소속 팀 `IT기획팀` → 방금 만든 부서) 성공 → `org_section_teams`에 매핑 1건 생성 확인(`getOrgTree()` 재조회 대신 매핑 테이블 직접 조회로 확인). `removeTeamFromSectionAction` 호출 → 매핑 삭제 및 `departments`(IT기획팀) 원본 행 무변화 확인.
+- [x] admin 세션에서 `setOrgLeaderAction({ level: "team", ... })`(자기 부문 팀) 성공, `{ level: "division", ... }`은 `/erp/forbidden` 리다이렉트 확인.
+- [x] admin 세션에서 `createOrgCompanyAction` 호출 → `/erp/forbidden` 리다이렉트 확인(superadmin 전용).
+- [x] 같은 조직에 리더 2명 지정 시도 → "해당 조직에는 이미 리더가 지정되어 있습니다." 메시지 확인 — `setOrgLeaderAction`이 "이미 있으면 교체" 방식이라 순차 호출로는 재현되지 않아, **동시 두 프로필로 같은 대상(부문)에 `Promise.all`로 동시 호출**해 실제 DB 레벨 레이스를 재현했다(한쪽 성공, 다른 쪽이 `23505` → 위 메시지로 실패).
+- [x] 임시 디버그 라우트, 테스트 데이터(임시 부서 1/법인 1/부문 1), 임시 계정 3개, 소비된 시퀀스(`org_code_company_seq`/`org_code_section_seq`) 원복 후 잔존 0건 확인(그룹사 1/법인 1/부문 1/팀 8/구성원 63 원상 유지). 브라우저 콘솔 에러 0건.
 
 ---
 
@@ -1040,7 +1040,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 | Phase                                 | Task 범위    | 상태    |
 | ------------------------------------- | ------------ | ------- |
-| **Phase 8 — 조직 데이터 모델 구축**   | Task 043~050 | ⬜ 대기 |
+| **Phase 8 — 조직 데이터 모델 구축**   | Task 043~050 | ✅ 완료 |
 | **Phase 9 — 메뉴 등록 / 관리 라우트** | Task 051~052 | ⬜ 대기 |
 | **Phase 10 — 조직도 화면 구현**       | Task 053~057 | ⬜ 대기 |
 | **Phase 11 — 시드 및 통합 검증**      | Task 058~059 | ⬜ 대기 |

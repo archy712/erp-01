@@ -67,6 +67,20 @@ export async function requireAdmin(): Promise<ErpUser> {
 }
 
 /**
+ * 최상위 관리자 전용 화면/액션의 진입 가드. superadmin이 아니면 접근 거부 화면(/erp/forbidden)으로 보낸다.
+ * 스코프 규칙이 없는 최상위 레벨(그룹사/법인 CRUD, 부문·법인·그룹사 리더 지정) 전용(PRD_ORG.md 3.1절).
+ */
+export async function requireSuperadmin(): Promise<ErpUser> {
+  const user = await getCurrentErpUser();
+
+  if (user.role !== "superadmin") {
+    redirect("/erp/forbidden");
+  }
+
+  return user;
+}
+
+/**
  * 사용자가 특정 메뉴에 접근 가능한지 판정한다.
  * 관리자(admin/superadmin)는 무조건 true, 그 외에는 user_menu_permissions에
  * 명시적으로 부여된 경우에만 true.
