@@ -440,6 +440,8 @@ export const ko: Dictionary = {
   erp: {
     header: {
       logoAriaLabel: "ERP 홈으로 이동",
+      orgChartTriggerLabel: "조직도",
+      orgChartTriggerAriaLabel: "조직도 보기",
     },
     rail: {
       ariaLabel: "대분류",

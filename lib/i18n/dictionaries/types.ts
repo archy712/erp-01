@@ -343,6 +343,8 @@ export interface Dictionary {
   erp: {
     header: {
       logoAriaLabel: string;
+      orgChartTriggerLabel: string;
+      orgChartTriggerAriaLabel: string;
     };
     rail: {
       ariaLabel: string;

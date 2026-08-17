@@ -5,6 +5,7 @@ import { Boxes } from "lucide-react";
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/ui/button";
 import { EnvVarWarning } from "@/components/env-var-warning";
+import { OrgChartPopupTrigger } from "@/components/erp/org/org-chart-popup";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { hasEnvVars } from "@/lib/utils";
 
@@ -57,7 +58,10 @@ export function ErpHeader({
         >
           ERP v0.1
         </Link>
-        <div className="flex flex-1 items-center justify-end">
+        <div className="flex flex-1 items-center justify-end gap-2">
+          {/* hasEnvVars가 false면 Supabase 연동 자체가 없는 튜토리얼 모드이므로
+              조직도 데이터를 불러올 수 없다 — EnvVarWarning과 같은 조건으로 숨긴다. */}
+          {hasEnvVars ? <OrgChartPopupTrigger dict={dict} /> : null}
           {!hasEnvVars ? (
             <EnvVarWarning dict={dict} />
           ) : (

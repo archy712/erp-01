@@ -442,6 +442,8 @@ export const en: Dictionary = {
   erp: {
     header: {
       logoAriaLabel: "Go to ERP home",
+      orgChartTriggerLabel: "Org Chart",
+      orgChartTriggerAriaLabel: "View org chart",
     },
     rail: {
       ariaLabel: "Categories",

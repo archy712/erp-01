@@ -444,6 +444,8 @@ export const ja: Dictionary = {
   erp: {
     header: {
       logoAriaLabel: "ERPホームへ移動",
+      orgChartTriggerLabel: "組織図",
+      orgChartTriggerAriaLabel: "組織図を見る",
     },
     rail: {
       ariaLabel: "大分類",

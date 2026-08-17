@@ -423,6 +423,8 @@ export const zh: Dictionary = {
   erp: {
     header: {
       logoAriaLabel: "前往 ERP 首页",
+      orgChartTriggerLabel: "组织架构",
+      orgChartTriggerAriaLabel: "查看组织架构",
     },
     rail: {
       ariaLabel: "大类",
