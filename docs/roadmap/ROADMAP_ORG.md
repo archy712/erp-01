@@ -145,7 +145,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 044: 조직 도메인 공통 상수 / 타입 / 레벨 메타 정의 (DB 무관)
+### Task 044: 조직 도메인 공통 상수 / 타입 / 레벨 메타 정의 (DB 무관) ✅
 
 **목표**: 5개 레벨이 공유할 앱 레벨 타입·상수를 **DB보다 먼저** 확정해, Task 045~050과 Phase 10 화면 작업이 같은 타입 위에서 병렬 진행되게 한다.
 
@@ -157,29 +157,29 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/org/levels.ts`: `ORG_LEVELS` 상수 정의 — `group`(그룹사, 기본 직책 "회장님") / `company`(법인, "대표이사") / `division`(부문, "부문장") / **`section`(부서, "부서장")** / `team`(팀, "팀장") / `member`(구성원, 직책 없음). 각 레벨에 `editableBy: "superadmin" | "adminScoped" | "none"`을 함께 담아, 관리 화면이 버튼 노출 여부를 이 메타 한 곳에서 판단하게 한다(PRD 3.1 표를 코드로 옮긴 것). **헤더 팝업(Task 054)은 이 메타를 아예 참조하지 않는다 — 편집 버튼 자체가 없으므로.**
+- [x] `lib/erp/org/levels.ts`: `ORG_LEVELS` 상수 정의 — `group`(그룹사, 기본 직책 "회장님") / `company`(법인, "대표이사") / `division`(부문, "부문장") / **`section`(부서, "부서장")** / `team`(팀, "팀장") / `member`(구성원, 직책 없음). 각 레벨에 `editableBy: "superadmin" | "adminScoped" | "none"`을 함께 담아, 관리 화면이 버튼 노출 여부를 이 메타 한 곳에서 판단하게 한다(PRD 3.1 표를 코드로 옮긴 것). **헤더 팝업(Task 054)은 이 메타를 아예 참조하지 않는다 — 편집 버튼 자체가 없으므로.**
   - `division`/`section`/`team`은 **노드 자체의 CRUD가 그룹사·법인과 다르므로**(부문은 아예 CRUD 없음, 부서는 admin 스코프) 레벨마다 `editableBy`(그룹/법인=`superadmin`, 부서=`adminScoped`, 부문=`none`)와 별도 필드 `leaderEditableBy`(부서·팀=`adminScoped`, 나머지=`superadmin`)를 둔다.
   - **`section` 레벨에는 `isOptional: true` 플래그**를 추가해, 화면이 "이 레벨은 노드가 0개여도 정상"임을 코드로도 표현하게 한다.
-- [ ] `lib/erp/org/types.ts`:
+- [x] `lib/erp/org/types.ts`:
   - `OrgLevel = "group" | "company" | "division" | "section" | "team" | "member"`
   - `OrgTreeNode = { id: string; level: OrgLevel; name: string; isActive: boolean; sortOrder: number; children: OrgTreeNode[] }` — 부문/팀은 `sortOrder`가 없으므로 이름 정렬 결과의 인덱스를 넣는다(PRD 6.5).
   - `OrgLeader = { id: string; level: OrgLevel; targetId: string; profileId: string; profileName: string | null; avatarKey: string; title: string }`
   - `OrgMember = { id: string; name: string | null; departmentId: string | null; avatarKey: string; role: UserRole; isActive: boolean }` — `get_org_chart_members()`의 반환 컬럼과 1:1 대응(PRD 3.2절).
-- [ ] `lib/erp/org/code.ts`: `ORG_CODE_SPECS = { orgGroup: { prefix: "GRP", digits: 4 }, orgCompany: { prefix: "OC", digits: 4 }, orgSection: { prefix: "OS", digits: 4 } }` + `isValidOrgCode(entity, code)` 정규식 검증. **DB 함수 인자는 snake_case(`org_group`/`org_company`/`org_section`)이고 앱 키는 camelCase**라는 점을 `lib/erp/master/code.ts`와 동일하게 주석으로 명시하고, 매핑 헬퍼를 함께 둔다.
-- [ ] 위 3개 파일은 **서버 전용 코드를 임포트하지 않는 순수 모듈**로 유지한다 — Client Component에서도 그대로 import 가능해야 한다(`lib/erp/role-labels.ts`·`lib/erp/master/gender.ts` 선례).
-- [ ] **네이밍 규칙 준수**: 이 3개 파일 어디에도 "부서"를 가리키는 식별자에 `department`를 쓰지 않는다(`section`만 사용). 리뷰 시 최우선 확인 항목.
+- [x] `lib/erp/org/code.ts`: `ORG_CODE_SPECS = { orgGroup: { prefix: "GRP", digits: 4 }, orgCompany: { prefix: "OC", digits: 4 }, orgSection: { prefix: "OS", digits: 4 } }` + `isValidOrgCode(entity, code)` 정규식 검증. **DB 함수 인자는 snake_case(`org_group`/`org_company`/`org_section`)이고 앱 키는 camelCase**라는 점을 `lib/erp/master/code.ts`와 동일하게 주석으로 명시하고, 매핑 헬퍼를 함께 둔다.
+- [x] 위 3개 파일은 **서버 전용 코드를 임포트하지 않는 순수 모듈**로 유지한다 — Client Component에서도 그대로 import 가능해야 한다(`lib/erp/role-labels.ts`·`lib/erp/master/gender.ts` 선례).
+- [x] **네이밍 규칙 준수**: 이 3개 파일 어디에도 "부서"를 가리키는 식별자에 `department`를 쓰지 않는다(`section`만 사용). 리뷰 시 최우선 확인 항목.
 
 **수락 기준**
 
-- [ ] `npm run typecheck` 통과.
-- [ ] `lib/erp/org/*` 3개 파일 어디에도 `"use server"` / `next/headers` / Supabase 클라이언트 import가 없다(`grep`으로 확인).
-- [ ] PRD 3.1 표의 권한 규칙이 `ORG_LEVELS` 메타로 빠짐없이 표현되어 있다(부서 포함 5개 레벨).
+- [x] `npm run typecheck` 통과.
+- [x] `lib/erp/org/*` 3개 파일 어디에도 `"use server"` / `next/headers` / Supabase 클라이언트 import가 없다(`grep`으로 확인 — 매치 0건).
+- [x] PRD 3.1 표의 권한 규칙이 `ORG_LEVELS` 메타로 빠짐없이 표현되어 있다(부서 포함 5개 레벨).
 
 **테스트 체크리스트**
 
-- [ ] `isValidOrgCode("orgGroup", "GRP0001")` → true, `isValidOrgCode("orgSection", "OS0001")` → true, `"OS001"` → false 를 임시 스크립트(`npx tsx`)로 확인 후 정리.
-- [ ] `ORG_LEVELS`의 레벨 6종(그룹사/법인/부문/부서/팀/구성원)과 기본 직책명이 Task 043 ⑤ 확정 결과와 일치하는지 대조.
-- [ ] `ORG_LEVELS.section.isOptional === true`이고 나머지 레벨은 이 플래그가 없거나 `false`인지 확인.
+- [x] `isValidOrgCode("orgGroup", "GRP0001")` → true, `isValidOrgCode("orgSection", "OS0001")` → true, `"OS001"` → false 를 임시 스크립트(`npx tsx`)로 확인 후 정리(삭제 완료).
+- [x] `ORG_LEVELS`의 레벨 6종(그룹사/법인/부문/부서/팀/구성원)과 기본 직책명이 Task 043 ⑤ 확정 결과와 일치함을 확인(회장님/대표이사/부문장/부서장/팀장/null).
+- [x] `ORG_LEVELS.section.isOptional === true`이고 나머지 레벨은 이 플래그가 없음을 확인.
 
 ---
 
@@ -1000,7 +1000,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
    │
    ├─ Task 043 (설계 확정 / 미해결 가정 확인) ✅  ← 046·058의 전제
    │
-   ├─ Task 044 (조직 상수/타입/레벨 메타, DB 무관)
+   ├─ Task 044 (조직 상수/타입/레벨 메타, DB 무관) ✅
    │    └─ Task 045 (org_groups / org_companies / org_company_divisions + RLS + 채번 확장)
    │         ├─ Task 046 (기존 organizations 고아 방지 초기 데이터)  ← PRD 5.3 필수 작업
    │         │    └─ (이후 모든 화면 Task가 이 매핑에 의존)
