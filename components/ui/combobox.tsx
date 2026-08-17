@@ -103,6 +103,13 @@ function ComboboxContent({
     "side" | "align" | "sideOffset" | "alignOffset" | "anchor"
   >) {
   return (
+    // shadcn Dialog(Radix)가 열려 있으면 자신의 콘텐츠 밖 전부(body 포함)에
+    // pointer-events: none을 걸어 모달 밖 클릭을 막는다. 이 Combobox의 팝업은
+    // 별도 포털(@base-ui/react)로 body 바로 아래에 렌더링되는 Dialog 콘텐츠의
+    // 형제 요소라 그 none이 그대로 상속돼, Dialog 안에서 연 Combobox 목록을
+    // 클릭해도 선택되지 않는 문제가 있었다(z-index는 이미 더 높아 시각적으로는
+    // 위에 보이지만, pointer-events: none은 상속되어 클릭 자체가 씹힌다).
+    // pointer-events-auto로 이 서브트리에서 상속을 끊어준다.
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
         side={side}
@@ -110,7 +117,7 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        className="pointer-events-auto isolate z-50"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
