@@ -1,32 +1,39 @@
 # 조직도 관리 시스템 개발 로드맵
 
-ERP MVP에서 **메뉴 이름만 등록된 빈 대분류**로 남아 있던 "인사급여" 영역에, "그룹사 → 법인 → 부문 → (부서, 선택) → 팀 → 구성원" 조직도를 하나의 트리 화면으로 완성한다. 기존 `profiles`/`departments`/`organizations`는 **한 컬럼도 건드리지 않고** 신규 테이블 5개와 신규 RPC 1개로만 보강한다.
+ERP MVP에서 기존 관리자 전용 3형제 화면(사용자 관리/메뉴 관리/사용자 권한 관리)이 있는 **"마스터 관리 > 기본 관리"** 아래에 4번째 소분류로 "그룹사 → 법인 → 부문 → (부서, 선택) → 팀 → 구성원" 조직도 **관리 화면**을 추가하고, 이와 별개로 **헤더에 상시 노출되는 "조직도" 버튼**(로그인 사용자 표시 바로 앞)을 클릭하면 role과 무관하게 누구나 팝업으로 조회할 수 있게 한다. 기존 `profiles`/`departments`/`organizations`는 **한 컬럼도 건드리지 않고** 신규 테이블 6개(구조 5개 + 매핑/트리거 포함)와 신규 RPC 1개로만 보강한다.
 
 - **기준 문서**: `docs/prd/PRD_ORG.md`
-- **선행 로드맵**: `docs/roadmap/ROADMAP_MVP.md` (Task 001~~022 완료 — ERP 셸/인증/`menus`·`user_menu_permissions`·역할 권한 체계) / `docs/roadmap/ROADMAP_MASTER.md` (Task 023~~042 완료 — 마스터 CRUD 공통 컴포넌트·채번 함수·`set_master_audit()` 등 재사용 자산)
+- **선행 로드맵**: `docs/roadmap/ROADMAP_MVP.md` (Task 001~~022 완료 — ERP 셸/인증/`menus`·`user_menu_permissions`·역할 권한 체계, `app/erp/admin/layout.tsx`의 `requireAdmin()` 가드 포함) / `docs/roadmap/ROADMAP_MASTER.md` (Task 023~~042 완료 — 마스터 CRUD 공통 컴포넌트·채번 함수·`set_master_audit()` 등 재사용 자산)
 - **기반 저장소**: Next.js 16 (App Router) + Supabase (`@supabase/ssr`) + shadcn/ui `new-york`
 - **개발 환경**: 1인 개발 — 일정 추정보다 **실행 순서와 의존관계** 중심으로 태스크를 분해했다.
 - **Task 번호**: `ROADMAP_MASTER.md`의 Task 042에 이어 **Task 043부터** 연속 채번한다 (번호 충돌 방지).
 - **Phase 번호**: `ROADMAP_MASTER.md`의 Phase 7에 이어 **Phase 8부터** 채번한다.
-- **개정 이력**: 최초안(Task 043~~056, "부문 → 팀" 4단계 고정)에서 **"부문과 팀 사이에 선택적 '부서' 레벨이 있을 수 있다"**는 요구가 추가되어 전면 재구성했다. 부서 관련 신규 테이블(`org_sections`/`org_section_teams`)과 전용 Task(047, 055)가 추가되어 **Task 043~~058(16개)**로 늘었다.
+- **개정 이력**:
+  1. 최초안(Task 043~056) — "부문 → 팀" 4단계 고정, 독립 라우트 `/erp/org`.
+  2. "부문과 팀 사이 선택적 '부서' 레벨" 요구 반영 — `org_sections`/`org_section_teams` 추가, Task 043~058(16개)로 확장.
+  3. **(이번 개정) 최종 산출물이 두 화면으로 확정** — ① 관리 화면을 `/erp/org`(독립 라우트)가 아니라 **`마스터 관리 > 기본 관리 > 조직도 관리`(`/erp/admin/org`)**로 이동해 기존 `requireAdmin()` 가드를 그대로 상속받게 하고, ② **헤더의 독립 "조직도" 버튼 → 팝업**을 신규 진입점으로 추가했다. 이에 따라 "일반 사용자에게 메뉴 권한을 일괄 부여해야 하는가" 문제가 사라지고(관리 화면은 완전히 관리자 전용, 조회는 헤더 팝업이 전담), 신규 Task(헤더 팝업)가 추가되어 **Task 043~059(17개)**가 됐다.
 - **최종 수정**: 2026-08-17
 
 ---
 
 ## 개요
 
-조직도 관리 시스템은 **전 구성원**이 조회하고 **관리자·최고관리자**가 편집하는 사내 조직 탐색 도구로 다음을 제공한다:
+조직도 관리 시스템은 **두 개의 진입점**으로 구성된다:
 
-- **가변 깊이 통합 트리**: 그룹사(고정 1건) → 법인 → 부문(`organizations` 재해석) → **부서(선택, `org_sections`)** → 팀(`departments`) → 구성원(`profiles`)을 하나의 트리에서 펼침/접힘으로 탐색한다. **부서는 있을 수도 없을 수도 있다** — 같은 부문 안에서도 어떤 팀은 부서 소속으로, 어떤 팀은 부문에 직접 소속으로 공존할 수 있다.
-- **노드별 리더 패널**: 어느 레벨 노드를 클릭해도 그 조직의 장(회장님/대표이사/부문장/**부서장**/팀장)과 하위 조직(팀 노드면 소속 구성원 목록)이 우측에 함께 표시된다.
+- **관리 화면** (`마스터 관리 > 기본 관리 > 조직도 관리`, `/erp/admin/org`) — `is_admin()` 이상만 접근 가능. 그룹사/법인/부서 CRUD, 부문↔법인·부서↔팀 소속 변경, 5개 레벨 리더 지정을 전부 이 화면에서 한다. 기존 `app/erp/admin/layout.tsx`의 `requireAdmin()` 가드를 그대로 상속받으므로 **이 화면을 위한 별도 접근 제어 코드가 필요 없다.**
+- **헤더 "조직도" 팝업** (신규) — 헤더 우측, 로그인 사용자 표시(`<AuthButton />`) 바로 앞에 상시 노출되는 독립 버튼. role과 무관하게 로그인한 누구나 클릭할 수 있고, 클릭 시 같은 계층 구조를 **조회 전용**으로 팝업에 보여준다. `menus`/`user_menu_permissions` 권한 체계와 완전히 무관하다.
+
+공통 기반:
+
+- **가변 깊이 계층**: 그룹사(고정 1건) → 법인 → 부문(`organizations` 재해석) → **부서(선택, `org_sections`)** → 팀(`departments`) → 구성원(`profiles`). **부서는 있을 수도 없을 수도 있다** — 같은 부문 안에서도 어떤 팀은 부서 소속으로, 어떤 팀은 부문에 직접 소속으로 공존할 수 있다.
+- **노드별 리더**: 어느 레벨 노드를 클릭해도 그 조직의 장(회장님/대표이사/부문장/**부서장**/팀장)과 하위 조직(팀 노드면 소속 구성원 목록)이 함께 표시된다(관리 화면은 편집도 가능, 팝업은 조회만).
 - **기존 테이블 무변경 원칙**: `profiles`/`departments`/`organizations`에 `ALTER TABLE`을 한 번도 실행하지 않는다. 부족한 계층(그룹사/법인/부서)·연결(법인↔부문, 부서↔팀)·리더 정보는 전부 신규 테이블(`org_groups`, `org_companies`, `org_company_divisions`, `org_sections`, `org_section_teams`, `org_unit_leaders`)로 보강한다.
-- **RLS를 깨지 않는 구성원 조회**: `profiles`의 SELECT 정책(`profiles_select_own_or_admin`)을 완화하는 대신, 조직도에 필요한 6개 컬럼만 반환하는 `SECURITY DEFINER` 함수 `get_org_chart_members()`를 신설해 우회한다.
-- **레벨별 권한 분기**: 그룹사/법인 CRUD·부문↔법인 매핑은 `superadmin` 전용, **부서 CRUD·부서↔팀 소속 변경·부서장/팀장 지정은 기존 `departments_update_admin`과 동일 스코프**(`is_admin()` + `organization_id = current_organization_id()`) 또는 `superadmin`, 조회는 로그인 사용자 전체.
+- **RLS를 깨지 않는 구성원 조회**: `profiles`의 SELECT 정책(`profiles_select_own_or_admin`)을 완화하는 대신, 조직도에 필요한 6개 컬럼만 반환하는 `SECURITY DEFINER` 함수 `get_org_chart_members()`를 신설해 우회한다. 관리 화면과 헤더 팝업이 이 함수 하나를 공유한다.
 
 ### 이번 로드맵 완료의 정의
 
-> "`/erp/org`에서 **그룹사~구성원이 실제 데이터로 탐색되고, 부서가 있는 팀과 없는 팀이 같은 트리에서 공존하며**, 각 노드의 리더와 하위 목록이 표시되고, `profiles`/`departments`/`organizations`에 대한 `ALTER TABLE`이 마이그레이션 diff에 **단 한 줄도 등장하지 않는다**"까지 보장한다.
-> 인사발령 이력, 결재선/보고라인, 부문·팀 자체의 CRUD 화면, 부서의 재귀적 하위 부서는 범위가 아니다. ([범위 제외](#범위-제외-out-of-scope) 참고)
+> "`/erp/admin/org`(관리 화면)에서 **그룹사~구성원이 실제 데이터로 탐색·편집되고, 부서가 있는 팀과 없는 팀이 같은 트리에서 공존**하며, 헤더의 '조직도' 버튼이 **모든 로그인 사용자에게** 노출되어 클릭 시 같은 구조를 **조회 전용 팝업**으로 보여주고, `profiles`/`departments`/`organizations`에 대한 `ALTER TABLE`이 마이그레이션 diff에 **단 한 줄도 등장하지 않는다**"까지 보장한다.
+> 인사발령 이력, 결재선/보고라인, 부문·팀 자체의 CRUD 화면, 부서의 재귀적 하위 부서, 헤더 팝업에서의 편집은 범위가 아니다. ([범위 제외](#범위-제외-out-of-scope) 참고)
 
 ---
 
@@ -34,17 +41,17 @@ ERP MVP에서 **메뉴 이름만 등록된 빈 대분류**로 남아 있던 "인
 
 `ROADMAP_MVP.md`의 [개발 워크플로우](./ROADMAP_MVP.md#개발-워크플로우)와 `ROADMAP_MASTER.md`의 규약을 그대로 따른다. 이 로드맵에서 특히 중요한 규약만 다시 적는다.
 
-1. **작업 계획** — 착수 전 `CLAUDE.md`·`docs/guides/`·`docs/prd/PRD_ORG.md`를 확인하고, 이미 존재하는 자산(`is_admin()`, `is_superadmin()`, `current_organization_id()`, `set_master_audit()`, `next_master_code()`, `requireAdmin()`, `MasterDetailLayout`/`MasterTreePanel`)을 **다시 만들지 않는지** 먼저 검증한다.
+1. **작업 계획** — 착수 전 `CLAUDE.md`·`docs/guides/`·`docs/prd/PRD_ORG.md`를 확인하고, 이미 존재하는 자산(`is_admin()`, `is_superadmin()`, `current_organization_id()`, `set_master_audit()`, `next_master_code()`, `requireAdmin()`, `app/erp/admin/layout.tsx`, `MasterDetailLayout`/`MasterTreePanel`)을 **다시 만들지 않는지** 먼저 검증한다.
 2. **작업 생성** — 각 Task는 **목표 / 관련 파일 / 구현 체크리스트 / 수락 기준 / 테스트 체크리스트** 5개 소단락을 갖는다.
 3. **작업 구현**
    - DB 스키마 변경은 로컬 `supabase/migrations/*.sql`이 아니라 **Supabase MCP(`mcp__supabase__apply_migration`)로 원격 프로젝트에 직접 적용**한다 (기존 관례).
-   - **모든 마이그레이션 적용 직후 `profiles`/`departments`/`organizations`에 대한 DDL이 포함되지 않았는지 SQL 본문을 재확인한다** — 이 로드맵의 최우선 제약이다(PRD 11장 성공 기준 4번).
+   - **모든 마이그레이션 적용 직후 `profiles`/`departments`/`organizations`에 대한 DDL이 포함되지 않았는지 SQL 본문을 재확인한다** — 이 로드맵의 최우선 제약이다(PRD 12장 성공 기준).
    - 스키마 변경 후 **반드시** `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts`를 재생성하고, `mcp__supabase__get_advisors`(security + performance)를 확인한다.
    - DB 연동·권한 로직 구현 시 **Playwright MCP로 E2E 검증**을 수행한 뒤 다음 단계로 진행한다. 검증에는 임시 계정(회원가입 후 `execute_sql`로 role 승격)을 사용하고 **검증 직후 삭제해 잔존 0건을 확인**한다.
    - 각 Task 완료 후 `npm run check-all`(typecheck + lint + format:check)을 통과시킨다.
 4. **로드맵 업데이트** — 완료 Task는 제목 옆에 ✅, 하위 체크박스를 `[x]`로 전환하고 Phase 전체 완료 시 Phase 제목에도 ✅를 붙인다. [진행 현황](#진행-현황) 표도 함께 갱신한다.
 
-> ⚠️ **착수 전 사용자 확인이 필요한 Task가 있다.** PRD 10장의 미해결 가정(그룹사·법인·부서 실제 이름, 초기 리더 지정자, 조직도 메뉴 노출 정책, 부서 선택성 해석)에 걸린 Task는 제목에 ⚠️를 붙였다. 해당 Task는 **구현 착수 전 반드시 사용자 확인을 받고** 시작한다.
+> ⚠️ **착수 전 사용자 확인이 필요한 Task가 있다.** PRD 11장의 미해결 가정(그룹사·법인·부서 실제 이름, 초기 리더 지정자, 부서 선택성 해석)에 걸린 Task는 제목에 ⚠️를 붙였다. 해당 Task는 **구현 착수 전 반드시 사용자 확인을 받고** 시작한다.
 
 ---
 
@@ -52,39 +59,42 @@ ERP MVP에서 **메뉴 이름만 등록된 빈 대분류**로 남아 있던 "인
 
 Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영향받는 Task를 함께 갱신할 것.
 
-| 항목                          | 결정                                                                                                                                                                                                                                          | 근거                                                                                                                                                                                                                                                                                                           |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 기존 테이블 무변경            | **`profiles` / `departments` / `organizations`에 `ALTER TABLE`을 실행하지 않는다.** 컬럼 추가·제약 변경·RLS 정책 수정 전부 금지                                                                                                               | PRD 1.2 / 2장 / 6.4절(옵션 A 미채택). 사용자의 명시적 요구이자 PRD 11장 성공 기준 4번의 검증 대상                                                                                                                                                                                                              |
-| **"부서"와 "팀"의 이름 충돌** | 기존 `departments` 테이블 = **팀**. 신규 개념 "부서"는 어디에도 `department`라는 영단어를 쓰지 않고 **`org_sections`/`section`**으로만 명명한다                                                                                               | PRD 1.1절 경고. 두 한국어 단어가 영어로 우연히 겹쳐 실수하기 매우 쉬움 — 코드 리뷰 시 이 규칙 위반(변수명에 `department`를 부서 의미로 쓰는 경우)을 최우선으로 잡아낼 것                                                                                                                                       |
-| 부서의 선택성                 | **팀 단위로 선택적** — 같은 부문 안에서도 일부 팀은 부서 소속, 일부는 부문 직속으로 공존 가능. "부문 전체가 부서 체계 on/off" 같은 부문 단위 스위치가 아니다                                                                                  | PRD 4.2절 / 10장. `org_section_teams`에 매핑이 있으면 부서 소속, 없으면 부문 직속으로 판정                                                                                                                                                                                                                     |
-| `profiles` 조회 우회          | **신규 `SECURITY DEFINER` 함수 `public.get_org_chart_members()`** 로만 조직도 구성원을 조회. `profiles_select_own_or_admin` 정책은 손대지 않는다. **`department_id` 필터를 두지 않는다**(팀 소속 없는 임원도 리더로 지정될 수 있으므로)       | PRD 3.2절. RLS는 행 단위라 "이름만 공개, 전화번호/이메일/bio 비공개"를 표현할 수 없음 — 컬럼 고정 반환 함수로 해결                                                                                                                                                                                             |
-| 권한 함수                     | **기존 `is_admin()` / `is_superadmin()` / `current_organization_id()`를 그대로 재사용.** 새 DB 권한 함수를 만들지 않는다                                                                                                                      | 실 DB 확인 결과 3개 함수 모두 `SECURITY DEFINER`로 존재(`current_organization_id()` → uuid). `departments_update_admin` 정책이 이미 이 조합을 사용 중                                                                                                                                                          |
-| 감사 컬럼 트리거              | **기존 `public.set_master_audit()` 재사용**(`updated_at` + `updated_by` 동시 설정). 새 트리거 함수를 만들지 않는다                                                                                                                            | ROADMAP_MASTER Task 025에서 신설한 공용 트리거. 신규 테이블도 동일한 감사 컬럼 관례를 따름                                                                                                                                                                                                                     |
-| 코드 채번                     | **기존 `public.next_master_code(p_entity)`를 `create or replace`로 확장**해 `org_group`(`GRP`/4) / `org_company`(`OC`/4) / `org_section`(`OS`/4) 3종을 추가. 새 채번 함수를 만들지 않는다                                                     | PRD 6.1. 함수가 이미 "시퀀스 + 충돌 시 재시도" 루프를 갖고 있어 그대로 재사용 가능. 권한 프리앰블은 `org_group`/`org_company`만 `is_superadmin()`으로 분기(그룹사·법인은 스코프 없는 최상위), `org_section`은 기존 `is_admin()` 기본 분기를 그대로 탄다(부서 등록 자체의 세부 스코프는 테이블 RLS가 최종 판정) |
-| 그룹사 싱글턴 강제            | `singleton boolean not null default true` + `check (singleton)` + `unique (singleton)` 2중 제약. 앱에서도 등록 화면을 제공하지 않고 **이름 수정 UI만** 둔다                                                                                   | PRD 6.2. 애플리케이션 레벨 방어만으로는 SQL 직접 삽입을 막을 수 없음                                                                                                                                                                                                                                           |
-| 리더 저장 방식                | **5개 레벨 공용 단일 테이블 `org_unit_leaders`** + `num_nonnulls(...) = 1` CHECK(5개 FK) + 5개 partial unique index. 레벨별 컬럼 추가(옵션 A) 미채택                                                                                          | PRD 6.4절 비교표. `organizations`/`departments`는 컬럼 추가 자체가 금지이고, 레벨마다 조회 방식이 갈라지면 UI/쿼리가 두 갈래가 됨                                                                                                                                                                              |
-| 부서↔팀 소속 표현             | **`org_section_teams`(department_id unique) 매핑 테이블** + 부서·팀이 같은 부문 소속인지 검증하는 **신규 트리거**(`org_sections`/`departments`를 읽기만 함). 매핑이 없으면 부문 직속으로 판정                                                 | PRD 4.2 / 5.5절. `departments`에 컬럼을 추가하지 않고 선택적 소속을 표현하는 유일한 방법                                                                                                                                                                                                                       |
-| 팀의 "실제 상위" 판정         | ① `org_section_teams` 매핑이 있으면 그 부서, ② 없으면 `departments.organization_id`가 가리키는 부문                                                                                                                                           | PRD 4.2절. 쿼리 레이어(`lib/erp/org/tree.ts`)에서 이 우선순위를 그대로 구현                                                                                                                                                                                                                                    |
-| 조직도 라우트 루트            | `app/erp/org/*` (신규). **`requireAdmin()`을 붙이지 않는다** — 조회는 로그인 사용자 전체 개방, 편집 동작만 Server Action 진입부에서 재검증                                                                                                    | PRD 3.1 표: 조직도 조회 = 로그인 사용자 전체. `app/erp/products/*`가 같은 패턴(가드 없는 세그먼트)                                                                                                                                                                                                             |
-| 편집 권한 재검증 위치         | Server Action 진입부에서 `requireSuperadmin()`(신규, 앱 레벨) 또는 `requireAdmin()` 호출 + DB RLS 이중 방어. **DB 함수는 신설하지 않고 앱 헬퍼만 추가**                                                                                       | `lib/erp/actions.ts`의 "진입부에서 반드시 `requireAdmin()` 먼저" 규약 계승. 앱 레벨 `superadmin` 가드는 아직 없어 이 하나만 신설(`lib/erp/auth.ts`)                                                                                                                                                            |
-| 조직 도메인 코드 위치         | `lib/erp/org/*`, `components/erp/org/*` (신규 하위 디렉토리)                                                                                                                                                                                  | `lib/erp/master/*` / `components/erp/master/*` 선례와 동일한 도메인 분리                                                                                                                                                                                                                                       |
-| 공통 UI 재사용 범위           | **`MasterDetailLayout` + `MasterTreePanel`만 재사용**한다. `MasterListTable` / `MasterFormSheet` / `MasterDeleteDialog` / `SortOrderCell`은 `MasterEntityKey`·`MASTER_ENTITIES`에 강결합되어 있어 재사용하지 않고 조직 전용 컴포넌트를 만든다 | 실 코드 확인 결과 앞의 2개만 엔티티 메타에 의존하지 않는 순수 컨트롤드 컴포넌트(`nodes`/`selectedId`/`onSelect`). 나머지를 재사용하려면 마스터 엔티티 레지스트리를 오염시켜야 함                                                                                                                               |
-| 부문/팀 활성 여부 매핑        | `organizations.archived_at is null` / `departments.archived_at is null` → 트리 노드의 `isActive`로 **쿼리 레이어에서 어댑팅**                                                                                                                 | PRD 6.5절. 두 테이블에 `is_active` 컬럼을 추가하지 않기 위한 조치                                                                                                                                                                                                                                              |
-| 정렬                          | 그룹사·법인·부서(신규)는 `sort_order` → `name`, **부문·팀은 `name` 가나다순**(정렬 컬럼이 없으므로)                                                                                                                                           | PRD 6.5절                                                                                                                                                                                                                                                                                                      |
-| 구성원 노드                   | 구성원은 **트리 노드로 펼치지 않고** 팀 노드 선택 시 우측 목록으로만 표시                                                                                                                                                                     | PRD 6.3절. 63명을 트리에 펼치면 깊이·성능 모두 악화                                                                                                                                                                                                                                                            |
-| 메뉴 위치                     | 기존 대분류 **"인사급여"**(`11111111-0001-4000-8000-000000000002`, 하위 0건 확인) 아래 "조직 관리"(중분류) > "조직도 관리"(소분류) 신규 추가 → `/erp/org`                                                                                     | PRD 7장. 실 DB 조회로 하위 메뉴가 0건인 placeholder 상태임을 확인                                                                                                                                                                                                                                              |
-| 다국어                        | 조직도 화면은 **한국어 단일 값**. `lib/i18n/dictionaries/`에 신규 문자열을 추가하지 않는다                                                                                                                                                    | ROADMAP_MVP Task 010 / ROADMAP_MASTER와 동일 기조(내부 업무 화면)                                                                                                                                                                                                                                              |
-| Suspense 경계                 | `cacheComponents: true` 환경이므로 `cookies()`/`params`/`searchParams` 사용 컴포넌트는 얇은 `Page` + `<Suspense>` + `async XxxContent` 패턴 유지                                                                                              | 기존 `app/erp/**` 전 페이지가 이 패턴                                                                                                                                                                                                                                                                          |
-| shadcn 컴포넌트               | `tree-view` `sheet` `dialog` `alert-dialog` `table` `select` `native-select` `combobox` `command` `badge` `avatar` `card` `switch` `input` `skeleton` 모두 **이미 존재**                                                                      | `npx shadcn add` 불필요                                                                                                                                                                                                                                                                                        |
+| 항목                           | 결정                                                                                                                                                                                                                                                                                                                                                                                                | 근거                                                                                                                                                                             |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 기존 테이블 무변경             | **`profiles` / `departments` / `organizations`에 `ALTER TABLE`을 실행하지 않는다.** 컬럼 추가·제약 변경·RLS 정책 수정 전부 금지                                                                                                                                                                                                                                                                     | PRD 1.2 / 2장 / 6.4절(옵션 A 미채택). 사용자의 명시적 요구이자 PRD 12장 성공 기준의 검증 대상                                                                                    |
+| **"부서"와 "팀"의 이름 충돌**  | 기존 `departments` 테이블 = **팀**. 신규 개념 "부서"는 어디에도 `department`라는 영단어를 쓰지 않고 **`org_sections`/`section`**으로만 명명한다                                                                                                                                                                                                                                                     | PRD 1.1절 경고. 두 한국어 단어가 영어로 우연히 겹쳐 실수하기 매우 쉬움 — 코드 리뷰 시 이 규칙 위반을 최우선으로 잡아낼 것                                                        |
+| 부서의 선택성                  | **팀 단위로 선택적** — 같은 부문 안에서도 일부 팀은 부서 소속, 일부는 부문 직속으로 공존 가능. "부문 전체가 부서 체계 on/off" 같은 부문 단위 스위치가 아니다                                                                                                                                                                                                                                        | PRD 4.2절 / 11장. `org_section_teams`에 매핑이 있으면 부서 소속, 없으면 부문 직속으로 판정                                                                                       |
+| `profiles` 조회 우회           | **신규 `SECURITY DEFINER` 함수 `public.get_org_chart_members()`** 로만 조직도 구성원을 조회. `profiles_select_own_or_admin` 정책은 손대지 않는다. **`department_id` 필터를 두지 않는다**                                                                                                                                                                                                            | PRD 3.2절. RLS는 행 단위라 "이름만 공개, 전화번호/이메일/bio 비공개"를 표현할 수 없음 — 컬럼 고정 반환 함수로 해결. 관리 화면·헤더 팝업이 이 함수 하나를 공유한다                |
+| **관리 화면 라우트/메뉴 위치** | `/erp/admin/org`(신규, `app/erp/admin/org/page.tsx`). 메뉴는 **"마스터 관리 > 기본 관리"**(기존 중분류, 사용자/메뉴/권한 관리와 형제) 아래 4번째 소분류. "인사급여" 신설안은 폐기                                                                                                                                                                                                                   | PRD 7장. `app/erp/admin/layout.tsx`의 기존 `requireAdmin()` 세그먼트 가드를 그대로 상속받아 **별도 접근 제어 코드가 필요 없다** — 이전 설계보다 단순함                           |
+| **헤더 "조직도" 팝업 진입점**  | `components/erp/erp-header.tsx`의 우측 계정 영역에 버튼 1개를 `<AuthButton />` 바로 앞에 추가. role 무관 전 로그인 사용자 노출, `menus`/`user_menu_permissions`와 무관, **완전 조회 전용**                                                                                                                                                                                                          | PRD 8장. 관리 화면이 admin 전용으로 확정되면서, 일반 사용자의 조직도 조회 수단이 이 팝업으로 분리됨                                                                              |
+| 권한 함수                      | **기존 `is_admin()` / `is_superadmin()` / `current_organization_id()`를 그대로 재사용.** 새 DB 권한 함수를 만들지 않는다                                                                                                                                                                                                                                                                            | 실 DB 확인 결과 3개 함수 모두 `SECURITY DEFINER`로 존재(`current_organization_id()` → uuid). `departments_update_admin` 정책이 이미 이 조합을 사용 중                            |
+| 감사 컬럼 트리거               | **기존 `public.set_master_audit()` 재사용**(`updated_at` + `updated_by` 동시 설정). 새 트리거 함수를 만들지 않는다                                                                                                                                                                                                                                                                                  | ROADMAP_MASTER Task 025에서 신설한 공용 트리거. 신규 테이블도 동일한 감사 컬럼 관례를 따름                                                                                       |
+| 코드 채번                      | **기존 `public.next_master_code(p_entity)`를 `create or replace`로 확장**해 `org_group`(`GRP`/4) / `org_company`(`OC`/4) / `org_section`(`OS`/4) 3종을 추가. 새 채번 함수를 만들지 않는다                                                                                                                                                                                                           | PRD 6.1. 권한 프리앰블은 `org_group`/`org_company`만 `is_superadmin()`으로 분기, `org_section`은 기존 `is_admin()` 기본 분기를 그대로 탄다(부문 스코프는 테이블 RLS가 최종 판정) |
+| 그룹사 싱글턴 강제             | `singleton boolean not null default true` + `check (singleton)` + `unique (singleton)` 2중 제약. 앱에서도 등록 화면을 제공하지 않고 **이름 수정 UI만** 둔다                                                                                                                                                                                                                                         | PRD 6.2. 애플리케이션 레벨 방어만으로는 SQL 직접 삽입을 막을 수 없음                                                                                                             |
+| 리더 저장 방식                 | **5개 레벨 공용 단일 테이블 `org_unit_leaders`** + `num_nonnulls(...) = 1` CHECK(5개 FK) + 5개 partial unique index. 레벨별 컬럼 추가(옵션 A) 미채택                                                                                                                                                                                                                                                | PRD 6.4절 비교표. `organizations`/`departments`는 컬럼 추가 자체가 금지이고, 레벨마다 조회 방식이 갈라지면 UI/쿼리가 두 갈래가 됨                                                |
+| 부서↔팀 소속 표현              | **`org_section_teams`(department_id unique) 매핑 테이블** + 부서·팀이 같은 부문 소속인지 검증하는 **신규 트리거**(`org_sections`/`departments`를 읽기만 함). 매핑이 없으면 부문 직속으로 판정                                                                                                                                                                                                       | PRD 4.2 / 5.5절. `departments`에 컬럼을 추가하지 않고 선택적 소속을 표현하는 유일한 방법                                                                                         |
+| 팀의 "실제 상위" 판정          | ① `org_section_teams` 매핑이 있으면 그 부서, ② 없으면 `departments.organization_id`가 가리키는 부문                                                                                                                                                                                                                                                                                                 | PRD 4.2절. 쿼리 레이어(`lib/erp/org/tree.ts`)에서 이 우선순위를 그대로 구현                                                                                                      |
+| 편집 권한 재검증 위치          | Server Action 진입부에서 `requireSuperadmin()`(신규, 앱 레벨) 또는 `requireAdmin()` 호출 + DB RLS 이중 방어. **관리 화면 라우트 접근 자체는 admin 세그먼트가 이미 처리**하므로 이 재검증은 "누가 어떤 편집 버튼을 쓸 수 있는가"만 다룬다                                                                                                                                                            | `lib/erp/actions.ts`의 "진입부에서 반드시 `requireAdmin()` 먼저" 규약 계승. 앱 레벨 `superadmin` 가드는 아직 없어 이 하나만 신설(`lib/erp/auth.ts`)                              |
+| 헤더 팝업 데이터 조회 권한     | 신규 Server Action(팝업 전용)에는 **역할 가드를 두지 않는다** — RLS/RPC가 이미 "로그인 사용자 전체 허용"이므로 인증 여부 외 추가 체크가 불필요                                                                                                                                                                                                                                                      | PRD 8.4절                                                                                                                                                                        |
+| 조직 도메인 코드 위치          | `lib/erp/org/*`, `components/erp/org/*` (신규 하위 디렉토리)                                                                                                                                                                                                                                                                                                                                        | `lib/erp/master/*` / `components/erp/master/*` 선례와 동일한 도메인 분리                                                                                                         |
+| 공통 UI 재사용 범위            | 관리 화면은 **`MasterDetailLayout` + `MasterTreePanel`만 재사용**한다. `MasterListTable` / `MasterFormSheet` / `MasterDeleteDialog` / `SortOrderCell`은 `MasterEntityKey`·`MASTER_ENTITIES`에 강결합되어 있어 재사용하지 않고 조직 전용 컴포넌트를 만든다. 헤더 팝업은 이 관리 화면 컴포넌트도 재사용하지 않고 **읽기 전용 축약 컴포넌트를 별도로** 둔다(편집 슬롯을 조건부로 숨기는 방식보다 단순) | 실 코드 확인 결과 앞의 2개만 엔티티 메타에 의존하지 않는 순수 컨트롤드 컴포넌트. PRD 6.3.2 — 팝업은 트리 조립 로직(`lib/erp/org/tree.ts`)만 공유하고 UI는 독립                   |
+| 부문/팀 활성 여부 매핑         | `organizations.archived_at is null` / `departments.archived_at is null` → 트리 노드의 `isActive`로 **쿼리 레이어에서 어댑팅**                                                                                                                                                                                                                                                                       | PRD 6.5절. 두 테이블에 `is_active` 컬럼을 추가하지 않기 위한 조치                                                                                                                |
+| 정렬                           | 그룹사·법인·부서(신규)는 `sort_order` → `name`, **부문·팀은 `name` 가나다순**(정렬 컬럼이 없으므로)                                                                                                                                                                                                                                                                                                 | PRD 6.5절                                                                                                                                                                        |
+| 구성원 노드                    | 구성원은 **트리 노드로 펼치지 않고** 팀 노드 선택 시 우측 목록으로만 표시                                                                                                                                                                                                                                                                                                                           | PRD 6.3절. 63명을 트리에 펼치면 깊이·성능 모두 악화                                                                                                                              |
+| 다국어                         | 관리 화면 콘텐츠는 **한국어 단일 값**(기존 관례). **헤더 팝업 트리거 버튼만 예외** — 헤더가 이미 `dict.erp.header.logoAriaLabel`로 부분 번역되고 있어, 같은 패턴으로 `orgChartTriggerLabel` 등을 4개 언어에 추가한다                                                                                                                                                                                | PRD 8.5절. ROADMAP_MVP Task 010 / ROADMAP_MASTER와 같은 기조를 유지하되, 헤더 chrome은 이미 번역 대상이라는 예외를 그대로 따름                                                   |
+| Suspense 경계                  | `cacheComponents: true` 환경이므로 `cookies()`/`params`/`searchParams` 사용 컴포넌트는 얇은 `Page` + `<Suspense>` + `async XxxContent` 패턴 유지                                                                                                                                                                                                                                                    | 기존 `app/erp/**` 전 페이지가 이 패턴                                                                                                                                            |
+| shadcn 컴포넌트                | `tree-view` `sheet` `dialog` `alert-dialog` `table` `select` `native-select` `combobox` `command` `badge` `avatar` `card` `switch` `input` `skeleton` 모두 **이미 존재**                                                                                                                                                                                                                            | `npx shadcn add` 불필요                                                                                                                                                          |
 
 ### 변경 금지 파일 / 객체 목록 (선행 로드맵에서 승계 + 이번 로드맵 추가분)
 
 - **`public.profiles` / `public.departments` / `public.organizations` 테이블 — 컬럼·제약·RLS 정책 전부 변경 금지 (이번 로드맵의 최우선 제약)**
 - `proxy.ts`, `lib/supabase/proxy.ts` — 쿠키 처리 로직 **특히 금지**
 - `app/layout.tsx`, `app/page.tsx`, `app/protected/**` — 스타터킷 영역
-- `app/erp/layout.tsx`의 셸 구조(Header → Menubar → 트리+콘텐츠 → Footer)
+- `app/erp/layout.tsx`, `components/erp/erp-shell.tsx`의 셸 **구성**(Header → Menubar → 트리+콘텐츠 → Footer)과 `components/erp/erp-footer.tsx`/`erp-mobile-nav.tsx`/`erp-tree-panel.tsx` — 그대로 유지
+  - **예외(이번 로드맵 한정)**: `components/erp/erp-header.tsx`의 **우측 계정 영역 안에 버튼 1개(헤더 팝업 트리거)를 추가하는 것만 허용**한다(Task 054). 로고/타이틀 중앙 정렬/모바일 햄버거 등 헤더의 나머지 구조와, `ErpShell`이 조립하는 전체 레이아웃은 변경하지 않는다.
 - `public.is_admin()` / `public.is_superadmin()` / `public.current_organization_id()` / `public.set_updated_at()` / `public.set_master_audit()` / `public.handle_new_user()` / `prevent_unauthorized_role_change` — **재사용만 하고 정의를 수정하지 않는다**
   - 예외: `public.next_master_code()`는 org 3종 추가를 위해 `create or replace`로 **확장만** 한다(기존 12종 분기와 권한 로직은 그대로 보존).
+- `app/erp/admin/layout.tsx` — **수정하지 않는다.** `requireAdmin()` 가드를 그대로 상속만 받는다(Task 052).
 - `components/erp/master/**`, `lib/erp/master/**` — 조직도 구현을 위해 수정하지 않는다. 재사용은 import만.
 - **변수·컬럼·타입 이름에 `department`(영문)를 "부서" 의미로 쓰지 않는다** — 기존 `departments` 테이블(팀)과 혼동 방지. 부서는 항상 `section`.
 
@@ -93,9 +103,9 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 ## 개발 단계
 
 - **Phase 8** — 조직 데이터 모델 구축 (Task 043~050)
-- **Phase 9** — 메뉴 등록 및 라우트 골격 (Task 051~052)
-- **Phase 10** — 조직도 화면 구현 (Task 053~056)
-- **Phase 11** — 더미 데이터 시드 및 통합 검증 (Task 057~058)
+- **Phase 9** — 메뉴 등록 및 관리 라우트 골격 (Task 051~052)
+- **Phase 10** — 조직도 화면 구현 (Task 053~057)
+- **Phase 11** — 더미 데이터 시드 및 통합 검증 (Task 058~059)
 
 ---
 
@@ -107,35 +117,30 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ### Task 043: 조직도 도메인 설계 확정 및 미해결 가정 확인 ⚠️
 
-**목표**: PRD 10장에 열려 있는 가정을 사용자 확인으로 확정하고, 그 결과를 이 로드맵의 "아키텍처 사전 결정 사항"과 영향 Task에 반영한다. **코드 변경은 없거나 최소한이며, 산출물은 결정 기록이다.**
+**목표**: PRD 11장에 열려 있는 가정을 사용자 확인으로 확정하고, 그 결과를 이 로드맵의 "아키텍처 사전 결정 사항"과 영향 Task에 반영한다. **코드 변경은 없거나 최소한이며, 산출물은 결정 기록이다.**
 
 **관련 파일**
 
-- `docs/prd/PRD_ORG.md` 8장 / 10장 (확인 결과 반영)
+- `docs/prd/PRD_ORG.md` 9장 / 11장 (확인 결과 반영)
 - `docs/roadmap/ROADMAP_ORG.md` (이 문서 — 결정 사항 표 및 영향 Task 갱신)
 
 **구현 체크리스트**
 
-- [ ] **① 그룹사 실제 이름 확정** — PRD 8장의 가안 "OO그룹" 대신 실제 그룹사명을 확정한다(Task 046의 초기 데이터 및 Task 057의 시드에 그대로 들어감).
-- [ ] **② 법인 실제 이름 확정** — 기존 `organizations` 1건("IT부문")을 소속시킬 법인명. PRD 8장 가안 "OO 법인".
+- [ ] **① 그룹사 실제 이름 확정** — PRD 9장의 가안 "OO그룹" 대신 실제 그룹사명을 확정한다(Task 046의 초기 데이터 및 Task 058의 시드에 그대로 들어감).
+- [ ] **② 법인 실제 이름 확정** — 기존 `organizations` 1건("IT부문")을 소속시킬 법인명. PRD 9장 가안 "OO 법인".
 - [ ] **③ 부서 구성 확정** — "IT부문" 하위에 실제로 어떤 부서를 둘지(가안: "개발부서" 1건, 8개 팀 중 몇 개를 이 부서에 묶을지). **부서를 아예 만들지 않고 8개 팀 전부 부문 직속으로 시작하는 것도 유효한 선택**임을 사용자에게 확인한다 — 부서는 "있어야 하는" 게 아니라 "있어도 되는" 레벨이다.
 - [ ] **④ 초기 리더 지정자 확정** — 그룹사/법인/부문/부서 리더로 지정할 실제 `profiles` 행(데모용이면 임의의 admin/superadmin 계정). 팀 리더는 8개 팀 중 몇 개를 지정하고 몇 개를 "미지정"으로 남길지도 함께 확정.
-- [ ] **⑤ 조직도 메뉴 노출 정책 확정** — PRD 3.1은 "조직도 조회 = 로그인 사용자 전체"인데, 이 저장소의 메뉴 트리는 `getVisibleMenuTree()`가 `user_menu_permissions`에 부여된 메뉴만 일반 사용자에게 보여준다(**실 DB 조회 결과 현재 권한 행 0건** — 일반 사용자에게는 어떤 메뉴도 보이지 않는 상태). 따라서 다음 중 하나를 확정해야 한다:
-  - (A) 신규 "조직도 관리" 메뉴를 **기존 전체 사용자(`profiles` 63건)에게 `user_menu_permissions`로 일괄 부여**한다 — 신규 가입자는 `handle_new_user()`가 권한을 부여하지 않으므로 계속 수동 부여가 필요하다는 한계를 감수.
-  - (B) 메뉴 노출은 기존 권한 체계 그대로 두고(관리자만 트리에서 보임), **라우트는 열어두어** 일반 사용자는 직접 URL/링크로만 접근 — PRD 3.1의 "전 구성원 조회"와 체감이 어긋남.
-  - (C) `getVisibleMenuTree()`에 "전 사용자 공개 메뉴" 개념을 새로 도입 — 기존 권한 체계 변경이 필요하므로 이번 범위에서는 비권장.
-  - **권장안은 (A)** (기존 체계를 바꾸지 않으면서 PRD 의도에 가장 근접). 확정 결과를 Task 051에 반영한다.
-- [ ] **⑥ 레벨별 기본 직책명 확정** — PRD 5.6은 "자유 입력, 레벨별 기본값만 폼에서 제안"이다. 그룹사="회장님" / 법인="대표이사" / 부문="부문장" / **부서="부서장"** / 팀="팀장"으로 확정할지 확인(Task 044의 `lib/erp/org/levels.ts` 상수로 들어감).
-- [ ] 확정된 결정을 이 문서의 "아키텍처 사전 결정 사항" 표와 [사용자 확인 대기 항목](#사용자-확인-대기-항목-착수-전-필수) 표에 반영하고, ⚠️가 붙은 Task 제목(043, 046, 051, 057)에서 ⚠️를 제거한다.
+- [ ] **⑤ 레벨별 기본 직책명 확정** — PRD 5.6은 "자유 입력, 레벨별 기본값만 폼에서 제안"이다. 그룹사="회장님" / 법인="대표이사" / 부문="부문장" / **부서="부서장"** / 팀="팀장"으로 확정할지 확인(Task 044의 `lib/erp/org/levels.ts` 상수로 들어감).
+- [ ] 확정된 결정을 이 문서의 "아키텍처 사전 결정 사항" 표와 [사용자 확인 대기 항목](#사용자-확인-대기-항목-착수-전-필수) 표에 반영하고, ⚠️가 붙은 Task 제목(043, 046, 058)에서 ⚠️를 제거한다.
 
 **수락 기준**
 
-- [ ] PRD 10장 기준 6개 항목에 대해 "확정" 또는 "현행 가정 유지"라는 명시적 사용자 답변이 기록되어 있다.
-- [ ] 결정에 따라 영향받는 Task(046 / 051 / 057)에 반영할 방향이 확정되었다.
+- [ ] PRD 11장 기준 5개 항목에 대해 "확정" 또는 "현행 가정 유지"라는 명시적 사용자 답변이 기록되어 있다.
+- [ ] 결정에 따라 영향받는 Task(046 / 058)에 반영할 방향이 확정되었다.
 
 **테스트 체크리스트**
 
-- [ ] (코드 변경 없음 — 자동 테스트 대상 아님) 결정 사항이 이 문서와 `PRD_ORG.md` 8장/10장 양쪽에 모순 없이 반영되었는지 교차 확인한다.
+- [ ] (코드 변경 없음 — 자동 테스트 대상 아님) 결정 사항이 이 문서와 `PRD_ORG.md` 9장/11장 양쪽에 모순 없이 반영되었는지 교차 확인한다.
 
 ---
 
@@ -151,7 +156,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/org/levels.ts`: `ORG_LEVELS` 상수 정의 — `group`(그룹사, 기본 직책 "회장님") / `company`(법인, "대표이사") / `division`(부문, "부문장") / **`section`(부서, "부서장")** / `team`(팀, "팀장") / `member`(구성원, 직책 없음). 각 레벨에 `editableBy: "superadmin" | "adminScoped" | "none"`을 함께 담아, 화면이 버튼 노출 여부를 이 메타 한 곳에서 판단하게 한다(PRD 3.1 표를 코드로 옮긴 것).
+- [ ] `lib/erp/org/levels.ts`: `ORG_LEVELS` 상수 정의 — `group`(그룹사, 기본 직책 "회장님") / `company`(법인, "대표이사") / `division`(부문, "부문장") / **`section`(부서, "부서장")** / `team`(팀, "팀장") / `member`(구성원, 직책 없음). 각 레벨에 `editableBy: "superadmin" | "adminScoped" | "none"`을 함께 담아, 관리 화면이 버튼 노출 여부를 이 메타 한 곳에서 판단하게 한다(PRD 3.1 표를 코드로 옮긴 것). **헤더 팝업(Task 054)은 이 메타를 아예 참조하지 않는다 — 편집 버튼 자체가 없으므로.**
   - `division`/`section`/`team`은 **노드 자체의 CRUD가 그룹사·법인과 다르므로**(부문은 아예 CRUD 없음, 부서는 admin 스코프) 레벨마다 `editableBy`(그룹/법인=`superadmin`, 부서=`adminScoped`, 부문=`none`)와 별도 필드 `leaderEditableBy`(부서·팀=`adminScoped`, 나머지=`superadmin`)를 둔다.
   - **`section` 레벨에는 `isOptional: true` 플래그**를 추가해, 화면이 "이 레벨은 노드가 0개여도 정상"임을 코드로도 표현하게 한다.
 - [ ] `lib/erp/org/types.ts`:
@@ -172,7 +177,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **테스트 체크리스트**
 
 - [ ] `isValidOrgCode("orgGroup", "GRP0001")` → true, `isValidOrgCode("orgSection", "OS0001")` → true, `"OS001"` → false 를 임시 스크립트(`npx tsx`)로 확인 후 정리.
-- [ ] `ORG_LEVELS`의 레벨 6종(그룹사/법인/부문/부서/팀/구성원)과 기본 직책명이 Task 043 ⑥ 확정 결과와 일치하는지 대조.
+- [ ] `ORG_LEVELS`의 레벨 6종(그룹사/법인/부문/부서/팀/구성원)과 기본 직책명이 Task 043 ⑤ 확정 결과와 일치하는지 대조.
 - [ ] `ORG_LEVELS.section.isOptional === true`이고 나머지 레벨은 이 플래그가 없거나 `false`인지 확인.
 
 ---
@@ -206,7 +211,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   - [ ] `insert` — `with check (public.is_superadmin())`
   - [ ] `update` — `using (public.is_superadmin()) with check (public.is_superadmin())`
   - [ ] `delete` — `using (public.is_superadmin())`
-  - [ ] `org_groups`의 `delete` 정책은 두되, 싱글턴이라 UI에서는 삭제 버튼을 제공하지 않는다(Task 054).
+  - [ ] `org_groups`의 `delete` 정책은 두되, 싱글턴이라 UI에서는 삭제 버튼을 제공하지 않는다(Task 055).
 - [ ] 코드 채번 확장:
   - [ ] 시퀀스 2개 생성 — `org_code_group_seq`(start 1), `org_code_company_seq`(start 1). **자릿수 4에 `lpad`로 채우므로 시작값은 1로 두고 `GRP` + `lpad('1',4,'0')` = `GRP0001`이 되게 한다.** (부서용 시퀀스는 Task 047에서 함께 생성)
   - [ ] `public.next_master_code(p_entity)`를 `create or replace`로 확장해 `when 'org_group'` / `when 'org_company'` 분기를 추가한다(부서 `org_section` 분기는 Task 047에서 같은 함수를 다시 `create or replace`로 확장). **기존 12종 분기와 `product` 권한 예외는 그대로 보존**하고, 권한 프리앰블에 `elsif p_entity in ('org_group','org_company') then if not public.is_superadmin() then raise exception ...` 분기만 추가한다(PRD 3.1 — 그룹사/법인은 superadmin 전용).
@@ -217,7 +222,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **수락 기준**
 
 - [ ] 3개 테이블이 생성되고 `list_tables`로 컬럼·FK·unique 제약이 확인된다.
-- [ ] `org_groups`에 2번째 행 INSERT 시도 → unique 위반(`23505`)으로 실패한다 (PRD 11장 성공 기준 7번).
+- [ ] `org_groups`에 2번째 행 INSERT 시도 → unique 위반(`23505`)으로 실패한다.
 - [ ] `select public.next_master_code('org_group')` → `GRP0001`, `next_master_code('org_company')` → `OC0001` 형식이 반환된다.
 - [ ] `role='user'` 세션에서 3개 테이블 select는 성공하고 insert는 RLS(`42501`)로 차단된다. `role='admin'`(superadmin 아님) 세션의 insert도 차단된다.
 - [ ] 기존 `organizations`/`departments`/`profiles`의 행 수와 컬럼 정의가 마이그레이션 전후 동일하다.
@@ -240,12 +245,12 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 > ⚠️ Task 043 ①②(그룹사·법인 실제 이름) 확정 후 착수한다.
 > **PRD 5.3절 "마이그레이션 시 필수 작업"에 해당하는 Task다. 이 Task를 건너뛰면 기존 부문 1건("IT부문")과 그 하위 팀 8건·구성원 63건 전체가 트리에서 고아가 되어 조직도 화면이 빈 껍데기가 된다.**
 
-**목표**: Task 045의 테이블에 그룹사 1건 + 법인 1건 + 부문 매핑 1건을 넣어, 기존 실데이터(부문 1 / 팀 8 / 구성원 63)가 트리에 즉시 연결되게 한다. **부서(`org_sections`)는 이 Task에서 만들지 않는다** — 부서는 선택적 레벨이므로, 부서 없이도 이 시점에서 트리가 완전히 정상 동작해야 한다(부서 예시는 Task 057에서 별도로 넣는다).
+**목표**: Task 045의 테이블에 그룹사 1건 + 법인 1건 + 부문 매핑 1건을 넣어, 기존 실데이터(부문 1 / 팀 8 / 구성원 63)가 트리에 즉시 연결되게 한다. **부서(`org_sections`)는 이 Task에서 만들지 않는다** — 부서는 선택적 레벨이므로, 부서 없이도 이 시점에서 트리가 완전히 정상 동작해야 한다(부서 예시는 Task 058에서 별도로 넣는다).
 
 **관련 파일**
 
 - Supabase 마이그레이션(MCP) — `seed_org_root_and_link_existing_division`
-- `docs/prd/PRD_ORG.md` 5.3절 / 8장
+- `docs/prd/PRD_ORG.md` 5.3절 / 9장
 
 **구현 체크리스트**
 
@@ -261,7 +266,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **수락 기준**
 
 - [ ] `org_groups` 1건 / `org_companies` 1건 / `org_company_divisions` 1건이 존재한다.
-- [ ] 기존 `organizations` 1건 / `departments` 8건 / `profiles` 63건의 행 수와 값이 마이그레이션 전후 정확히 동일하다 (PRD 11장 성공 기준 5번).
+- [ ] 기존 `organizations` 1건 / `departments` 8건 / `profiles` 63건의 행 수와 값이 마이그레이션 전후 정확히 동일하다.
 - [ ] 그룹사 → 법인 → 부문 → 팀 → 구성원 조인 쿼리가 63명 전원을 반환한다(고아 0명). **이 시점에는 부서 테이블이 아직 없으므로 조인에 부서를 포함하지 않는다.**
 
 **테스트 체크리스트 (execute_sql)**
@@ -317,7 +322,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **수락 기준**
 
 - [ ] `org_sections`/`org_section_teams` 2개 테이블이 생성되고 `list_tables`로 컬럼·FK·unique·트리거가 확인된다.
-- [ ] 서로 다른 부문 소속인 부서-팀 조합을 `org_section_teams`에 insert 시도 → 트리거 예외로 실패한다 (PRD 11장 성공 기준 8번).
+- [ ] 서로 다른 부문 소속인 부서-팀 조합을 `org_section_teams`에 insert 시도 → 트리거 예외로 실패한다.
 - [ ] 같은 팀을 2개 부서에 동시에 매핑 시도 → unique 위반(`23505`)으로 실패한다.
 - [ ] `role='admin'`이면서 `current_organization_id()`가 일치하는 부문의 부서에는 CRUD가 가능하고, 다른 부문의 부서는 차단된다. `role='superadmin'`은 전부 가능.
 - [ ] `select public.next_master_code('org_section')` → `OS0001` 형식이 반환되고, 기존 12종 + `org_group`/`org_company` 채번이 회귀 없이 동작한다.
@@ -425,7 +430,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ### Task 049: `get_org_chart_members()` SECURITY DEFINER 함수 구현
 
-**목표**: `profiles`의 RLS를 **전혀 건드리지 않고** 조직도에 필요한 최소 컬럼만 전 로그인 사용자에게 노출한다. 이 로드맵에서 가장 보안 민감도가 높은 Task다.
+**목표**: `profiles`의 RLS를 **전혀 건드리지 않고** 조직도에 필요한 최소 컬럼만 전 로그인 사용자에게 노출한다. 이 로드맵에서 가장 보안 민감도가 높은 Task다. **관리 화면(Task 053)과 헤더 팝업(Task 054) 둘 다 이 함수를 공유한다.**
 
 **관련 파일**
 
@@ -462,7 +467,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **수락 기준**
 
 - [ ] `role='user'` 세션에서 `select * from public.get_org_chart_members()` 호출 시 **`profiles` 63건 전체**(팀 소속 여부와 무관하게)가 반환된다.
-- [ ] 같은 세션에서 `select * from public.profiles` 직접 조회 시 **여전히 본인 1건만** 반환된다 (PRD 11장 성공 기준 6번 — RPC 우회가 기존 RLS를 깨지 않았음).
+- [ ] 같은 세션에서 `select * from public.profiles` 직접 조회 시 **여전히 본인 1건만** 반환된다 (RPC 우회가 기존 RLS를 깨지 않았음).
 - [ ] 반환 컬럼이 정확히 6개(`id`, `name`, `department_id`, `avatar_key`, `role`, `is_active`)다.
 - [ ] `anon` 롤에서는 실행이 거부된다.
 
@@ -478,7 +483,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ### Task 050: 타입 재생성 및 조직도 데이터 액세스 계층 구현
 
-**목표**: Phase 10의 화면들이 공유할 서버 측 조회 함수와 Server Action을 한 곳에 모은다. **화면이 각자 조인을 짜지 않도록 하는 것, 그리고 "부서 있으면 부서 아래 / 없으면 부문 직속"이라는 트리 조립 규칙을 한 곳에만 구현하는 것이 이 Task의 존재 이유다.**
+**목표**: 관리 화면(Task 053)과 헤더 팝업(Task 054)이 공유할 서버 측 조회 함수와 Server Action을 한 곳에 모은다. **화면이 각자 조인을 짜지 않도록 하는 것, 그리고 "부서 있으면 부서 아래 / 없으면 부문 직속"이라는 트리 조립 규칙을 한 곳에만 구현하는 것이 이 Task의 존재 이유다.**
 
 **관련 파일**
 
@@ -493,7 +498,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 - [ ] `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — Task 045/047/048의 5개 테이블 블록과 Task 049의 함수 시그니처(`Functions.get_org_chart_members`)가 반영됨을 확인.
 - [ ] `lib/erp/auth.ts`에 `requireSuperadmin()` 추가 — `getCurrentErpUser()` 결과의 `role !== "superadmin"`이면 `redirect("/erp/forbidden")`. **기존 `requireAdmin()`은 수정하지 않는다**(추가만).
-- [ ] `lib/erp/org/queries.ts` — 조회 함수(전부 함수 내부에서 `await createClient()` 호출, 전역 변수 없음):
+- [ ] `lib/erp/org/queries.ts` — 조회 함수(전부 함수 내부에서 `await createClient()` 호출, 전역 변수 없음). **관리 화면·헤더 팝업 둘 다 이 함수들만 호출한다(각자 조인을 새로 짜지 않는다).**
   - [ ] `getOrgTree()` — `org_groups` / `org_companies` / `org_company_divisions` / `org_sections` / `org_section_teams` + `organizations` + `departments`를 조회해 **가변 깊이** `OrgTreeNode[]`를 반환. 구성원은 트리에 포함하지 않는다(PRD 6.3).
     - [ ] **부문 노드의 자식 조립 규칙**(PRD 4.2절 그대로 구현): 그 부문 소속 `org_sections` 전부를 자식으로 두고, 그 부문 소속 `departments` 중 `org_section_teams`에 매핑이 **없는** 것만 부문의 직접 자식으로 추가한다(부서에 매핑된 팀은 그 부서의 자식으로만 나타나고 부문에 중복 노출되지 않는다).
     - [ ] 부문/팀의 `isActive`는 `archived_at is null`로 매핑(PRD 6.5).
@@ -502,23 +507,24 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   - [ ] `getOrgLeaders()` — `org_unit_leaders`를 한 번에 조회해 `Map<"level:targetId", OrgLeader>` 형태로 반환. 리더 이름/아바타는 `profiles` 직접 조인이 아니라 **`get_org_chart_members()` 결과와 앱에서 매칭**한다(일반 사용자 세션에서도 리더 이름이 보여야 하므로 — `profiles` 조인은 RLS에 막힌다). **이 점이 이 Task에서 가장 놓치기 쉬운 함정이다.**
   - [ ] `getOrgChartMembers()` — `supabase.rpc("get_org_chart_members")` 호출 결과를 `OrgMember[]`로 매핑.
   - [ ] `getMembersByDepartment(departmentId)` — 위 결과를 필터링(RPC를 팀별로 반복 호출하지 않는다).
-  - [ ] `getUnmappedDivisions()` — 아직 법인에 연결되지 않은 `organizations` 목록(Task 054의 매핑 관리 UI용).
-  - [ ] **`getUnmappedTeamsInDivision(organizationId)`** — 특정 부문 안에서 아직 어떤 부서에도 매핑되지 않은 `departments` 목록(Task 055의 부서-팀 소속 관리 UI용, "부서에 추가할 수 있는 팀 후보").
+  - [ ] `getUnmappedDivisions()` — 아직 법인에 연결되지 않은 `organizations` 목록(Task 055의 매핑 관리 UI용).
+  - [ ] **`getUnmappedTeamsInDivision(organizationId)`** — 특정 부문 안에서 아직 어떤 부서에도 매핑되지 않은 `departments` 목록(Task 056의 부서-팀 소속 관리 UI용).
   - [ ] 파일 상단에 "`cookies()`를 쓰는 `createClient()`에 의존하므로 호출하는 컴포넌트는 `<Suspense>` 경계가 필요하다"를 명시(기존 관례).
 - [ ] `lib/erp/org/tree.ts` — 평면 행 배열을 `OrgTreeNode[]`로 조립하는 **순수 함수**(`buildOrgTree`). `lib/erp/menu-tree.ts`의 `buildMenuTree` 패턴을 따르되 레벨 이름이 다르고 **부서 유무에 따른 가변 분기가 있으므로** 재사용은 하지 않는다. 순수 함수라 단위 검증이 쉽다 — "부서 0개인 부문", "부서 1개 + 직속 팀 혼재하는 부문" 두 케이스를 반드시 단위 검증한다.
-- [ ] `lib/erp/org/actions.ts` — Server Actions (전부 진입부에서 권한 가드 먼저 호출):
+- [ ] `lib/erp/org/actions.ts` — Server Actions (편집용은 전부 진입부에서 권한 가드 먼저 호출):
   - [ ] `createOrgCompanyAction(input)` / `updateOrgCompanyAction(id, input)` / `deleteOrgCompanyAction(id)` — 첫 줄에서 `requireSuperadmin()`. 등록 시 `rpc("next_master_code", { p_entity: "org_company" })`로 채번.
   - [ ] `updateOrgGroupAction(id, input)` — 그룹사는 **이름/비고/사용여부 수정만** 제공(생성·삭제 액션을 만들지 않는다, PRD 6.2).
   - [ ] `setDivisionCompanyAction(organizationId, orgCompanyId)` — `org_company_divisions` upsert(부문당 1건 unique). `requireSuperadmin()`.
   - [ ] `moveOrgCompanyAction(id, direction)` — 형제 간 `sort_order` 교환(`moveMasterEntityAction` 로직 참고, 마스터 액션을 수정하지 않고 조직용으로 별도 구현).
-  - [ ] **`createOrgSectionAction(input)` / `updateOrgSectionAction(id, input)` / `deleteOrgSectionAction(id)`** — 첫 줄에서 `requireAdmin()` 호출 후, 대상 부문이 `current_organization_id()`와 일치하는지 앱에서도 1차 확인(최종 판정은 RLS). `superadmin`은 통과. 등록 시 `next_master_code("org_section")`로 채번.
-  - [ ] **`assignTeamToSectionAction(departmentId, sectionId)`** — `org_section_teams` upsert(팀당 1건 unique, 이미 다른 부서 소속이면 이관). 부서 기준 스코프로 `requireAdmin()` + 검증.
-  - [ ] **`removeTeamFromSectionAction(departmentId)`** — `org_section_teams`에서 해당 팀 매핑 delete(=부문 직속으로 되돌림). 삭제 전 기존 매핑의 부서 기준으로 스코프 검증.
+  - [ ] `createOrgSectionAction(input)` / `updateOrgSectionAction(id, input)` / `deleteOrgSectionAction(id)` — 첫 줄에서 `requireAdmin()` 호출 후, 대상 부문이 `current_organization_id()`와 일치하는지 앱에서도 1차 확인(최종 판정은 RLS). `superadmin`은 통과. 등록 시 `next_master_code("org_section")`로 채번.
+  - [ ] `assignTeamToSectionAction(departmentId, sectionId)` — `org_section_teams` upsert(팀당 1건 unique, 이미 다른 부서 소속이면 이관). 부서 기준 스코프로 `requireAdmin()` + 검증.
+  - [ ] `removeTeamFromSectionAction(departmentId)` — `org_section_teams`에서 해당 팀 매핑 delete(=부문 직속으로 되돌림). 삭제 전 기존 매핑의 부서 기준으로 스코프 검증.
   - [ ] `setOrgLeaderAction({ level, targetId, profileId, title })` — 레벨에 따라 가드 분기: `team`/`section`이면 `requireAdmin()`(DB RLS가 스코프까지 최종 판정), 그 외는 `requireSuperadmin()`. 내부적으로 해당 레벨 컬럼 하나만 채워 upsert한다(partial unique index가 1명 제한을 보장).
   - [ ] `clearOrgLeaderAction({ level, targetId })` — 동일 가드 분기 후 delete.
+  - [ ] **`getOrgChartPopupDataAction()`** — 헤더 팝업(Task 054) 전용. `getOrgTree()`/`getOrgLeaders()`/`getOrgChartMembers()`를 한 번에 호출해 `{ tree, leaders, members }`로 묶어 반환하는 **읽기 전용** 액션. **역할 가드를 두지 않는다**(PRD 8.4 — RLS가 이미 로그인 사용자 전체 허용이므로 인증 여부 외 추가 체크 불필요). 이 액션은 다른 편집 액션과 달리 `revalidatePath`도 호출하지 않는다(변경이 없으므로).
   - [ ] 에러 변환: FK `restrict` 위반(`23503`) → "하위 데이터가 있어 삭제할 수 없습니다.", unique 위반(`23505`) → 상황별 한국어 메시지("이미 사용 중인 코드입니다." / "해당 조직에는 이미 리더가 지정되어 있습니다." / "이 부문은 이미 다른 법인에 소속되어 있습니다." / "이 팀은 이미 다른 부서에 소속되어 있습니다."), 트리거 예외(부서-팀 부문 불일치) → "부서와 팀의 소속 부문이 달라 연결할 수 없습니다.", RLS 차단(`42501`) → "권한이 없습니다."
-  - [ ] 반환 타입은 기존 `lib/erp/actions.ts`의 `ActionResult`를 import해 재사용한다.
-  - [ ] 변경 후 `revalidatePath("/erp/org")` 호출.
+  - [ ] 반환 타입은 기존 `lib/erp/actions.ts`의 `ActionResult`를 import해 재사용한다(단, `getOrgChartPopupDataAction()`은 단순 조회라 별도의 조회 결과 타입을 반환해도 무방).
+  - [ ] 편집 액션 성공 후 `revalidatePath("/erp/admin/org")` 호출.
 - [ ] **`lib/erp/master/**` 파일을 수정하지 않았는지 `git diff`로 확인**한다.
 
 **수락 기준**
@@ -527,6 +533,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - [ ] `getOrgTree()`가 그룹사 1 → 법인 1 → 부문 1 → 팀 8(부서 아직 없음)의 트리를 반환한다(Task 046까지만 적용된 상태 기준).
 - [ ] `getOrgChartMembers()`가 일반 사용자 세션에서도 63건을 반환한다.
 - [ ] 일반 사용자 세션에서 `setOrgLeaderAction`(부문 레벨) 호출 시 `/erp/forbidden`으로 리다이렉트된다.
+- [ ] 일반 사용자 세션에서 `getOrgChartPopupDataAction()` 호출은 **성공**한다(가드가 없으므로).
 - [ ] `buildOrgTree` 단위 테스트가 "부서 0개인 부문"과 "부서 1개 + 직속 팀 혼재" 두 케이스 모두에서 올바른 트리를 만든다.
 
 **테스트 체크리스트 (Playwright MCP + execute_sql)**
@@ -535,6 +542,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 - [ ] 임시 계정 3개(superadmin / admin / user)를 회원가입 → `execute_sql`로 role 승격(`prevent_unauthorized_role_change` 때문에 superadmin은 admin 경유 2단계 승격 필요 — ROADMAP_MASTER Task 031 기록 참고)해 준비.
 - [ ] user 세션에서 `getOrgChartMembers()` → 63건 반환 확인. 같은 세션에서 `getOrgTree()` → 정상 트리 반환 확인.
+- [ ] user 세션에서 `getOrgChartPopupDataAction()` 호출 → 성공 확인(가드 없음 재검증).
 - [ ] user 세션에서 `getOrgLeaders()`가 **리더 이름을 정상 반환**하는지 확인(`profiles` 직접 조인이었다면 null이 되었을 지점 — RPC 매칭 구현이 맞는지 검증).
 - [ ] superadmin 세션에서 `createOrgCompanyAction` → 코드가 `OC####`로 자동 채번되어 저장됨을 `execute_sql`로 확인.
 - [ ] admin 세션에서 `createOrgSectionAction`(자기 부문) 성공 → `execute_sql`로 `OS####` 채번 확인. 임시로 다른 부문을 만들어 그 부문에 `createOrgSectionAction` 시도 → `/erp/forbidden` 또는 RLS 차단 확인 후 정리.
@@ -546,81 +554,76 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-## Phase 9: 메뉴 등록 및 라우트 골격
+## Phase 9: 메뉴 등록 및 관리 라우트 골격
 
-> PRD 7장 / 3.1절.
-> `menus`에 신규 2단(중분류 "조직 관리" + 소분류 "조직도 관리")을 추가하고 `/erp/org` 라우트에 연결한다.
+> PRD 7장.
+> `menus`의 기존 "마스터 관리 > 기본 관리"(사용자/메뉴/권한 관리와 형제) 아래 4번째 소분류로 "조직도 관리"를 추가하고 `/erp/admin/org` 라우트에 연결한다.
 > **Phase 8과 병렬 착수 가능하다** — 스키마와 무관한 메뉴/라우팅 작업이다.
 
-### Task 051: menus 데이터 추가 ("인사급여 > 조직 관리 > 조직도 관리") ⚠️
+### Task 051: menus 데이터 추가 ("마스터 관리 > 기본 관리 > 조직도 관리")
 
-> ⚠️ Task 043 ⑤(메뉴 노출 정책) 확정 후 착수한다.
-
-**목표**: 하위가 비어 있던 대분류 "인사급여" 아래에 중분류/소분류 2건을 신규 등록한다. **기존 메뉴는 한 건도 수정하지 않는다.**
+**목표**: 이미 3개 소분류(사용자 관리/메뉴 관리/사용자 권한 관리)가 있는 "기본 관리" 중분류 아래에 4번째 소분류를 신규 등록한다. **기존 메뉴는 한 건도 수정하지 않는다.** 관리 화면이 admin 전용으로 확정되면서, 이전 검토안에 있던 "일반 사용자에게 메뉴 권한을 일괄 부여해야 하는가" 문제는 **더 이상 발생하지 않는다** — 이 메뉴도 기존 3형제와 마찬가지로 일반 사용자에게는 그냥 보이지 않으면 된다(헤더 팝업이 조회를 전담하므로).
 
 **관련 파일**
 
-- Supabase 마이그레이션(MCP) — `add_org_chart_menus`
+- Supabase 마이그레이션(MCP) — `add_org_chart_menu`
 - `docs/prd/PRD_ORG.md` 7장
 
 **구현 체크리스트**
 
-- [ ] 착수 전 `execute_sql`로 대상 메뉴를 재확인한다 — 2026-08-17 실 DB 기준 대분류 "인사급여" = `11111111-0001-4000-8000-000000000002` (level 1, `sort_order` 2, `is_active` true, **하위 0건**). id가 다르면 조회 결과를 우선한다.
-- [ ] 중분류 insert — `parent_id` = 인사급여 id, `level = 2`, `name = '조직 관리'`, `sort_order = 0`, `is_active = true`.
-- [ ] 소분류 insert — `parent_id` = 위 중분류 id, `level = 3`, `name = '조직도 관리'`, `sort_order = 0`, `is_active = true`.
-- [ ] **기존 메뉴 행에 대한 UPDATE/DELETE가 없는지** 마이그레이션 SQL로 확인(순수 INSERT 2건).
-- [ ] Task 043 ⑤ 확정 결과 반영:
-  - [ ] (A)안 확정 시 — `user_menu_permissions`에 "조직도 관리" 메뉴를 **기존 전체 사용자에게 일괄 부여**하는 INSERT를 함께 적용한다(`insert into public.user_menu_permissions (user_id, menu_id) select id, '<소분류 id>' from public.profiles on conflict do nothing`). 관리자는 `getVisibleMenuTree()`가 무조건 전체를 보여주므로 부여 여부와 무관하다. **신규 가입자에게는 자동 부여되지 않는다는 한계를 이 Task에 기록**하고, 필요 시 후속 이슈로 남긴다.
-  - [ ] (B)안 확정 시 — 권한 부여 없이 메뉴만 등록하고, 일반 사용자는 URL로만 접근 가능함을 기록한다.
-- [ ] 롤백 SQL(권한 행 delete → 소분류 delete → 중분류 delete 순)을 마이그레이션 주석에 남긴다. `menus`의 `on delete cascade`로 하위와 권한이 함께 지워진다는 점도 함께 기록.
+- [ ] 착수 전 `execute_sql`로 대상 중분류를 재확인한다 — 2026-08-17 실 DB 기준 "기본 관리" = `7ecdefaa-2707-4890-bddd-77e1de731ef1`(level 2, parent "마스터 관리" `d3346981-9b2f-4be7-b21d-1f7c2dac69fa`), 기존 소분류 3건: 사용자 관리(`sort_order=0`) / 메뉴 관리(`1`) / 사용자 권한 관리(`2`). **id가 다르면 조회 결과를 우선한다.**
+- [ ] 소분류 insert 1건 — `parent_id` = "기본 관리" id, `level = 3`, `name = '조직도 관리'`, `sort_order = 3`, `is_active = true`.
+- [ ] **기존 메뉴 행에 대한 UPDATE/DELETE가 없는지** 마이그레이션 SQL로 확인(순수 INSERT 1건 — 인사급여 하위 신설안 폐기로 인해 이전 버전보다 훨씬 단순해졌다).
+- [ ] `user_menu_permissions`에 대한 INSERT는 **하지 않는다** — 이 화면은 `role in ('admin','superadmin')`만 접근하며, 관리자는 `getVisibleMenuTree()`가 권한 행과 무관하게 항상 전체 메뉴를 보여준다(`lib/erp/queries.ts`의 `isAdminRole(role)` 분기, 실 코드로 재확인 완료). 일반 사용자는 이 메뉴 자체가 필요 없다.
+- [ ] 롤백 SQL(소분류 delete)을 마이그레이션 주석에 남긴다.
 
 **수락 기준**
 
-- [ ] "인사급여" 하위에 중분류 1건 / 소분류 1건이 존재하고 `is_active = true`다.
-- [ ] 기존 메뉴(마스터 관리 등)의 이름·정렬·활성 상태가 마이그레이션 전후 동일하다.
-- [ ] 관리자 계정으로 `/erp`에서 상단 "인사급여" 선택 시 좌측 트리에 "조직 관리 > 조직도 관리"가 노출된다.
+- [ ] "기본 관리" 하위에 소분류 1건이 추가되어 총 4건(사용자/메뉴/권한/조직도 관리)이 되고 `is_active = true`다.
+- [ ] 기존 메뉴(마스터 관리, 기본 관리 및 그 3형제 등)의 이름·정렬·활성 상태가 마이그레이션 전후 동일하다.
+- [ ] 관리자 계정으로 `/erp`에서 상단 "마스터 관리" 선택 시 좌측 트리에 "기본 관리 > 조직도 관리"가 노출된다.
+- [ ] 일반 사용자 계정에게는 (기존 3형제와 마찬가지로) 이 메뉴가 노출되지 않는다.
 
 **테스트 체크리스트 (Playwright MCP)**
 
-- [ ] 임시 관리자 계정으로 로그인 → `/erp` → 상단 Menubar "인사급여" → 좌측 트리에 "조직 관리" 펼침 → "조직도 관리" 노출 확인(스크린샷).
-- [ ] (A)안 확정 시 — 임시 일반 사용자 계정으로 로그인 → 트리에 "조직도 관리"가 보이는지 확인. (B)안 확정 시 — 보이지 않는 것이 의도된 동작임을 확인.
-- [ ] 마이그레이션 전후 `menus` 전체 행 수 대조(+2건) 및 기존 행 체크섬 동일 확인.
+- [ ] 임시 관리자 계정으로 로그인 → `/erp` → 상단 Menubar "마스터 관리" → 좌측 트리에 "기본 관리" 펼침 → "조직도 관리"가 기존 3형제 아래 4번째로 노출 확인(스크린샷).
+- [ ] 임시 일반 사용자 계정으로 로그인 → 트리에서 "기본 관리" 자체가 (기존과 동일하게) 노출되지 않는지 확인.
+- [ ] 마이그레이션 전후 `menus` 전체 행 수 대조(+1건) 및 기존 행 체크섬 동일 확인.
 - [ ] `browser_console_messages`로 콘솔 에러 0건 확인.
-- [ ] 임시 계정 및 부여한 테스트 권한 정리 후 잔존 0건 확인(단, (A)안의 63명 일괄 부여분은 유지).
+- [ ] 임시 계정 정리 후 잔존 0건 확인.
 - [ ] `npm run check-all` 통과 확인(이번 Task는 데이터 마이그레이션이라 코드 변경 없음).
 
 ---
 
-### Task 052: `/erp/org` 라우트 골격 및 메뉴 라우트 매핑
+### Task 052: `/erp/admin/org` 라우트 골격 및 메뉴 라우트 매핑
 
-**목표**: 조직도 라우트를 스캐폴딩하고 메뉴 → 실제 라우트 매핑을 연결한다. **Phase 10의 화면 Task가 착수할 수 있게 하는 선행 작업이다.**
+**목표**: 조직도 관리 라우트를 스캐폴딩하고 메뉴 → 실제 라우트 매핑을 연결한다. **기존 `app/erp/admin/layout.tsx`가 이미 `requireAdmin()`으로 가드하고 있으므로, 이 Task는 그 가드를 상속받는 `page.tsx`만 추가하면 된다 — 별도 접근 제어 코드가 필요 없다.**
 
 **관련 파일**
 
-- `app/erp/org/page.tsx` (신규, 스텁 — **`requireAdmin()` 가드 없음**)
+- `app/erp/admin/org/page.tsx` (신규, 스텁 — `app/erp/admin/{users,menus,permissions}/page.tsx`와 형제)
 - `lib/erp/menu-routes.ts` (기존 — `MENU_ROUTES`에 매핑 1건 추가)
 - `components/erp/page-header.tsx` (기존 재사용)
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/menu-routes.ts`의 `MENU_ROUTES`에 매핑 추가 — `"인사급여>조직 관리>조직도 관리": "/erp/org"` (PRD 7장). 착수 전 `execute_sql`로 실 DB의 메뉴 이름 3단이 이 키와 정확히 일치하는지 재확인한다(공백·표기 포함).
-- [ ] `app/erp/org/page.tsx` 스텁 생성 — 얇은 `Page` + `<Suspense fallback={null}>` + `async OrgContent` 패턴. `PageHeader`로 breadcrumb("인사급여 > 조직 관리 > 조직도 관리")를 표시하고 "Task 053에서 구현됩니다" 안내 문구를 둔다.
-- [ ] **`app/erp/org/layout.tsx`를 만들지 않는다** — `requireAdmin()`/`requireSuperadmin()` 세그먼트 가드를 걸면 PRD 3.1의 "조직도 조회 = 로그인 사용자 전체"가 깨진다. 인증 자체는 `proxy.ts`가 이미 보장한다. 이 판단 근거를 페이지 상단 주석에 남긴다.
+- [ ] `lib/erp/menu-routes.ts`의 `MENU_ROUTES`에 매핑 추가 — `"마스터 관리>기본 관리>조직도 관리": "/erp/admin/org"` (PRD 7장). 착수 전 `execute_sql`로 실 DB의 메뉴 이름 3단이 이 키와 정확히 일치하는지 재확인한다(공백·표기 포함).
+- [ ] `app/erp/admin/org/page.tsx` 스텁 생성 — 얇은 `Page` + `<Suspense fallback={null}>` + `async OrgContent` 패턴. `PageHeader`로 breadcrumb("마스터 관리 > 기본 관리 > 조직도 관리")를 표시하고 "Task 053에서 구현됩니다" 안내 문구를 둔다. **`app/erp/admin/layout.tsx`를 그대로 상속받으므로 이 페이지에 별도 가드 코드를 넣지 않는다.**
 - [ ] `app/erp/menu/[menuId]/page.tsx`의 기존 판정 순서("존재 여부 → `canAccessMenu` → 라우트 매핑 리다이렉트")를 **변경하지 않는다** — 새 매핑이 그 흐름에 자연히 얹힌다.
 
 **수락 기준**
 
-- [ ] 트리에서 "조직도 관리" 클릭 시 `MenuPlaceholder`가 아니라 `/erp/org`로 이동한다.
-- [ ] 로그인한 `role='user'` 계정이 `/erp/org`에 **직접 URL로 진입 가능**하다(`/erp/forbidden`으로 튕기지 않는다).
-- [ ] 미인증 상태로 `/erp/org` 접근 시 `/auth/login`으로 리다이렉트된다(`proxy.ts` 회귀 없음).
-- [ ] breadcrumb이 "인사급여 > 조직 관리 > 조직도 관리"로 표시된다.
+- [ ] 트리에서 "조직도 관리" 클릭 시 `MenuPlaceholder`가 아니라 `/erp/admin/org`로 이동한다.
+- [ ] 로그인한 `role='user'` 계정이 `/erp/admin/org`에 **직접 URL로 접근하면 `/erp/forbidden`으로 리다이렉트**된다(기존 `app/erp/admin/layout.tsx` 가드 상속 검증 — 이전 버전(`/erp/org`, 조회 전체 개방)과 정반대 동작이므로 반드시 확인).
+- [ ] 미인증 상태로 `/erp/admin/org` 접근 시 `/auth/login`으로 리다이렉트된다(`proxy.ts` 회귀 없음).
+- [ ] breadcrumb이 "마스터 관리 > 기본 관리 > 조직도 관리"로 표시된다.
 
 **테스트 체크리스트 (Playwright MCP)** — 임시 계정 2개(admin 1 / user 1)로 검증 후 즉시 삭제
 
-- [ ] admin 계정으로 트리 클릭 → `/erp/org`로 이동 및 breadcrumb 확인.
-- [ ] user 계정으로 `/erp/org` 직접 진입 → 스텁 화면 정상 렌더링 확인(차단되지 않음).
-- [ ] 로그아웃 상태로 `/erp/org` 접근 → `/auth/login` 리다이렉트 확인.
-- [ ] `getMenuPathForRoute("/erp/org")`가 3단 경로를 반환하는지 breadcrumb 표시로 간접 확인.
+- [ ] admin 계정으로 트리 클릭 → `/erp/admin/org`로 이동 및 breadcrumb 확인.
+- [ ] **user 계정으로 `/erp/admin/org` 직접 URL 진입 → `/erp/forbidden`으로 튕기는지 확인** (기존 3형제 화면과 동일 동작인지 대조).
+- [ ] 로그아웃 상태로 `/erp/admin/org` 접근 → `/auth/login` 리다이렉트 확인.
+- [ ] `getMenuPathForRoute("/erp/admin/org")`가 3단 경로를 반환하는지 breadcrumb 표시로 간접 확인.
 - [ ] `browser_console_messages` 에러 0건, `npm run check-all` 통과.
 - [ ] 임시 계정 삭제 후 잔존 0건 확인.
 
@@ -628,17 +631,17 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ## Phase 10: 조직도 화면 구현
 
-> PRD 6.3절 / 3.1절.
-> **조회 화면(Task 053)을 먼저 완성해 데이터 계층을 실사용으로 검증하고, 편집 기능(Task 054/055/056)을 그 위에 얹는다.**
-> Task 054·055·056은 Task 053 완료 후 서로 독립적으로 병렬 개발 가능하다.
+> PRD 6.3절 / 3.1절 / 8장.
+> **조회 기반 관리 화면(Task 053)을 먼저 완성해 데이터 계층을 실사용으로 검증하고, 헤더 팝업(Task 054)과 편집 기능(Task 055/056/057)을 그 위에 얹는다.**
+> Task 054·055·056·057은 Task 053 완료 후 서로 독립적으로 병렬 개발 가능하다.
 
-### Task 053: 가변 깊이 통합 트리 + 리더/하위 패널 구현 (조회 전용)
+### Task 053: 관리 화면 — 가변 깊이 통합 트리 + 리더/하위 패널 (조회 기반)
 
-**목표**: PRD 6.3 와이어프레임대로 "좌측 가변 깊이 트리 + 우측 리더 패널 + 하위 목록"을 완성한다. **부서가 있는 부문과 없는 부문, 그리고 한 부문 안에서도 부서 소속 팀과 부문 직속 팀이 섞여 있는 경우까지 정확히 렌더링되어야 이 Task가 끝난 것이다.**
+**목표**: `/erp/admin/org`에 PRD 6.3.1 와이어프레임대로 "좌측 가변 깊이 트리 + 우측 리더 패널 + 하위 목록"을 완성한다. **부서가 있는 부문과 없는 부문, 그리고 한 부문 안에서도 부서 소속 팀과 부문 직속 팀이 섞여 있는 경우까지 정확히 렌더링되어야 이 Task가 끝난 것이다.**
 
 **관련 파일**
 
-- `app/erp/org/page.tsx` (스텁 → 실 구현)
+- `app/erp/admin/org/page.tsx` (스텁 → 실 구현)
 - `components/erp/org/org-chart-view.tsx` (신규 — 화면 셸/상태 소유)
 - `components/erp/org/org-leader-panel.tsx` (신규 — 선택 노드의 장 표시)
 - `components/erp/org/org-children-panel.tsx` (신규 — 하위 조직 카드 / 팀이면 구성원 목록)
@@ -649,11 +652,11 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **구현 체크리스트**
 
 - [ ] `MasterDetailLayout` + `MasterTreePanel`을 **그대로 재사용**한다(신규 트리 컴포넌트를 만들지 않는다). `MasterTreePanel`의 `MasterTreeNode`는 `{ id, name, isActive, children }` 구조라 `OrgTreeNode`에서 `level`/`sortOrder`를 제외해 매핑하면 그대로 들어간다 — 다만 선택된 노드의 **레벨을 알아야 하므로** 화면(`OrgChartView`)이 `id → level` 맵을 별도로 갖는다.
-  - [ ] 노드 id가 레벨 간 충돌하지 않도록 트리 노드 키를 `"group:<uuid>"` / `"company:<uuid>"` / `"division:<uuid>"` / **`"section:<uuid>"`** / `"team:<uuid>"` 형태의 **접두사 포함 문자열**로 만든다(서로 다른 테이블의 uuid라 충돌 가능성은 낮지만, 파싱만으로 레벨을 알 수 있는 편이 화면 로직이 단순해진다).
+  - [ ] 노드 id가 레벨 간 충돌하지 않도록 트리 노드 키를 `"group:<uuid>"` / `"company:<uuid>"` / `"division:<uuid>"` / **`"section:<uuid>"`** / `"team:<uuid>"` 형태의 **접두사 포함 문자열**로 만든다(서로 다른 테이블의 uuid라 충돌 가능성은 낮지만, 파싱만으로 레벨을 알 수 있는 편이 화면 로직이 단순해진다). **이 키 포맷은 Task 054(헤더 팝업)도 그대로 재사용한다.**
 - [ ] 좌측 트리: 그룹사 → 법인 → 부문 → (부서 있으면 부서 →) 팀. **구성원은 트리에 넣지 않는다**(PRD 6.3). **부문 노드 바로 아래에 부서 노드와(부서 없는) 팀 노드가 같은 레벨로 섞여서 나타나는지가 이 Task의 핵심 시각적 검증 포인트다.**
-- [ ] 우측 상단 **리더 패널**(`OrgLeaderPanel`) — 선택 노드의 `org_unit_leaders` 정보를 표시. 지정되어 있으면 아바타(`lib/erp/avatar-options.ts`의 `getAvatarEmoji()` 재사용) + 이름 + 직책, 없으면 "미지정" 상태를 표시한다(지정 버튼은 Task 056에서 추가).
+- [ ] 우측 상단 **리더 패널**(`OrgLeaderPanel`) — 선택 노드의 `org_unit_leaders` 정보를 표시. 지정되어 있으면 아바타(`lib/erp/avatar-options.ts`의 `getAvatarEmoji()` 재사용) + 이름 + 직책, 없으면 "미지정" 상태를 표시한다(지정 버튼은 Task 057에서 추가).
 - [ ] 우측 하단 **하위 패널**(`OrgChildrenPanel`) — 그룹사/법인/부문/부서 노드면 하위 조직 카드 목록(이름 + 하위 개수 + 리더 이름), **팀 노드면 `getMembersByDepartment()` 결과로 구성원 목록**을 표시한다(PRD 6.3).
-- [ ] 구성원 목록(`OrgMemberList`)은 아바타 + 이름 + 역할 배지(`lib/erp/role-labels.ts` 재사용) + 비활성 배지만 표시한다. **`phone_number`/`bio`/`email`은 표시하지 않는다**(애초에 RPC가 반환하지 않지만, 화면에서 다른 경로로 조회하지 않는지도 확인).
+- [ ] 구성원 목록(`OrgMemberList`)은 아바타 + 이름 + 역할 배지(`lib/erp/role-labels.ts` 재사용) + 비활성 배지만 표시한다. **`phone_number`/`bio`/`email`은 표시하지 않는다**(애초에 RPC가 반환하지 않지만, 화면에서 다른 경로로 조회하지 않는지도 확인). **이 컴포넌트는 Task 054(헤더 팝업)도 재사용할 수 있는지 검토하되, 강제하지 않는다**(PRD 6.3.2 — 팝업은 독립 컴포넌트로 둬도 무방).
 - [ ] 선택 상태를 URL 쿼리(`?node=team:<uuid>`)로 관리해 새로고침/딥링크/뒤로가기에서 유지되게 한다(`erp-menu-tree.tsx`/`brand-structure-manager.tsx`와 동일한 `useSearchParams` + `router.replace` 패턴).
 - [ ] 초기 진입 시 그룹사 노드를 기본 선택하고 법인까지 펼친 상태로 시작한다.
 - [ ] 비활성(부문/팀의 `archived_at is not null`) 노드는 "비활성" 배지와 함께 계속 노출한다(마스터 화면과 동일 정책).
@@ -664,20 +667,17 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **수락 기준**
 
-- [ ] 그룹사 → 법인 → 부문 → (부서 있으면 부서 →) 팀이 트리에서 펼침/접힘으로 탐색되고, 팀 선택 시 구성원 목록이 우측에 표시된다 → **전체 계층 탐색 성립** (PRD 11장 성공 기준 1번).
-- [ ] **같은 부문 아래에서 부서 소속 팀과 부문 직속 팀이 동시에 트리에 표시된다** (PRD 11장 성공 기준 2번 — 부서 선택성의 핵심 증거).
-- [ ] 어느 레벨 노드를 클릭해도 리더(지정 시)와 하위 목록이 함께 표시된다 (PRD 11장 성공 기준 3번).
-- [ ] `role='user'` 계정으로도 다른 팀 동료의 이름·소속이 조회된다 (PRD 11장 성공 기준 6번의 전반부).
+- [ ] `/erp/admin/org`에서 그룹사 → 법인 → 부문 → (부서 있으면 부서 →) 팀이 트리에서 펼침/접힘으로 탐색되고, 팀 선택 시 구성원 목록이 우측에 표시된다.
+- [ ] **같은 부문 아래에서 부서 소속 팀과 부문 직속 팀이 동시에 트리에 표시된다** — 부서 선택성의 핵심 증거.
+- [ ] 어느 레벨 노드를 클릭해도 리더(지정 시)와 하위 목록이 함께 표시된다.
 - [ ] 데스크탑(1440px) / 태블릿(768px) / 모바일(390px) 3개 뷰포트에서 레이아웃이 깨지지 않는다.
 
-**테스트 체크리스트 (Playwright MCP)** — 임시 계정 2개(user 1 / admin 1)로 검증 후 즉시 삭제. **Task 047/057에서 부서 예시 데이터가 이미 들어가 있어야 이 Task의 핵심 시나리오를 검증할 수 있다.**
+**테스트 체크리스트 (Playwright MCP)** — 임시 계정 1개(admin)로 검증 후 즉시 삭제. **이 화면은 admin 전용이므로 user 세션 검증은 Task 052에서 이미 완료했다.** Task 047/058에서 부서 예시 데이터가 이미 들어가 있어야 이 Task의 핵심 시나리오를 검증할 수 있다.
 
-- [ ] user 계정으로 `/erp/org` 진입 → 그룹사 노드부터 팀까지 순차 클릭하며 펼침 확인(스크린샷).
+- [ ] admin 계정으로 `/erp/admin/org` 진입 → 그룹사 노드부터 팀까지 순차 클릭하며 펼침 확인(스크린샷).
 - [ ] **부서가 있는 부문에서, 부서 노드와 부서 없이 직속된 팀 노드가 같은 레벨에 나란히 보이는지 확인**(스크린샷) — 예: "개발부서"와 "IT기획팀"이 "IT부문" 아래 같은 depth에 표시.
 - [ ] 부서 노드 선택 → 그 부서의 리더(부서장)와 소속 팀 목록이 우측에 표시되는지 확인.
 - [ ] 팀 노드 선택 → 해당 팀 구성원 목록이 표시되고, `execute_sql`로 조회한 그 팀의 실제 인원수와 일치하는지 대조.
-- [ ] **user 계정에서 다른 팀(본인 소속이 아닌 팀)을 선택해도 구성원 이름이 보이는지 확인** — RPC 우회의 실사용 검증.
-- [ ] 같은 세션의 다른 화면(예: `/erp/settings` 프로필)에서 본인 외 프로필이 노출되지 않는지 확인(회귀 없음).
 - [ ] 리더가 지정된 노드와 미지정 노드 양쪽의 리더 패널 표시를 확인(미지정은 "미지정" 문구).
 - [ ] URL(`?node=team:<uuid>`) 직접 진입 → 트리 자동 확장 + 해당 노드 선택 상태 확인. `browser_navigate_back()`으로 이전 선택 복원 확인.
 - [ ] `browser_resize`로 1440 / 768 / 390px 순회하며 레이아웃 확인 — 390px에서 `document.body.scrollWidth === window.innerWidth`(가로 스크롤 없음) 확인.
@@ -689,7 +689,60 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 054: 그룹사 / 법인 CRUD 및 부문↔법인 매핑 관리 UI (superadmin 전용)
+### Task 054: 헤더 "조직도" 팝업 트리거 구현 (전 사용자, 조회 전용)
+
+**목표**: 헤더 우측 계정 영역에 role과 무관하게 항상 노출되는 "조직도" 버튼을 추가하고, 클릭 시 같은 계층 구조를 조회 전용 팝업으로 보여준다. **이 Task가 끝나야 일반 사용자(`role='user'`)가 조직도를 볼 수 있는 유일한 경로가 완성된다** — Task 052에서 관리 화면을 완전히 admin 전용으로 확정했기 때문이다.
+
+**관련 파일**
+
+- `components/erp/erp-header.tsx` (**부수 수정** — 우측 계정 영역에 버튼 1개 추가, `<AuthButton />` 바로 앞)
+- `components/erp/org/org-chart-popup.tsx` (신규 — Dialog 트리거 + 콘텐츠, 조회 전용)
+- `components/erp/org/org-chart-popup-tree.tsx` (신규 — 팝업 전용 축약 트리, 관리 화면 패널과 별개)
+- `lib/erp/org/actions.ts` (Task 050 — `getOrgChartPopupDataAction()` 소비)
+- `lib/i18n/dictionaries/types.ts` (**부수 수정** — `erp.header`에 `orgChartTriggerLabel`/`orgChartTriggerAriaLabel` 추가)
+- `lib/i18n/dictionaries/{ko,en,ja,zh}.ts` (**부수 수정** — 위 2개 키 4개 언어 전부 추가)
+- `components/ui/dialog.tsx` (기존 재사용)
+
+**구현 체크리스트**
+
+- [ ] `components/erp/erp-header.tsx` 수정 — 우측 `flex justify-end` 컨테이너 안, `{!hasEnvVars ? <EnvVarWarning /> : <Suspense><AuthButton /></Suspense>}` **바로 앞**에 `<OrgChartPopupTrigger dict={dict} />`를 추가한다. **이 컴포넌트가 이 파일에서 유일하게 새로 추가되는 부분이며, 로고/타이틀 중앙 정렬/기존 계정 영역 로직은 그대로 둔다**(변경 금지 목록 예외 조항 재확인).
+  - [ ] `hasEnvVars`가 false인 튜토리얼 모드에서도 이 버튼이 자연스럽게 동작하는지(또는 숨겨지는 게 맞는지) 확인하고, 숨기는 게 맞다면 `EnvVarWarning`과 같은 조건부로 처리한다.
+- [ ] `components/erp/org/org-chart-popup.tsx` — Client Component. `Dialog` + `DialogTrigger`(버튼, 라벨은 `dict.erp.header.orgChartTriggerLabel`) + `DialogContent`(넓게, 예: `sm:max-w-3xl`). `onOpenChange`로 열릴 때만 `getOrgChartPopupDataAction()`을 호출해 지연 로딩한다(페이지 진입 시마다 미리 불러오지 않는다 — 헤더는 모든 `/erp/*` 페이지에서 렌더링되므로 불필요한 요청을 피한다).
+  - [ ] 로딩 중에는 `Skeleton`으로 트리 자리를 채운다.
+  - [ ] 데이터가 비어 있으면(그룹사 0건 등, Task 046 이전 상태) 간단한 빈 상태 문구를 보여준다.
+- [ ] `components/erp/org/org-chart-popup-tree.tsx` — Task 053의 `OrgTreeNode`/`buildOrgTree` 조립 로직(`lib/erp/org/tree.ts`)은 그대로 재사용하되, **렌더링 컴포넌트는 관리 화면의 `OrgLeaderPanel`/`OrgChildrenPanel`을 재사용하지 않고 이 파일 안에서 단순하게 새로 만든다**(아키텍처 사전 결정 사항 표 — 편집 슬롯을 조건부로 숨기는 방식보다 단순). `TreeView`(`components/ui/tree-view.tsx`)는 그대로 재사용해도 된다.
+  - [ ] 트리 노드 선택 시 우측(또는 좁은 화면에서는 트리 아래)에 **읽기 전용 요약**만 표시: 리더 이름 + 직책(있으면), 팀이면 구성원 이름 목록(역할 배지만, `phone_number`/`bio`/`email` 없음).
+  - [ ] Task 053에서 정한 노드 키 포맷(`"team:<uuid>"` 등)을 그대로 재사용한다.
+  - [ ] **이 파일 어디에도 등록/수정/삭제/리더 지정 버튼이 없다** — 코드 리뷰 시 최우선 확인 항목(PRD 8.3).
+- [ ] `lib/erp/org/actions.ts`의 `getOrgChartPopupDataAction()`을 호출하는 유일한 지점이 이 컴포넌트여야 한다(다른 화면에서 재사용할 필요가 생기면 그때 공용화).
+- [ ] `Dictionary` 타입(`lib/i18n/dictionaries/types.ts`)의 `erp.header`에 `orgChartTriggerLabel: string`과 `orgChartTriggerAriaLabel: string`을 추가하고, `ko`("조직도" / "조직도 보기") / `en`("Org Chart" / "View org chart") / `ja`("組織図" / "組織図を見る") / `zh`("组织架构" / "查看组织架构") 4개 파일을 전부 갱신한다(`npm run check-all`의 typecheck가 누락된 언어 파일을 잡아준다 — `Dictionary` 타입에 필수 필드로 추가하면 자동 검증됨).
+- [ ] 팝업 안에서 언어를 바꿔도(만약 팝업이 열린 채로 언어 스위처를 쓸 수 있다면) 깨지지 않는지 확인 — 팝업이 열린 상태에서 `router.refresh()`가 일어나도 Dialog 상태는 클라이언트 로컬 상태라 유지되는지 확인.
+
+**수락 기준**
+
+- [ ] `role`과 무관하게(user/admin/superadmin 전부) 로그인 상태라면 헤더에 "조직도" 버튼이 항상 보인다.
+- [ ] 버튼 클릭 → 팝업이 열리고 트리가 조회 전용으로 표시된다. **팝업 안 어디에도 편집 버튼이 없다.**
+- [ ] `role='user'` 계정도 팝업에서 다른 팀 동료의 이름·소속을 조회할 수 있다.
+- [ ] `/erp/*`의 다른 모든 페이지에서 헤더가 기존과 동일하게 렌더링된다(회귀 없음).
+- [ ] 언어를 en/ja/zh로 바꾸면 버튼 라벨이 각 언어로 표시된다.
+
+**테스트 체크리스트 (Playwright MCP)** — 임시 계정 1개(user)로 검증 후 즉시 삭제. **이 Task가 이 로드맵에서 유일하게 "일반 사용자가 조직도를 실제로 조회하는" 경로를 검증하는 지점이다.**
+
+- [ ] user 계정으로 로그인 → `/erp` 진입 → 헤더에서 "조직도" 버튼 노출 확인(로그인 사용자 표시 바로 앞에 위치하는지 스크린샷으로 확인).
+- [ ] 버튼 클릭 → 팝업 오픈 → 트리가 그룹사부터 펼쳐지는지 확인.
+- [ ] **부서가 있는 부문과 부서 없이 직속된 팀이 팝업 트리에서도 함께 확인되는지** 확인(관리 화면과 동일 데이터).
+- [ ] 팀 노드 선택 → 구성원 목록이 표시되고, 이 계정이 속하지 않은 다른 팀이어도 이름이 보이는지 확인(RPC 우회 실사용 검증, 관리 화면과 별개로 재검증).
+- [ ] **팝업 전체에서 등록/수정/삭제/리더 지정 버튼이 단 하나도 없는지** DOM/스크린샷으로 확인.
+- [ ] `/erp` 외 다른 페이지(`/erp/products`, `/erp/settings/profile` 등)로 이동해도 헤더와 "조직도" 버튼이 정상 렌더링되는지 확인(회귀).
+- [ ] `/erp/admin/org`(관리 화면)에는 여전히 접근이 막히는지(Task 052에서 검증한 내용과 모순 없는지) 재확인.
+- [ ] 언어 스위처로 en/ja/zh 전환 후 버튼 라벨이 바뀌는지 확인, ko로 복귀.
+- [ ] 1440 / 390px 뷰포트에서 팝업이 정상 표시되는지 확인(390px에서 가로 스크롤 없음).
+- [ ] `browser_console_messages` 에러 0건, `npm run check-all` 통과.
+- [ ] 임시 계정 삭제 후 잔존 0건 확인.
+
+---
+
+### Task 055: 그룹사 / 법인 CRUD 및 부문↔법인 매핑 관리 UI (superadmin 전용)
 
 **목표**: 비어 있던 상위 2개 레벨을 화면에서 관리할 수 있게 하고, 부문이 어느 법인에 속하는지를 UI로 바꿀 수 있게 한다.
 
@@ -709,11 +762,11 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - [ ] 그룹사 노드 선택 시 — `superadmin`에게 "+ 법인 등록" 버튼 노출. 필드: 코드(등록 시 "자동 생성(OC####)" 안내, 수정 시 편집 가능) / 법인명(필수) / 상위 그룹사(읽기 전용) / 사용여부 / 정렬순서 / 비고.
 - [ ] 법인 노드 선택 시 — "법인 수정" / "법인 삭제" / 정렬 위·아래 버튼 노출(`superadmin` 전용). 삭제는 하위 부문 매핑이 있으면 FK `restrict`로 거부되고 **"하위 데이터가 있어 삭제할 수 없습니다. 대신 사용여부를 꺼주세요."** 안내로 전환한다.
 - [ ] 법인 노드 선택 시 — "부문 연결 관리" 버튼. 다이얼로그에서 (a) 아직 매핑되지 않은 부문(`getUnmappedDivisions()`) 추가, (b) 이 법인 소속 부문을 다른 법인으로 이동을 처리한다. `organizations` 자체는 읽기만 하고 **이름 수정/생성/삭제 UI는 제공하지 않는다**(PRD 2장 범위 제외).
-- [ ] 부문 노드 선택 시 — 부문 자체의 편집 버튼은 없고, "소속 법인 변경"만 제공(`superadmin`). **부서 등록/관리는 Task 055에서 별도 버튼으로 추가된다(이 Task 범위 아님).**
+- [ ] 부문 노드 선택 시 — 부문 자체의 편집 버튼은 없고, "소속 법인 변경"만 제공(`superadmin`). **부서 등록/관리는 Task 056에서 별도 버튼으로 추가된다(이 Task 범위 아님).**
 - [ ] 권한에 따른 버튼 노출은 서버에서 내려준 `currentUserRole`과 `ORG_LEVELS`의 `editableBy` 메타로 판정한다. **버튼 숨김은 UX일 뿐이고 실제 차단은 Server Action 가드 + RLS**라는 이중 방어를 주석으로 명시한다.
 - [ ] 다이얼로그 폼 상태는 `useEffect`로 초기화하지 않는다 — `open`일 때만 필드 서브컴포넌트를 마운트해 `useState` 초기값으로 계산한다(ROADMAP_MASTER Task 032에서 `react-hooks/set-state-in-effect` 린트로 확립한 해법).
 - [ ] 코드 직접 수정 시 `isValidOrgCode()`(Task 044)로 클라이언트 1차 검증 + 서버 unique 위반 메시지 표시(이중 방어).
-- [ ] 저장/삭제 후 토스트로 결과를 알리고(등록 시 채번된 코드 포함), 트리가 즉시 갱신되는지 확인한다(`revalidatePath("/erp/org")`).
+- [ ] 저장/삭제 후 토스트로 결과를 알리고(등록 시 채번된 코드 포함), 트리가 즉시 갱신되는지 확인한다(`revalidatePath("/erp/admin/org")`).
 
 **수락 기준**
 
@@ -737,7 +790,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 055: 부서 CRUD 및 부서 ↔ 팀 소속 관리 UI (부문 스코프 admin)
+### Task 056: 부서 CRUD 및 부서 ↔ 팀 소속 관리 UI (부문 스코프 admin)
 
 **목표**: "있을 수도 없을 수도 있는" 부서를 화면에서 만들고, 어느 팀을 그 부서에 넣을지(또는 부문 직속으로 되돌릴지)를 관리할 수 있게 한다. **그룹사·법인과 달리 이 화면은 `admin`도 자기 부문 범위 안에서 사용할 수 있어야 한다.**
 
@@ -756,10 +809,10 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - [ ] 부서 노드 선택 시 — "부서 수정" / "부서 삭제" / 정렬 위·아래 버튼 노출(부문 스코프 admin 또는 superadmin). 삭제는 소속 팀이 있어도 **막지 않는다** — `org_section_teams`가 `on delete cascade`라 부서를 지우면 소속 팀들이 자동으로 부문 직속으로 돌아간다(PRD 5.5, Task 047). 삭제 확인 다이얼로그에 **"이 부서를 삭제하면 소속 팀 N개가 부문 직속으로 바뀝니다"**를 명시한다(마스터 도메인의 "하위 있으면 삭제 불가"와 다른 정책이므로 반드시 문구로 안내).
 - [ ] 부서 노드 선택 시 — "팀 소속 관리" 버튼. 다이얼로그에서 (a) 이 부문 안에서 아직 어떤 부서에도 속하지 않은 팀(`getUnmappedTeamsInDivision()`) 추가, (b) 이미 이 부서 소속인 팀을 부문 직속으로 되돌리거나 같은 부문의 다른 부서로 이동. **다른 부문 소속 팀은 후보 목록에 아예 나타나지 않는다**(트리거로도 막히지만 UI에서 먼저 걸러 사용자 혼란을 줄인다).
 - [ ] 팀 노드 선택 시 — 팀 자체의 편집 버튼 없음(PRD 2장). "소속 부서: OO부서" 또는 "소속 부서: 없음(부문 직속)"만 읽기 전용으로 표시한다.
-- [ ] 권한에 따른 버튼 노출은 `ORG_LEVELS.section.editableBy`("adminScoped")와 현재 사용자의 `current_organization_id` 일치 여부로 판정한다. **버튼 숨김은 UX일 뿐이고 실제 차단은 Server Action 가드 + RLS**라는 이중 방어를 주석으로 명시한다(Task 054와 동일 원칙).
-- [ ] 다이얼로그 폼 상태는 `useEffect`로 초기화하지 않는다(Task 054와 동일 패턴).
+- [ ] 권한에 따른 버튼 노출은 `ORG_LEVELS.section.editableBy`("adminScoped")와 현재 사용자의 `current_organization_id` 일치 여부로 판정한다. **버튼 숨김은 UX일 뿐이고 실제 차단은 Server Action 가드 + RLS**라는 이중 방어를 주석으로 명시한다(Task 055와 동일 원칙).
+- [ ] 다이얼로그 폼 상태는 `useEffect`로 초기화하지 않는다(Task 055와 동일 패턴).
 - [ ] 코드 직접 수정 시 `isValidOrgCode()`(Task 044)로 클라이언트 1차 검증 + 서버 unique 위반 메시지 표시.
-- [ ] 저장/삭제/소속 변경 후 토스트로 결과를 알리고, 트리가 즉시 갱신되는지 확인한다(`revalidatePath("/erp/org")`).
+- [ ] 저장/삭제/소속 변경 후 토스트로 결과를 알리고, 트리가 즉시 갱신되는지 확인한다(`revalidatePath("/erp/admin/org")`).
 
 **수락 기준**
 
@@ -780,13 +833,13 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - [ ] 부서명 미입력 저장 시도 → 인라인 에러 확인.
 - [ ] 1440 / 390px 뷰포트에서 다이얼로그가 정상 표시되는지 확인.
 - [ ] `browser_console_messages` 에러 0건, `npm run check-all` 통과.
-- [ ] 테스트 데이터·계정 삭제 후 잔존 0건 확인(Task 057의 데모 부서/매핑은 이 Task보다 나중에 들어가므로 이 시점엔 영향 없음).
+- [ ] 테스트 데이터·계정 삭제 후 잔존 0건 확인(Task 058의 데모 부서/매핑은 이 Task보다 나중에 들어가므로 이 시점엔 영향 없음).
 
 ---
 
-### Task 056: 조직별 리더 지정 / 해제 UI (5개 레벨 공용)
+### Task 057: 조직별 리더 지정 / 해제 UI (5개 레벨 공용, 관리 화면 전용)
 
-**목표**: 5개 레벨 전부에서 동일한 UI로 리더를 지정·교체·해제할 수 있게 하고, PRD 3.1의 레벨별 권한 차이를 화면에서도 정확히 반영한다.
+**목표**: 5개 레벨 전부에서 동일한 UI로 리더를 지정·교체·해제할 수 있게 하고, PRD 3.1의 레벨별 권한 차이를 화면에서도 정확히 반영한다. **헤더 팝업(Task 054)에는 이 기능이 없다 — 리더 지정은 관리 화면에서만 가능하다.**
 
 **관련 파일**
 
@@ -803,28 +856,28 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - [ ] 리더 후보 선택은 `combobox`(검색형) — 후보 목록은 `getOrgChartMembers()` 결과를 재사용한다(`profiles` 직접 조회 금지). 63명 규모라 클라이언트 필터링으로 충분.
   - [ ] **같은 조직 소속 구성원을 목록 상단에 우선 노출**하고, 그 외 전체 구성원도 선택 가능하게 한다 — 겸직/파견을 DB에서 강제하지 않기로 한 PRD 5.6 결정을 UX로 유도하는 부분이다. 부서 리더 지정 시에는 그 부서에 배정된 팀들의 구성원을 우선 노출한다.
   - [ ] 비활성(`is_active = false`) 구성원은 목록에서 제외한다.
-- [ ] 직책명(`title`) 입력 — 자유 입력 텍스트 필드에 레벨별 기본값(그룹사 "회장님" / 법인 "대표이사" / 부문 "부문장" / **부서 "부서장"** / 팀 "팀장")을 초기값으로 채운다(PRD 5.6, Task 043 ⑥ 확정값).
+- [ ] 직책명(`title`) 입력 — 자유 입력 텍스트 필드에 레벨별 기본값(그룹사 "회장님" / 법인 "대표이사" / 부문 "부문장" / **부서 "부서장"** / 팀 "팀장")을 초기값으로 채운다(PRD 5.6, Task 043 ⑤ 확정값).
 - [ ] 리더 교체는 이력 없이 기존 행을 UPDATE(또는 삭제 후 재등록)한다(PRD 5.6). 이력 UI는 만들지 않는다.
 - [ ] 해제는 `AlertDialog`로 확인 후 `clearOrgLeaderAction` 호출.
 - [ ] 동시성/중복 대비 — partial unique index 위반(`23505`)이 오면 "해당 조직에는 이미 리더가 지정되어 있습니다. 새로고침 후 다시 시도해주세요."로 안내한다.
-- [ ] 저장 후 리더 패널과 하위 조직 카드(리더 이름 표시)가 함께 갱신되는지 확인한다.
+- [ ] 저장 후 리더 패널과 하위 조직 카드(리더 이름 표시)가 함께 갱신되는지 확인한다. **헤더 팝업(Task 054)은 지연 로딩이라, 관리 화면에서 리더를 바꾼 직후 팝업을 다시 열면 최신 값이 보이는지도 함께 확인한다**(팝업이 별도 캐시를 갖지 않는지).
 
 **수락 기준**
 
 - [ ] 5개 레벨 전부에서 리더 지정 → 표시 → 교체 → 해제가 동작한다.
-- [ ] `superadmin`은 5개 레벨 전부, `admin`은 팀·부서 레벨만 편집 버튼이 보인다. `user`에게는 어떤 편집 버튼도 보이지 않는다.
+- [ ] `superadmin`은 5개 레벨 전부, `admin`은 팀·부서 레벨만 편집 버튼이 보인다. `user`는 애초에 이 화면(`/erp/admin/org`) 자체에 접근할 수 없다.
 - [ ] 리더 지정 결과가 새로고침 후에도 유지되고, `execute_sql`로 `org_unit_leaders`에 정확히 1행(해당 레벨 컬럼만 채워짐)으로 저장된다.
 
-**테스트 체크리스트 (Playwright MCP)** — 임시 계정 3개(superadmin / admin / user)로 검증 후 즉시 삭제
+**테스트 체크리스트 (Playwright MCP)** — 임시 계정 2개(superadmin / admin)로 검증 후 즉시 삭제. **`user` 계정 검증은 불필요하다 — 이 화면 자체에 접근할 수 없음을 Task 052에서 이미 검증했다.**
 
 - [ ] superadmin으로 그룹사/법인/부문/**부서**/팀 5개 레벨에 각각 리더 지정 → 리더 패널 표시 확인 → `execute_sql`로 `num_nonnulls = 1`인 5개 행 확인.
 - [ ] 같은 노드의 리더를 다른 사람으로 교체 → 행이 늘지 않고 UPDATE되는지 확인(`count(*)` 변화 없음).
 - [ ] 리더 해제 → 패널이 "미지정"으로 바뀌고 DB 행이 삭제되는지 확인.
 - [ ] admin 계정으로 진입 → 팀·부서 노드에만 "지정" 버튼이 보이고 그룹사/법인/부문에는 보이지 않는지 확인. 팀·부서 리더 지정 성공 확인.
-- [ ] user 계정으로 진입 → 5개 레벨 전부 편집 버튼 미노출 확인(조회는 정상).
 - [ ] 콤보박스 검색 → 이름 일부 입력 시 후보가 필터링되고, 비활성 구성원이 목록에 없는지 확인.
 - [ ] 팀 노드에서 콤보박스를 열었을 때 **해당 팀 소속 구성원이 상단에 우선 노출**되는지 확인. 부서 노드에서는 그 부서 소속 팀들의 구성원이 우선 노출되는지 확인.
 - [ ] 직책명 기본값이 레벨별로 다르게 채워지는지 5개 레벨 순회 확인(부서 = "부서장" 포함).
+- [ ] superadmin으로 팀 리더를 새로 지정한 직후, 헤더 "조직도" 팝업을 열어 최신 리더가 반영되는지 확인.
 - [ ] 1440 / 390px 뷰포트에서 다이얼로그·콤보박스가 정상 동작하는지 확인.
 - [ ] `browser_console_messages` 에러 0건, `npm run check-all` 통과.
 - [ ] 테스트로 지정한 리더 행과 임시 계정 삭제 후 잔존 0건 확인.
@@ -833,9 +886,9 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ## Phase 11: 더미 데이터 시드 및 통합 검증
 
-> PRD 8장 / 11장.
+> PRD 9장 / 12장.
 
-### Task 057: 조직도 더미 데이터 시드 ⚠️
+### Task 058: 조직도 더미 데이터 시드 ⚠️
 
 > ⚠️ Task 043 ①②③④(그룹사·법인 이름, 부서 구성, 초기 리더 지정자) 확정 후 착수한다.
 
@@ -844,7 +897,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 **관련 파일**
 
 - Supabase 마이그레이션(MCP) — `seed_org_sections_and_leaders`
-- `docs/prd/PRD_ORG.md` 8장
+- `docs/prd/PRD_ORG.md` 9장
 
 **구현 체크리스트**
 
@@ -856,7 +909,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   - [ ] 법인 리더 1건 — `title = '대표이사'`.
   - [ ] 부문 리더 1건 — 기존 "IT부문"에 `title = '부문장'`.
   - [ ] **부서 리더 1건 — 위 "개발부서"에 `title = '부서장'`.**
-  - [ ] 팀 리더 — 8개 팀 중 **일부(예: 4개, 부서 소속·부문 직속 섞어서)만** 지정하고 나머지는 미지정으로 남긴다(PRD 8장 — "미지정" 상태 UI를 함께 확인하기 위함). `title = '팀장'`.
+  - [ ] 팀 리더 — 8개 팀 중 **일부(예: 4개, 부서 소속·부문 직속 섞어서)만** 지정하고 나머지는 미지정으로 남긴다(PRD 9장 — "미지정" 상태 UI를 함께 확인하기 위함). `title = '팀장'`.
 - [ ] 리더로 지정할 `profile_id`는 **실제 존재하는 활성 구성원**이어야 한다 — 시드 전 `execute_sql`로 대상 id를 조회해 하드코딩하지 말고 서브쿼리로 선택하거나, 조회한 id를 마이그레이션 주석에 함께 기록한다.
 - [ ] 그룹사·법인·매핑(`org_company_divisions`)은 **다시 넣지 않는다**(Task 046에서 이미 1건씩 존재). 중복 삽입 시 싱글턴/unique 제약으로 실패한다는 점을 주석에 남긴다.
 - [ ] 시드를 되돌릴 수 있도록 롤백 SQL을 마이그레이션 주석에 남긴다.
@@ -867,13 +920,14 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - [ ] `org_sections` 1~2건, `org_section_teams` 3건(가안)이 존재한다.
 - [ ] `org_unit_leaders`에 그룹사 1 / 법인 1 / 부문 1 / 부서 1 / 팀 4 = 총 8건이 존재하고, 전부 `num_nonnulls(...) = 1`을 만족한다.
 - [ ] 기존 `organizations` 1건 / `departments` 8건 / `profiles` 63건의 값이 시드 전후 정확히 동일하다.
-- [ ] 화면에서 리더가 지정된 노드와 미지정 노드가 모두 확인되고, 부서 소속 팀과 부문 직속 팀이 함께 확인된다.
+- [ ] 관리 화면과 헤더 팝업 양쪽에서 리더가 지정된 노드와 미지정 노드가 모두 확인되고, 부서 소속 팀과 부문 직속 팀이 함께 확인된다.
 
 **테스트 체크리스트 (Playwright MCP + execute_sql)**
 
 - [ ] `execute_sql`로 `org_sections`/`org_section_teams` 행 수와 `org_unit_leaders` 8건 및 레벨별 분포(1/1/1/1/4)를 확인.
 - [ ] 시드 전후 `organizations`/`departments`/`profiles` 체크섬 동일 확인.
-- [ ] 임시 관리자 계정으로 `/erp/org` 진입 → 그룹사/법인/부문/부서 리더가 각 패널에 표시되는지 확인.
+- [ ] 임시 관리자 계정으로 `/erp/admin/org` 진입 → 그룹사/법인/부문/부서 리더가 각 패널에 표시되는지 확인.
+- [ ] 임시 일반 사용자 계정으로 헤더 팝업을 열어 같은 리더/부서 구성이 보이는지 확인.
 - [ ] 리더가 지정된 팀 4개와 미지정 팀 4개를 각각 선택해 "미지정" 문구가 정상 표시되는지 확인.
 - [ ] "개발부서" 아래 3개 팀과, 부문 직속으로 남은 5개 팀이 트리에서 동시에 확인되는지 스크린샷으로 검증.
 - [ ] 하위 조직 카드에도 리더 이름이 함께 표시되는지 확인.
@@ -881,9 +935,9 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 058: 조직도 통합 검증 (PRD 11장 성공 기준)
+### Task 059: 조직도 통합 검증 (PRD 12장 성공 기준)
 
-**목표**: PRD 11장의 성공 기준 8개를 하나씩 실제 시나리오로 재현해 통과 여부를 기록한다. **신규 기능 개발이 아니라 최종 검수다.**
+**목표**: PRD 12장의 성공 기준을 하나씩 실제 시나리오로 재현해 통과 여부를 기록한다. **신규 기능 개발이 아니라 최종 검수다.**
 
 **관련 파일**
 
@@ -891,36 +945,39 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] **성공 기준 1**: `/erp/org`에서 그룹사 → 법인 → 부문 → (부서 있으면 부서 →) 팀 → 구성원까지 하나의 트리에서 펼침/접힘으로 탐색된다.
-- [ ] **성공 기준 2**: **같은 부문 안에서 부서가 있는 팀과 부서 없이 부문에 직속된 팀이 동시에 트리에 정상 표시된다.**
-- [ ] **성공 기준 3**: 아무 레벨 노드를 클릭해도 해당 조직의 리더(지정 시)와 하위 조직(또는 팀이면 구성원 목록)이 함께 표시된다.
-- [ ] **성공 기준 4**: **`profiles`/`departments`/`organizations`에 `ALTER TABLE`이 한 번도 실행되지 않았다** — `mcp__supabase__list_migrations`로 Task 043~057에서 적용한 마이그레이션 목록을 뽑고, 각 SQL 본문에 `alter table public.profiles` / `public.departments` / `public.organizations`가 없음을 전수 확인한다. 추가로 세 테이블의 `information_schema.columns` 스냅샷이 로드맵 착수 전과 동일한지 대조한다.
-- [ ] **성공 기준 5**: 기존 `organizations`(1건) / `departments`(8건) / `profiles`(63건) 데이터가 신규 매핑 이후에도 정확히 그대로 조회된다(행 수·값 변화 없음).
-- [ ] **성공 기준 6**: `role='user'` 계정으로 조직도에서 다른 팀 동료의 이름·소속이 조회되지만, 같은 계정으로 `profiles`를 직접 조회하면 여전히 본인 행만 보인다.
-- [ ] **성공 기준 7**: `org_groups`에 2번째 행 INSERT 시도가 DB 제약 위반으로 실패한다.
-- [ ] **성공 기준 8**: 서로 다른 부문에 속한 부서와 팀을 억지로 연결(`org_section_teams`)하려 하면 트리거가 막는다.
-- [ ] 회귀 검증: ERP MVP·마스터 관리 기능(로그인, Menubar/트리 내비게이션, 관리자 3개 화면, 기준정보 5개 화면, 상품 화면)이 이번 변경으로 깨지지 않았는지 확인한다. 특히 **`next_master_code()`가 이번 로드맵에서 세 번(Task 045/047) `create or replace`되는 동안 기존 12종 채번에 영향을 주지 않았는지** 반드시 재확인한다.
+- [ ] **관리 화면 접근**: `/erp/admin/org`에서 그룹사 → 법인 → 부문 → (부서 있으면 부서 →) 팀 → 구성원까지 하나의 트리에서 펼침/접힘으로 탐색된다.
+- [ ] **관리 화면 가드**: `role='user'` 계정으로 `/erp/admin/org`에 직접 URL로 접근하면 `/erp/forbidden`으로 이동한다.
+- [ ] **헤더 팝업**: 헤더의 "조직도" 버튼이 `role`과 무관하게 로그인한 모든 사용자에게 노출되고, 클릭 시 팝업에 같은 계층 구조가 조회 전용으로 표시된다. 팝업 안에는 어떤 편집 버튼도 없다.
+- [ ] **부서 선택성**: 같은 부문 안에서 부서가 있는 팀과 부서 없이 부문에 직속된 팀이 동시에 트리에 정상 표시된다(관리 화면·헤더 팝업 둘 다).
+- [ ] **리더/하위 표시**: 관리 화면에서 아무 레벨 노드를 클릭해도 해당 조직의 리더(지정 시)와 하위 조직(또는 팀이면 구성원 목록)이 함께 표시된다.
+- [ ] **스키마 무변경**: `profiles`/`departments`/`organizations` 테이블에 `ALTER TABLE`이 한 번도 실행되지 않았다 — `mcp__supabase__list_migrations`로 Task 043~058에서 적용한 마이그레이션 목록을 뽑고, 각 SQL 본문에 `alter table public.profiles` / `public.departments` / `public.organizations`가 없음을 전수 확인한다. 추가로 세 테이블의 `information_schema.columns` 스냅샷이 로드맵 착수 전과 동일한지 대조한다.
+- [ ] **기존 데이터 무결**: 기존 `organizations`(1건) / `departments`(8건) / `profiles`(63건) 데이터가 신규 매핑 이후에도 정확히 그대로 조회된다(행 수·값 변화 없음).
+- [ ] **RLS 우회 검증**: `role='user'` 계정으로 헤더 팝업에서 다른 팀 동료의 이름·소속이 조회되지만, 같은 계정으로 `profiles`를 직접 조회하면 여전히 본인 행만 보인다.
+- [ ] **싱글턴 제약**: `org_groups`에 2번째 행 INSERT 시도가 DB 제약 위반으로 실패한다.
+- [ ] **부서-팀 일관성 트리거**: 서로 다른 부문에 속한 부서와 팀을 억지로 연결(`org_section_teams`)하려 하면 트리거가 막는다.
+- [ ] **헤더 회귀**: `erp-header.tsx` 변경 후에도 로그인/로그아웃, 언어 전환, 다른 모든 `/erp/*` 페이지의 헤더 렌더링에 회귀가 없다.
+- [ ] 회귀 검증: ERP MVP·마스터 관리 기능(로그인, Menubar/트리 내비게이션, 관리자 3개 화면, 기준정보 5개 화면, 상품 화면)이 이번 변경으로 깨지지 않았는지 확인한다. 특히 **`next_master_code()`가 이번 로드맵에서 두 번(Task 045/047) `create or replace`되는 동안 기존 12종 채번에 영향을 주지 않았는지** 반드시 재확인한다.
 - [ ] `mcp__supabase__get_advisors`(security + performance) 최종 확인 — 신규 경고가 있으면 원인·대응(또는 유지 근거)을 기록한다.
 - [ ] 발견된 결함은 해당 Task로 되돌려 수정하고, 이 Task에는 재검증 결과만 기록한다.
 
 **수락 기준**
 
-- [ ] PRD 11장 8개 항목이 전부 실제 재현으로 통과했다.
+- [ ] PRD 12장 성공 기준이 전부 실제 재현으로 통과했다.
 - [ ] ERP MVP / 마스터 관리 기능에 회귀가 없다.
 - [ ] `npm run check-all` + `npm run build` 통과.
 
 **테스트 체크리스트 (Playwright MCP + execute_sql)** — 계정은 1개를 `user` → `admin` → `superadmin`으로 순차 승격시키는 방식을 권장한다(`getCurrentErpUser()`가 매 요청 `profiles.role`을 조회하므로 재로그인 없이 즉시 반영 — ROADMAP_MASTER Task 042 선례). `prevent_unauthorized_role_change` 때문에 superadmin 승격은 admin 경유 2단계로 진행한다.
 
-- [ ] **시나리오 A (전 레벨 탐색)**: superadmin으로 그룹사 → 법인 → 부문 → 부서 → 팀 순으로 클릭하며 각 단계의 리더 패널과 하위 목록을 확인하고, 팀에서 구성원 목록까지 도달(성공 기준 1·3).
-- [ ] **시나리오 B (부서 선택성)**: "IT부문" 노드를 펼쳐 "개발부서"와 부문 직속 팀들이 같은 depth에 공존하는지 확인(성공 기준 2).
-- [ ] **시나리오 C (일반 사용자 조회)**: 동일 계정을 `role='user'` 상태로 두고 `/erp/org` 진입 → 다른 팀 구성원 이름이 보이는지 확인 → 같은 세션에서 `profiles` 직접 조회(임시 디버그 경로 또는 `execute_sql` 세션 시뮬레이션)로 본인 1건만 반환됨을 확인(성공 기준 6).
-- [ ] **시나리오 D (권한 분기)**: `role='admin'`으로 승격 → 팀·부서 리더 지정 및 부서 CRUD만 가능하고 그룹사/법인/부문 편집 버튼이 없는지 확인 → `superadmin`으로 재승격 후 전부 가능해지는지 확인.
-- [ ] **시나리오 E (스키마 무변경 증명)**: `list_migrations` + 각 마이그레이션 SQL 본문 검사로 `profiles`/`departments`/`organizations` DDL 0건 확인. 세 테이블 컬럼 목록과 행 수를 로드맵 착수 전 값(`organizations` 1 / `departments` 8 / `profiles` 63)과 대조(성공 기준 4·5).
-- [ ] **시나리오 F (제약 검증)**: `execute_sql`로 `org_groups` 2번째 행 insert 시도 → `23505` 확인(성공 기준 7). 다른 부문의 부서-팀을 `org_section_teams`에 연결 시도 → 트리거 예외 확인(성공 기준 8).
-- [ ] **시나리오 G (반응형/테마)**: `/erp/org`를 1440px 라이트 / 390px 다크로 스크린샷 확인, 768px 스팟 체크.
-- [ ] **시나리오 H (회귀)**: `/erp/admin/{users,menus,permissions}`, `/erp/master/{companies,brands,item-categories,colors,sizes}`, `/erp/products`, `/erp/settings` 진입 및 기본 렌더링 확인. 마스터 화면에서 신규 등록 1건을 해 채번이 정상 동작하는지 확인 후 삭제·시퀀스 원복.
+- [ ] **시나리오 A (관리 화면 전 레벨 탐색)**: superadmin으로 `/erp/admin/org`에서 그룹사 → 법인 → 부문 → 부서 → 팀 순으로 클릭하며 각 단계의 리더 패널과 하위 목록을 확인하고, 팀에서 구성원 목록까지 도달.
+- [ ] **시나리오 B (부서 선택성)**: "IT부문" 노드를 펼쳐 "개발부서"와 부문 직속 팀들이 같은 depth에 공존하는지 확인.
+- [ ] **시나리오 C (헤더 팝업 — 일반 사용자)**: 계정을 `role='user'` 상태로 두고 `/erp`(또는 임의의 `/erp/*` 페이지)에서 헤더 "조직도" 버튼 클릭 → 팝업에서 다른 팀 구성원 이름이 보이는지 확인 → 같은 세션에서 `profiles` 직접 조회(임시 디버그 경로 또는 `execute_sql` 세션 시뮬레이션)로 본인 1건만 반환됨을 확인. → 이어서 `/erp/admin/org` URL 직접 접근 시 `/erp/forbidden` 확인.
+- [ ] **시나리오 D (권한 분기)**: `role='admin'`으로 승격 → 관리 화면 접근은 성공하되 팀·부서 리더 지정 및 부서 CRUD만 가능하고 그룹사/법인/부문 편집 버튼이 없는지 확인 → `superadmin`으로 재승격 후 전부 가능해지는지 확인.
+- [ ] **시나리오 E (스키마 무변경 증명)**: `list_migrations` + 각 마이그레이션 SQL 본문 검사로 `profiles`/`departments`/`organizations` DDL 0건 확인. 세 테이블 컬럼 목록과 행 수를 로드맵 착수 전 값(`organizations` 1 / `departments` 8 / `profiles` 63)과 대조.
+- [ ] **시나리오 F (제약 검증)**: `execute_sql`로 `org_groups` 2번째 행 insert 시도 → `23505` 확인. 다른 부문의 부서-팀을 `org_section_teams`에 연결 시도 → 트리거 예외 확인.
+- [ ] **시나리오 G (반응형/테마)**: `/erp/admin/org`와 헤더 팝업 각각을 1440px 라이트 / 390px 다크로 스크린샷 확인, 768px 스팟 체크.
+- [ ] **시나리오 H (회귀)**: `/erp/admin/{users,menus,permissions}`, `/erp/master/{companies,brands,item-categories,colors,sizes}`, `/erp/products`, `/erp/settings` 진입 및 기본 렌더링(헤더 포함) 확인. 마스터 화면에서 신규 등록 1건을 해 채번이 정상 동작하는지 확인 후 삭제·시퀀스 원복.
 - [ ] `browser_console_messages`로 전 시나리오 콘솔 에러 0건 확인.
-- [ ] 테스트 계정·데이터 삭제 후 `execute_sql`로 잔존 0건 확인(Task 046/057의 초기 데이터는 유지).
+- [ ] 테스트 계정·데이터 삭제 후 `execute_sql`로 잔존 0건 확인(Task 046/058의 초기 데이터는 유지).
 
 ---
 
@@ -928,17 +985,17 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 아래 항목은 이번 로드맵에서 **명시적으로 제외**한다. 세부 Task로 분해하지 않는다.
 
-- **`organizations`(부문) / `departments`(팀) 자체의 CRUD 화면** — 이름 변경, 신규 팀 생성 등. 기존에도 없었고 이번에도 추가하지 않는다 (PRD 2장 / 9장)
+- **`organizations`(부문) / `departments`(팀) 자체의 CRUD 화면** — 이름 변경, 신규 팀 생성 등. 기존에도 없었고 이번에도 추가하지 않는다 (PRD 2장 / 10장)
 - **`profiles`/`departments`/`organizations`의 스키마·RLS 변경** — 이 로드맵의 최우선 금지 사항
-- **부서의 재귀적 하위 부서** — 부서는 부문과 팀 사이 딱 1단계로 고정 (PRD 9장)
-- **인사발령(팀 이동·조직 개편) 이력 관리, 겸직/파견 표현** (PRD 9장)
+- **헤더 팝업에서의 조직 데이터 편집** — 조회 전용으로 고정(PRD 8.3절, 10장)
+- **부서의 재귀적 하위 부서** — 부서는 부문과 팀 사이 딱 1단계로 고정 (PRD 10장)
+- **인사발령(팀 이동·조직 개편) 이력 관리, 겸직/파견 표현** (PRD 10장)
 - **결재선 / 보고라인 설정**
 - **`profiles.role`(user/admin/superadmin) 체계 자체의 변경** — `requireSuperadmin()` 앱 헬퍼 추가는 역할 체계 변경이 아니라 기존 역할을 읽는 가드일 뿐이다
-- **조직도와 마스터 도메인 `companies`(상품 마스터 "법인") 연계** — `org_companies.master_company_id` FK 검토는 필요해지는 시점에 별도 문서로 (PRD 4.4 / 10장)
-- **조직도 카드 꾸미기** — 직급 체계, 명함 다운로드, 프로필 사진 업로드(아바타 이모지만 사용) (PRD 9장)
-- **조직도 화면의 다국어(ko/en/ja/zh) 번역** — 내부 업무 화면은 한국어만 지원
+- **조직도와 마스터 도메인 `companies`(상품 마스터 "법인") 연계** — `org_companies.master_company_id` FK 검토는 필요해지는 시점에 별도 문서로 (PRD 4.4 / 11장)
+- **조직도 카드 꾸미기** — 직급 체계, 명함 다운로드, 프로필 사진 업로드(아바타 이모지만 사용) (PRD 10장)
+- **관리 화면 콘텐츠의 다국어(ko/en/ja/zh) 번역** — 내부 업무 화면은 한국어만 지원(헤더 팝업 트리거 버튼 라벨만 예외적으로 번역, Task 054)
 - **조직도 엑셀 내보내기 / 인쇄용 레이아웃**
-- **`user_menu_permissions` 자동 부여 체계 개선** — 신규 가입자에게 공개 메뉴를 자동 부여하는 구조(`handle_new_user()` 변경 등)는 기존 인증 자산 수정이 필요하므로 후속 문서에서 검토
 
 ---
 
@@ -947,28 +1004,29 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 ```
 [ROADMAP_MVP.md Task 001~022 / ROADMAP_MASTER.md Task 023~042 완료]  ← 전제
    │
-   ├─ Task 043 (설계 확정 / 미해결 가정 확인) ⚠️  ← 046·051·057의 전제
+   ├─ Task 043 (설계 확정 / 미해결 가정 확인) ⚠️  ← 046·058의 전제
    │
    ├─ Task 044 (조직 상수/타입/레벨 메타, DB 무관)
    │    └─ Task 045 (org_groups / org_companies / org_company_divisions + RLS + 채번 확장)
    │         ├─ Task 046 (기존 organizations 고아 방지 초기 데이터) ⚠️  ← PRD 5.3 필수 작업
    │         │    └─ (이후 모든 화면 Task가 이 매핑에 의존)
    │         ├─ Task 047 (org_sections / org_section_teams + 일관성 트리거 + RLS + 채번 확장)
-   │         │    └─ (Task 055의 부서 CRUD, Task 057의 부서 시드가 이 테이블에 의존)
+   │         │    └─ (Task 056의 부서 CRUD, Task 058의 부서 시드가 이 테이블에 의존)
    │         └─ Task 048 (org_unit_leaders + 레벨별 RLS, org_section_id 포함)
    │              └─ Task 049 (get_org_chart_members() SECURITY DEFINER)
-   │                   └─ Task 050 (타입 재생성 + 데이터 액세스 계층 + requireSuperadmin())
+   │                   └─ Task 050 (타입 재생성 + 데이터 액세스 계층 + requireSuperadmin() + 팝업 액션)
    │                        │
-   │                        └─ Task 053 (가변 깊이 트리 + 리더/하위 패널, 조회 전용)
-   │                             ├─ Task 054 (그룹사/법인 CRUD + 부문↔법인 매핑)
-   │                             ├─ Task 055 (부서 CRUD + 부서↔팀 소속 관리)
-   │                             └─ Task 056 (리더 지정/해제 UI, 5레벨)
+   │                        └─ Task 053 (관리 화면 — 가변 깊이 트리 + 리더/하위 패널, 조회 기반)
+   │                             ├─ Task 054 (헤더 "조직도" 팝업 트리거) ← 관리 화면의 tree.ts/키 포맷 재사용
+   │                             ├─ Task 055 (그룹사/법인 CRUD + 부문↔법인 매핑)
+   │                             ├─ Task 056 (부서 CRUD + 부서↔팀 소속 관리)
+   │                             └─ Task 057 (리더 지정/해제 UI, 5레벨)
    │                                  │
-   │                                  └─ Task 057 (더미 데이터 시드 — 부서 + 리더) ⚠️
-   │                                       └─ Task 058 (통합 검증)
+   │                                  └─ Task 058 (더미 데이터 시드 — 부서 + 리더) ⚠️
+   │                                       └─ Task 059 (통합 검증)
    │
-   └─ Task 051 (menus 신규 2건 추가) ⚠️      ← Phase 8과 병렬 가능
-        └─ Task 052 (/erp/org 라우트 골격 + 메뉴 매핑)
+   └─ Task 051 (menus 신규 1건 추가)      ← Phase 8과 병렬 가능
+        └─ Task 052 (/erp/admin/org 라우트 골격 + 메뉴 매핑, requireAdmin() 자동 상속)
              └─ (Task 053이 이 스텁을 채움)
 ```
 
@@ -976,7 +1034,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 - **Phase 8(Task 044~~050)와 Phase 9(Task 051~~052)** — 스키마 구축과 메뉴/라우팅 등록은 서로 독립. Phase 9를 먼저 끝내두면 Task 053이 스텁을 바로 교체할 수 있다.
 - **Task 046과 Task 047** — 둘 다 Task 045에만 의존하고 서로 다른 테이블을 다루므로 병렬 가능(단, 047은 Task 045의 시퀀스/함수 확장과 무관하게 자체적으로 `next_master_code()`를 또 `create or replace`하므로, **두 마이그레이션을 동시에 적용하지 말고 순서대로 적용**해 함수 정의가 서로 덮어쓰지 않게 한다).
-- **Task 054·055·056** — 편집 기능 세 갈래는 Task 053 완료 후 서로 독립(각각 다른 다이얼로그 컴포넌트, 다른 레벨 대상).
+- **Task 054·055·056·057** — Task 053 완료 후 서로 독립(각각 다른 컴포넌트, 다른 레벨/진입점 대상). 특히 054(헤더 팝업)는 편집 기능(055~057)과 전혀 무관하므로 가장 먼저 병행 착수해도 된다.
 - **Task 044** — DB와 무관한 순수 모듈이라 Task 043 확정을 기다리지 않고 착수 가능(레벨별 기본 직책명만 나중에 보강).
 
 **직렬 필수 구간**
@@ -985,8 +1043,9 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 - Task 045 → **Task 047** (부서 테이블도 `org_groups`/`org_companies`와 무관하지만, `next_master_code()`를 같은 함수에 순차적으로 확장하므로 045 적용 후에 047을 적용해야 045의 확장분이 유지된다)
 - Task 048 → Task 049 → Task 050 (리더 테이블과 구성원 RPC가 있어야 데이터 액세스 계층이 성립)
 - Task 050 → Task 053 (조회 함수 없이 화면을 만들면 화면마다 조인 복제)
-- Task 053 → Task 054 / 055 / 056 (트리·패널 셸이 있어야 편집 버튼을 얹을 자리가 생김)
-- Task 043 → Task 046 / 051 / 057 (이름·부서 구성·리더·메뉴 노출 정책이 확정되어야 데이터가 확정됨)
+- Task 052 → Task 053 (라우트 스텁이 있어야 실 구현을 채울 자리가 생김)
+- Task 053 → Task 054 / 055 / 056 / 057 (트리 조립 로직·노드 키 포맷이 확정돼야 편집 UI·팝업을 얹을 자리가 생김)
+- Task 043 → Task 046 / 058 (이름·부서 구성·리더 정책이 확정되어야 데이터가 확정됨)
 
 ---
 
@@ -995,29 +1054,29 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 | Phase                                 | Task 범위    | 상태    |
 | ------------------------------------- | ------------ | ------- |
 | **Phase 8 — 조직 데이터 모델 구축**   | Task 043~050 | ⬜ 대기 |
-| **Phase 9 — 메뉴 등록 / 라우트 골격** | Task 051~052 | ⬜ 대기 |
-| **Phase 10 — 조직도 화면 구현**       | Task 053~056 | ⬜ 대기 |
-| **Phase 11 — 시드 및 통합 검증**      | Task 057~058 | ⬜ 대기 |
+| **Phase 9 — 메뉴 등록 / 관리 라우트** | Task 051~052 | ⬜ 대기 |
+| **Phase 10 — 조직도 화면 구현**       | Task 053~057 | ⬜ 대기 |
+| **Phase 11 — 시드 및 통합 검증**      | Task 058~059 | ⬜ 대기 |
 
 ### 사용자 확인 대기 항목 (착수 전 필수)
 
 | 항목                                   | 관련 Task      | 현재 가정                                                                      | 상태         |
 | -------------------------------------- | -------------- | ------------------------------------------------------------------------------ | ------------ |
-| ① 그룹사 실제 이름                     | 043 → 046, 057 | PRD 8장 가안 "OO그룹"                                                          | ⬜ 확인 필요 |
-| ② 법인 실제 이름                       | 043 → 046, 057 | PRD 8장 가안 "OO 법인"                                                         | ⬜ 확인 필요 |
-| ③ 부서 구성(부서명, 소속 팀)           | 043 → 057      | 가안 "개발부서" 1건, 8개 팀 중 3개만 소속. **부서를 아예 안 만드는 것도 가능** | ⬜ 확인 필요 |
-| ④ 초기 리더 지정자 / 팀 리더 지정 개수 | 043 → 057      | 임의의 admin·superadmin 계정, 8개 팀 중 4개만 지정                             | ⬜ 확인 필요 |
-| ⑤ 조직도 메뉴 노출 정책                | 043 → 051      | (A) 기존 전체 사용자에게 `user_menu_permissions` 일괄 부여 — 권장안            | ⬜ 확인 필요 |
-| ⑥ 레벨별 기본 직책명                   | 043 → 044, 056 | 회장님 / 대표이사 / 부문장 / **부서장** / 팀장                                 | ⬜ 확인 필요 |
+| ① 그룹사 실제 이름                     | 043 → 046, 058 | PRD 9장 가안 "OO그룹"                                                          | ⬜ 확인 필요 |
+| ② 법인 실제 이름                       | 043 → 046, 058 | PRD 9장 가안 "OO 법인"                                                         | ⬜ 확인 필요 |
+| ③ 부서 구성(부서명, 소속 팀)           | 043 → 058      | 가안 "개발부서" 1건, 8개 팀 중 3개만 소속. **부서를 아예 안 만드는 것도 가능** | ⬜ 확인 필요 |
+| ④ 초기 리더 지정자 / 팀 리더 지정 개수 | 043 → 058      | 임의의 admin·superadmin 계정, 8개 팀 중 4개만 지정                             | ⬜ 확인 필요 |
+| ⑤ 레벨별 기본 직책명                   | 043 → 044, 057 | 회장님 / 대표이사 / 부문장 / **부서장** / 팀장                                 | ⬜ 확인 필요 |
 
 ### 실 DB 확인값 (2026-08-17 조회 기준 — 착수 시 재확인할 것)
 
-| 항목                           | 값                                                                                                                   |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| 대분류 "인사급여" 메뉴 id      | `11111111-0001-4000-8000-000000000002` (level 1, sort_order 2, 하위 0건)                                             |
-| 기존 부문(`organizations`) 1건 | `e72c8bf2-e334-498f-a21f-1cadd9b37ee0` / "IT부문" / `archived_at = null`                                             |
-| 팀(`departments`)              | 8건, 현재 전부 부서 없이 "IT부문"에 직접 소속                                                                        |
-| 구성원(`profiles`)             | 63건 (전원 `department_id` 있음)                                                                                     |
-| `user_menu_permissions`        | **0건** (일반 사용자에게 현재 보이는 메뉴 없음 — ⑤ 결정의 배경)                                                      |
-| 재사용 가능 DB 함수            | `is_admin()` / `is_superadmin()` / `current_organization_id()` / `set_master_audit()` / `next_master_code(p_entity)` |
-| `profiles` SELECT 정책         | `profiles_select_own_or_admin` — `id = auth.uid() or is_admin()`                                                     |
+| 항목                              | 값                                                                                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| "마스터 관리 > 기본 관리" 메뉴 id | `7ecdefaa-2707-4890-bddd-77e1de731ef1` (level 2, parent "마스터 관리"). 기존 소분류 3건: 사용자 관리(0)/메뉴 관리(1)/사용자 권한 관리(2) |
+| 기존 부문(`organizations`) 1건    | `e72c8bf2-e334-498f-a21f-1cadd9b37ee0` / "IT부문" / `archived_at = null`                                                                 |
+| 팀(`departments`)                 | 8건, 현재 전부 부서 없이 "IT부문"에 직접 소속                                                                                            |
+| 구성원(`profiles`)                | 63건 (전원 `department_id` 있음)                                                                                                         |
+| `user_menu_permissions`           | 0건 — 관리 화면이 admin 전용으로 확정되면서 더 이상 이 로드맵과 무관해짐(Task 051 참고)                                                  |
+| 재사용 가능 DB 함수               | `is_admin()` / `is_superadmin()` / `current_organization_id()` / `set_master_audit()` / `next_master_code(p_entity)`                     |
+| `profiles` SELECT 정책            | `profiles_select_own_or_admin` — `id = auth.uid() or is_admin()`                                                                         |
+| `app/erp/admin/layout.tsx`        | `requireAdmin()`으로 이미 가드 중 — `/erp/admin/org`도 자동 상속(Task 052)                                                               |
