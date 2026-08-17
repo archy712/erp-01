@@ -183,7 +183,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 045: 조직 계층 신규 테이블 3종 생성 (`org_groups` / `org_companies` / `org_company_divisions`)
+### Task 045: 조직 계층 신규 테이블 3종 생성 (`org_groups` / `org_companies` / `org_company_divisions`) ✅
 
 **목표**: 비어 있던 상위 2개 레벨(그룹사·법인)과 "법인 ↔ 부문" 매핑 테이블을 구축한다. **기존 테이블에는 손대지 않는 순수 additive 마이그레이션이어야 한다.**
 
@@ -195,49 +195,50 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `org_groups` 생성 (PRD 5.1):
-  - [ ] `id uuid primary key default gen_random_uuid()`, `code text not null unique`, `name text not null`, `is_active boolean not null default true`, `note text`
-  - [ ] `singleton boolean not null default true` + `constraint org_groups_singleton_true check (singleton)` + `constraint org_groups_singleton_unique unique (singleton)` (PRD 6.2 — 2행 INSERT가 unique 위반으로 실패)
-  - [ ] `created_at`/`updated_at timestamptz not null default now()`, `created_by uuid references public.profiles(id) default auth.uid()`, `updated_by uuid references public.profiles(id)`
-  - [ ] `before update` 트리거로 **기존 `public.set_master_audit()` 연결**(새 트리거 함수 만들지 않음)
-- [ ] `org_companies` 생성 (PRD 5.2) — 위 공통 컬럼 + `org_group_id uuid not null references public.org_groups(id) on delete restrict` + `sort_order integer not null default 0`. `code`는 `OC####`.
-- [ ] `org_company_divisions` 생성 (PRD 5.3):
-  - [ ] `id uuid primary key default gen_random_uuid()`
-  - [ ] `org_company_id uuid not null references public.org_companies(id) on delete restrict`
-  - [ ] `organization_id uuid not null unique references public.organizations(id) on delete restrict` — **unique로 "부문은 법인 정확히 1곳에만 소속"을 강제**. `organizations`를 참조만 하고 변경하지 않는다.
-  - [ ] `sort_order integer not null default 0`, `created_at timestamptz not null default now()`, `created_by uuid references public.profiles(id) default auth.uid()` (PRD 5.3: updated 계열 생략)
-- [ ] 인덱스: `org_companies(org_group_id, sort_order)`, `org_company_divisions(org_company_id, sort_order)` + `created_by`/`updated_by` FK 커버링 인덱스.
-- [ ] RLS 활성화 + 정책 (PRD 3.1, **기존 함수 재사용**):
-  - [ ] `select` — 3개 테이블 모두 `to authenticated using (true)` (조직도는 전 구성원 조회)
-  - [ ] `insert` — `with check (public.is_superadmin())`
-  - [ ] `update` — `using (public.is_superadmin()) with check (public.is_superadmin())`
-  - [ ] `delete` — `using (public.is_superadmin())`
-  - [ ] `org_groups`의 `delete` 정책은 두되, 싱글턴이라 UI에서는 삭제 버튼을 제공하지 않는다(Task 055).
-- [ ] 코드 채번 확장:
-  - [ ] 시퀀스 2개 생성 — `org_code_group_seq`(start 1), `org_code_company_seq`(start 1). **자릿수 4에 `lpad`로 채우므로 시작값은 1로 두고 `GRP` + `lpad('1',4,'0')` = `GRP0001`이 되게 한다.** (부서용 시퀀스는 Task 047에서 함께 생성)
-  - [ ] `public.next_master_code(p_entity)`를 `create or replace`로 확장해 `when 'org_group'` / `when 'org_company'` 분기를 추가한다(부서 `org_section` 분기는 Task 047에서 같은 함수를 다시 `create or replace`로 확장). **기존 12종 분기와 `product` 권한 예외는 그대로 보존**하고, 권한 프리앰블에 `elsif p_entity in ('org_group','org_company') then if not public.is_superadmin() then raise exception ...` 분기만 추가한다(PRD 3.1 — 그룹사/법인은 superadmin 전용).
-  - [ ] 확장 후 기존 12종 채번이 회귀 없이 동작하는지 반드시 재확인한다.
-- [ ] `mcp__supabase__get_advisors`(security + performance) 확인 — 신규 경고가 나오면 원인과 대응(또는 유지 근거)을 이 Task에 기록한다.
-- [ ] **마이그레이션 SQL 본문에 `alter table public.profiles` / `public.departments` / `public.organizations`가 한 줄도 없는지 적용 직후 재확인**한다.
+- [x] `org_groups` 생성 (PRD 5.1):
+  - [x] `id uuid primary key default gen_random_uuid()`, `code text not null unique`, `name text not null`, `is_active boolean not null default true`, `note text`
+  - [x] `singleton boolean not null default true` + `constraint org_groups_singleton_true check (singleton)` + `constraint org_groups_singleton_unique unique (singleton)` (PRD 6.2 — 2행 INSERT가 unique 위반으로 실패)
+  - [x] `created_at`/`updated_at timestamptz not null default now()`, `created_by uuid references public.profiles(id) default auth.uid()`, `updated_by uuid references public.profiles(id)`
+  - [x] `before update` 트리거로 **기존 `public.set_master_audit()` 연결**(새 트리거 함수 만들지 않음)
+- [x] `org_companies` 생성 (PRD 5.2) — 위 공통 컬럼 + `org_group_id uuid not null references public.org_groups(id) on delete restrict` + `sort_order integer not null default 0`. `code`는 `OC####`.
+- [x] `org_company_divisions` 생성 (PRD 5.3):
+  - [x] `id uuid primary key default gen_random_uuid()`
+  - [x] `org_company_id uuid not null references public.org_companies(id) on delete restrict`
+  - [x] `organization_id uuid not null unique references public.organizations(id) on delete restrict` — **unique로 "부문은 법인 정확히 1곳에만 소속"을 강제**. `organizations`를 참조만 하고 변경하지 않는다.
+  - [x] `sort_order integer not null default 0`, `created_at timestamptz not null default now()`, `created_by uuid references public.profiles(id) default auth.uid()` (PRD 5.3: updated 계열 생략)
+- [x] 인덱스: `org_companies(org_group_id, sort_order)`, `org_company_divisions(org_company_id, sort_order)` + `created_by`/`updated_by` FK 커버링 인덱스.
+- [x] RLS 활성화 + 정책 (PRD 3.1, **기존 함수 재사용**):
+  - [x] `select` — 3개 테이블 모두 `to authenticated using (true)` (조직도는 전 구성원 조회)
+  - [x] `insert` — `with check (public.is_superadmin())`
+  - [x] `update` — `using (public.is_superadmin()) with check (public.is_superadmin())`
+  - [x] `delete` — `using (public.is_superadmin())`
+  - [x] `org_groups`의 `delete` 정책은 두되, 싱글턴이라 UI에서는 삭제 버튼을 제공하지 않는다(Task 055).
+- [x] 코드 채번 확장:
+  - [x] 시퀀스 2개 생성 — `org_code_group_seq`(start 1), `org_code_company_seq`(start 1). **자릿수 4에 `lpad`로 채우므로 시작값은 1로 두고 `GRP` + `lpad('1',4,'0')` = `GRP0001`이 되게 한다.** (부서용 시퀀스는 Task 047에서 함께 생성)
+  - [x] `public.next_master_code(p_entity)`를 `create or replace`로 확장해 `when 'org_group'` / `when 'org_company'` 분기를 추가한다(부서 `org_section` 분기는 Task 047에서 같은 함수를 다시 `create or replace`로 확장). **기존 12종 분기와 `product` 권한 예외는 그대로 보존**하고, 권한 프리앰블에 `elsif p_entity in ('org_group','org_company') then if not public.is_superadmin() then raise exception ...` 분기만 추가한다(PRD 3.1 — 그룹사/법인은 superadmin 전용).
+  - [x] 확장 후 기존 12종 채번이 회귀 없이 동작하는지 반드시 재확인한다.
+- [x] `mcp__supabase__get_advisors`(security + performance) 확인 — **신규 실질 경고 없음.** performance에 `org_groups`/`org_companies`/`org_company_divisions`의 `created_by`/`updated_by` 커버링 인덱스가 "unused_index" INFO로 나오지만, 방금 생성된 빈 테이블이라 당연한 결과(조회 이력이 없을 뿐)라 조치 불필요. security의 `next_master_code` SECURITY DEFINER anon/authenticated 실행 가능 경고는 이번 변경 이전부터 있던 기존 항목(함수 grant는 그대로, body만 교체).
+- [x] **마이그레이션 SQL 본문에 `alter table public.profiles` / `public.departments` / `public.organizations`가 한 줄도 없는지 적용 직후 재확인**했다 — 두 마이그레이션 모두 `organizations`를 FK 참조로만 사용, `ALTER TABLE` 없음.
+- [x] (워크플로우 규약) 스키마 변경 후 `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — 순수 추가분만 반영됨(기존 타입 삭제/변경 없음), `npm run typecheck` 통과.
 
 **수락 기준**
 
-- [ ] 3개 테이블이 생성되고 `list_tables`로 컬럼·FK·unique 제약이 확인된다.
-- [ ] `org_groups`에 2번째 행 INSERT 시도 → unique 위반(`23505`)으로 실패한다.
-- [ ] `select public.next_master_code('org_group')` → `GRP0001`, `next_master_code('org_company')` → `OC0001` 형식이 반환된다.
-- [ ] `role='user'` 세션에서 3개 테이블 select는 성공하고 insert는 RLS(`42501`)로 차단된다. `role='admin'`(superadmin 아님) 세션의 insert도 차단된다.
-- [ ] 기존 `organizations`/`departments`/`profiles`의 행 수와 컬럼 정의가 마이그레이션 전후 동일하다.
+- [x] 3개 테이블이 생성되고 컬럼·FK·unique 제약이 확인된다(`information_schema.columns` + `pg_constraint` 조회로 검증).
+- [x] `org_groups`에 2번째 행 INSERT 시도 → unique 위반(`23505`)으로 실패한다.
+- [x] `select public.next_master_code('org_group')` → `GRP0001`, `next_master_code('org_company')` → `OC0001` 형식이 반환된다(superadmin 세션 시뮬레이션으로 확인, 이후 시퀀스 원복).
+- [x] `role='user'` 세션에서 3개 테이블 select는 성공하고 insert는 RLS(`42501`)로 차단된다. `role='admin'`(superadmin 아님) 세션의 insert도 차단된다.
+- [x] 기존 `organizations`(1) / `departments`(8) / `profiles`(63)의 행 수가 마이그레이션 전후 동일하다.
 
 **테스트 체크리스트 (execute_sql)**
 
-- [ ] `execute_sql`로 `org_groups` 1건 insert 성공 → 2건째 insert 시도 → `23505` 확인.
-- [ ] `org_companies` 1건 insert 후 `org_company_divisions`에 기존 `organizations`(IT부문, `e72c8bf2-…`) 매핑 1건 insert 성공 확인 → 같은 `organization_id`로 2번째 매핑 시도 → unique 위반(`23505`) 확인(부문 1곳 소속 강제).
-- [ ] 하위 법인이 있는 `org_groups` 행 delete 시도 → FK `restrict` 위반(`23503`) 확인.
-- [ ] `set local role authenticated` + `set_config('request.jwt.claims', ...)`로 `role='user'` / `role='admin'` 세션을 시뮬레이션 — select 통과, insert `42501` 차단, update/delete는 RLS `USING` 필터로 영향 행 0건임을 `GET DIAGNOSTICS`로 확인.
-- [ ] `update` 실행 후 `updated_at`/`updated_by`가 `set_master_audit()`로 채워지는지 확인.
-- [ ] 확장된 `next_master_code()`가 기존 12종(`company`~`product`)에 대해서도 회귀 없이 동작하는지 1회씩 호출 후 시퀀스를 `setval`로 원복.
-- [ ] `role='admin'` 세션에서 `next_master_code('org_group')` 호출 → superadmin 권한 예외 확인.
-- [ ] 테스트에 사용한 행 전부 삭제 후 잔존 0건 확인, 소비한 시퀀스 원복 확인.
+- [x] `execute_sql`로 `org_groups` 1건 insert 성공 → 2건째 insert 시도 → `23505`(unique_violation) 확인.
+- [x] `org_companies` 1건 insert 후 `org_company_divisions`에 기존 `organizations`(IT부문, `e72c8bf2-…`) 매핑 1건 insert 성공 확인 → 같은 `organization_id`로 2번째 매핑 시도 → unique 위반(`23505`) 확인(부문 1곳 소속 강제).
+- [x] 하위 법인이 있는 `org_groups` 행 delete 시도 → FK `restrict` 위반(`23503`/foreign_key_violation) 확인.
+- [x] `set local role authenticated` + `set_config('request.jwt.claims', ...)`로 `role='user'`(표유진) / `role='admin'`(홍길동) 세션을 시뮬레이션 — select 통과(3개 테이블 전부 count 정상 반환), insert는 `insufficient_privilege`(`42501`)로 두 세션 모두 차단 확인.
+- [x] `update` 실행 후 `updated_at`/`updated_by`가 `set_master_audit()`로 채워지는지 확인(superadmin 나승규 세션으로 확인).
+- [x] 확장된 `next_master_code()`가 기존 12종(`company`~`product`)에 대해서도 회귀 없이 동작함을 1회씩 호출로 확인 후 시퀀스 전부 `setval`로 원복.
+- [x] `role='admin'`(홍길동, superadmin 아님) 세션에서 `next_master_code('org_group')` 호출 → superadmin 권한 예외 확인.
+- [x] 테스트에 사용한 행(그룹사/법인/매핑 각 1건) 전부 삭제 후 잔존 0건 확인, `org_code_group_seq`/`org_code_company_seq`를 `setval(..., 1, false)`로 원복(Task 046이 실제 코드로 `GRP0001`/`OC0001`을 채번할 수 있도록).
 
 ---
 
@@ -1001,7 +1002,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
    ├─ Task 043 (설계 확정 / 미해결 가정 확인) ✅  ← 046·058의 전제
    │
    ├─ Task 044 (조직 상수/타입/레벨 메타, DB 무관) ✅
-   │    └─ Task 045 (org_groups / org_companies / org_company_divisions + RLS + 채번 확장)
+   │    └─ Task 045 (org_groups / org_companies / org_company_divisions + RLS + 채번 확장) ✅
    │         ├─ Task 046 (기존 organizations 고아 방지 초기 데이터)  ← PRD 5.3 필수 작업
    │         │    └─ (이후 모든 화면 Task가 이 매핑에 의존)
    │         ├─ Task 047 (org_sections / org_section_teams + 일관성 트리거 + RLS + 채번 확장)
