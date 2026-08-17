@@ -48,11 +48,15 @@ export function OrgChartPopupTrigger({ dict }: { dict: Dictionary }) {
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           aria-label={dict.erp.header.orgChartTriggerAriaLabel}
         >
+          {/* 헤더 타이틀이 폭과 무관하게 항상 절대좌표 중앙에 고정되는 구조라(erp-header.tsx),
+              어떤 breakpoint에서 텍스트 라벨을 보여줘도 특정 폭 구간에서 다시 겹칠 수 있다
+              (Task 059 검증에서 768~900px 겹침 발견 → lg:inline으로 시도했으나 1024px 근방에서
+              재발 확인). 대신 같은 헤더의 "설정" 버튼(auth-menu.tsx)과 동일하게 아이콘 전용
+              버튼으로 통일해 겹침 가능성 자체를 제거한다. */}
           <Network className="size-4" />
-          {dict.erp.header.orgChartTriggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl">
