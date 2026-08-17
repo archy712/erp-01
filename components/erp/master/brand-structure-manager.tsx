@@ -233,7 +233,7 @@ export function BrandStructureManager({
 
   return (
     <div className="flex flex-1 flex-col">
-      <PageHeader breadcrumb={breadcrumb} title="브랜드 구조 관리" />
+      <PageHeader breadcrumb={breadcrumb} title="브랜드 관리" />
 
       <MasterDetailLayout
         treeTitle="법인 / 브랜드"

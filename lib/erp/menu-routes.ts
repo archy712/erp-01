@@ -17,7 +17,7 @@ const MENU_ROUTES: Record<string, string> = {
   "마스터 관리>기본 관리>메뉴 관리": "/erp/admin/menus",
   "마스터 관리>기본 관리>사용자 권한 관리": "/erp/admin/permissions",
   "마스터 관리>기준정보 관리>법인 관리": "/erp/master/companies",
-  "마스터 관리>기준정보 관리>브랜드 구조 관리": "/erp/master/brands",
+  "마스터 관리>기준정보 관리>브랜드 관리": "/erp/master/brands",
   "마스터 관리>기준정보 관리>상품 분류 관리": "/erp/master/item-categories",
   "마스터 관리>기준정보 관리>컬러 관리": "/erp/master/colors",
   "마스터 관리>기준정보 관리>사이즈 관리": "/erp/master/sizes",
