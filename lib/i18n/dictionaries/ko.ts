@@ -140,6 +140,7 @@ export const ko: Dictionary = {
     avatarLabel: "아바타",
     avatarChangeButton: "아바타 변경",
     avatarDialogTitle: "아바타 선택",
+    avatarDialogConfirm: "선택 완료",
     bioLabel: "자기소개",
     saveButton: "저장",
     saving: "저장 중...",

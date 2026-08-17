@@ -131,6 +131,7 @@ export const zh: Dictionary = {
     avatarLabel: "头像",
     avatarChangeButton: "更换头像",
     avatarDialogTitle: "选择头像",
+    avatarDialogConfirm: "确认选择",
     bioLabel: "个人简介",
     saveButton: "保存",
     saving: "保存中...",

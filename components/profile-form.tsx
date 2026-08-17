@@ -18,6 +18,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -219,6 +220,14 @@ export function ProfileForm({
                         </button>
                       ))}
                     </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        onClick={() => setAvatarDialogOpen(false)}
+                      >
+                        {dict.profile.avatarDialogConfirm}
+                      </Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>

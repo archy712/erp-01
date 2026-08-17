@@ -144,6 +144,7 @@ export const ja: Dictionary = {
     avatarLabel: "アバター",
     avatarChangeButton: "アバターを変更",
     avatarDialogTitle: "アバターを選択",
+    avatarDialogConfirm: "選択を確定",
     bioLabel: "自己紹介",
     saveButton: "保存",
     saving: "保存中...",

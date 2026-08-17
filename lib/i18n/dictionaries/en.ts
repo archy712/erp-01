@@ -138,6 +138,7 @@ export const en: Dictionary = {
     avatarLabel: "Avatar",
     avatarChangeButton: "Change avatar",
     avatarDialogTitle: "Choose an avatar",
+    avatarDialogConfirm: "Confirm selection",
     bioLabel: "Bio",
     saveButton: "Save",
     saving: "Saving...",

@@ -114,6 +114,7 @@ export interface Dictionary {
     avatarLabel: string;
     avatarChangeButton: string;
     avatarDialogTitle: string;
+    avatarDialogConfirm: string;
     bioLabel: string;
     saveButton: string;
     saving: string;
