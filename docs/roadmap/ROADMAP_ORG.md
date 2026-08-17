@@ -548,7 +548,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-## Phase 9: 메뉴 등록 및 관리 라우트 골격
+## Phase 9: 메뉴 등록 및 관리 라우트 골격 ✅
 
 > PRD 7장.
 > `menus`의 기존 "마스터 관리 > 기본 관리"(사용자/메뉴/권한 관리와 형제) 아래 4번째 소분류로 "조직도 관리"를 추가하고 `/erp/admin/org` 라우트에 연결한다.
@@ -589,7 +589,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 052: `/erp/admin/org` 라우트 골격 및 메뉴 라우트 매핑
+### Task 052: `/erp/admin/org` 라우트 골격 및 메뉴 라우트 매핑 ✅
 
 **목표**: 조직도 관리 라우트를 스캐폴딩하고 메뉴 → 실제 라우트 매핑을 연결한다. **기존 `app/erp/admin/layout.tsx`가 이미 `requireAdmin()`으로 가드하고 있으므로, 이 Task는 그 가드를 상속받는 `page.tsx`만 추가하면 된다 — 별도 접근 제어 코드가 필요 없다.**
 
@@ -601,25 +601,25 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `lib/erp/menu-routes.ts`의 `MENU_ROUTES`에 매핑 추가 — `"마스터 관리>기본 관리>조직도 관리": "/erp/admin/org"` (PRD 7장). 착수 전 `execute_sql`로 실 DB의 메뉴 이름 3단이 이 키와 정확히 일치하는지 재확인한다(공백·표기 포함).
-- [ ] `app/erp/admin/org/page.tsx` 스텁 생성 — 얇은 `Page` + `<Suspense fallback={null}>` + `async OrgContent` 패턴. `PageHeader`로 breadcrumb("마스터 관리 > 기본 관리 > 조직도 관리")를 표시하고 "Task 053에서 구현됩니다" 안내 문구를 둔다. **`app/erp/admin/layout.tsx`를 그대로 상속받으므로 이 페이지에 별도 가드 코드를 넣지 않는다.**
-- [ ] `app/erp/menu/[menuId]/page.tsx`의 기존 판정 순서("존재 여부 → `canAccessMenu` → 라우트 매핑 리다이렉트")를 **변경하지 않는다** — 새 매핑이 그 흐름에 자연히 얹힌다.
+- [x] `lib/erp/menu-routes.ts`의 `MENU_ROUTES`에 매핑 추가 — `"마스터 관리>기본 관리>조직도 관리": "/erp/admin/org"`. 착수 전 Task 051에서 조회한 메뉴명("조직도 관리")과 정확히 일치함을 확인.
+- [x] `app/erp/admin/org/page.tsx` 스텁 생성 — 얇은 `Page` + `<Suspense fallback={null}>` + `async AdminOrgContent` 패턴. `PageHeader`로 breadcrumb(다른 3형제와 동일 패턴 — `getMenuPathForRoute().slice(0, -1)`로 "마스터 관리 > 기본 관리"를 breadcrumb에, "조직도 관리"를 title로 표시해 합쳐서 3단 경로를 나타냄)를 표시하고 "Task 053에서 구현됩니다" 안내 문구를 둔다(`MenuPlaceholder`와 동일한 `Empty`/`Construction` 아이콘 사용). `app/erp/admin/layout.tsx`를 그대로 상속받으므로 이 페이지에 별도 가드 코드를 넣지 않았다.
+- [x] `app/erp/menu/[menuId]/page.tsx`의 기존 판정 순서를 **변경하지 않았다** — 새 매핑이 그 흐름에 자연히 얹힘을 코드 리뷰로 확인.
 
 **수락 기준**
 
-- [ ] 트리에서 "조직도 관리" 클릭 시 `MenuPlaceholder`가 아니라 `/erp/admin/org`로 이동한다.
-- [ ] 로그인한 `role='user'` 계정이 `/erp/admin/org`에 **직접 URL로 접근하면 `/erp/forbidden`으로 리다이렉트**된다(기존 `app/erp/admin/layout.tsx` 가드 상속 검증 — 이전 버전(`/erp/org`, 조회 전체 개방)과 정반대 동작이므로 반드시 확인).
-- [ ] 미인증 상태로 `/erp/admin/org` 접근 시 `/auth/login`으로 리다이렉트된다(`proxy.ts` 회귀 없음).
-- [ ] breadcrumb이 "마스터 관리 > 기본 관리 > 조직도 관리"로 표시된다.
+- [x] 트리에서 "조직도 관리" 클릭 시 `MenuPlaceholder`가 아니라 `/erp/admin/org`로 이동함을 Playwright로 확인.
+- [x] 로그인한 `role='user'` 계정이 `/erp/admin/org`에 **직접 URL로 접근하면 `/erp/forbidden`으로 리다이렉트**됨을 확인.
+- [x] 미인증 상태로 `/erp/admin/org` 접근 시 `/auth/login`으로 리다이렉트됨을 확인.
+- [x] breadcrumb "마스터 관리 > 기본 관리" + heading "조직도 관리"로 3단 경로가 표시됨을 확인.
 
 **테스트 체크리스트 (Playwright MCP)** — 임시 계정 2개(admin 1 / user 1)로 검증 후 즉시 삭제
 
-- [ ] admin 계정으로 트리 클릭 → `/erp/admin/org`로 이동 및 breadcrumb 확인.
-- [ ] **user 계정으로 `/erp/admin/org` 직접 URL 진입 → `/erp/forbidden`으로 튕기는지 확인** (기존 3형제 화면과 동일 동작인지 대조).
-- [ ] 로그아웃 상태로 `/erp/admin/org` 접근 → `/auth/login` 리다이렉트 확인.
-- [ ] `getMenuPathForRoute("/erp/admin/org")`가 3단 경로를 반환하는지 breadcrumb 표시로 간접 확인.
-- [ ] `browser_console_messages` 에러 0건, `npm run check-all` 통과.
-- [ ] 임시 계정 삭제 후 잔존 0건 확인.
+- [x] admin 계정(`temp-org-052-admin@example.com`, role 승격)으로 트리 클릭 → `/erp/admin/org?cat=...&menu=aa8ed6df-...`로 이동 및 breadcrumb 확인(스크린샷 확인 후 삭제).
+- [x] **user 계정(`temp-org-052-user@example.com`, role 기본값)으로 `/erp/admin/org` 직접 URL 진입 → `/erp/forbidden`으로 튕기는지 확인** — 기존 3형제 화면과 동일 동작 대조 완료.
+- [x] 로그아웃 상태로 `/erp/admin/org` 접근 → `/auth/login` 리다이렉트 확인.
+- [x] `getMenuPathForRoute("/erp/admin/org")`가 3단 경로(`["마스터 관리","기본 관리","조직도 관리"]`)를 반환함을 breadcrumb+title 표시로 간접 확인.
+- [x] `browser_console_messages` 에러 0건(admin/user/미인증 3단계 모두), `npm run check-all` 통과(에러 0건, 기존 경고 8건은 무관).
+- [x] 임시 계정 2개 삭제 후 잔존 0건 확인.
 
 ---
 
@@ -1041,7 +1041,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 | Phase                                 | Task 범위    | 상태    |
 | ------------------------------------- | ------------ | ------- |
 | **Phase 8 — 조직 데이터 모델 구축**   | Task 043~050 | ✅ 완료 |
-| **Phase 9 — 메뉴 등록 / 관리 라우트** | Task 051~052 | 🟡 진행 중 (051 완료) |
+| **Phase 9 — 메뉴 등록 / 관리 라우트** | Task 051~052 | ✅ 완료 |
 | **Phase 10 — 조직도 화면 구현**       | Task 053~057 | ⬜ 대기 |
 | **Phase 11 — 시드 및 통합 검증**      | Task 058~059 | ⬜ 대기 |
 
