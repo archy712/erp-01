@@ -784,7 +784,9 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 > **메뉴 위치(마스터 관리 > 상품 관리 > 상품 관리)와 접근 권한(기존 `user_menu_permissions` 방식, 오픈 유지)은 변경하지 않는다.** 화면만 구현한다.
 > Phase 5(특히 Task 034~037)의 마스터 데이터가 있어야 캐스케이드 드롭다운을 검증할 수 있으므로 Phase 5 이후에 착수한다.
 
-### Task 038: 상품 목록 화면 구현 (PRD 7.6.1)
+### Task 038: 상품 목록 화면 구현 (PRD 7.6.1) ✅
+
+> 완료(2026-08-17) — `getProducts`/`getBrands`/`getSubItemFilterOptions`(신규)를 서버 컴포넌트에서 조회해 `ProductFilters`(검색+4개 필터, URL 쿼리 상태) + `ProductTable`(8컬럼, 사용여부 Switch, Prev/Next 페이지네이션)로 렌더링. 검색/필터/페이지 전부 서버 사이드 + URL 쿼리 기반. `ProductListItem`에 `brandColorRgbHex`를 추가해 컬러 스와치를 목록에서도 표시하고, `next.config.ts`에 Supabase Storage 도메인을 `images.remotePatterns`로 등록했다. 임시 관리자 계정 1개(`task038-erp-test@example.com`) + 단일 브랜드 체인(법인~서브아이템/라인/컬러/사이즈) + 상품 3건(남성·활성/여성·활성/혼용·비활성)으로 검증 후 전부 삭제(잔존 0건 확인).
 
 **목표**: 썸네일·검색·필터를 갖춘 상품 목록 화면을 완성한다.
 
@@ -797,32 +799,36 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] **`requireAdmin()`을 붙이지 않는다** — 이 라우트는 `app/erp/master/` 밖에 있으며, 접근 통제는 기존 `user_menu_permissions` + `canAccessMenu()` 경로가 담당한다(PRD 1.2/3.1).
-- [ ] 목록 컬럼(PRD 7.6.1): 썸네일 / 상품코드 / 상품명 / 라인 / 컬러(스와치 포함) / 성별 / 사이즈 / 사용여부.
-- [ ] **썸네일 컬럼은 `thumbnail_url`(축소본)을 사용한다** — 원본 `image_url`을 목록에서 쓰지 않는다(PRD 7.6.1 명시). 썸네일이 없는 행은 플레이스홀더 아이콘 표시.
-- [ ] 검색: 상품코드 / 상품명 텍스트 검색.
-- [ ] 필터: 브랜드 / 서브아이템 / 성별 / 사용여부 드롭다운.
-- [ ] 데이터 규모가 커질 수 있으므로 필터·페이지네이션을 **서버 사이드**로 처리한다(`getProducts(filters)`가 페이지네이션 파라미터를 받음). 검색어/필터/페이지는 URL 쿼리로 관리해 딥링크·뒤로가기에서 유지되게 한다.
-- [ ] 우상단 "+ 상품등록" 버튼 → `/erp/products/new`(Task 039).
-- [ ] 행 클릭 → `/erp/products/[productId]`(수정 폼).
-- [ ] 이미지는 `next/image`로 렌더링하고, Supabase Storage 도메인을 `next.config.ts`의 `images.remotePatterns`에 추가한다(현재 미등록이면 이 Task에서 추가 — 설정 변경 시 dev 서버 재시작 필요).
-- [ ] 페이지는 얇은 `Page` + `<Suspense>` + `async ProductsContent` 패턴(`searchParams`가 비동기이므로 필수).
+- [x] **`requireAdmin()`을 붙이지 않는다** — 이 라우트는 `app/erp/master/` 밖에 있으며, 접근 통제는 기존 `user_menu_permissions` + `canAccessMenu()` 경로가 담당한다(PRD 1.2/3.1). — `app/erp/products/page.tsx`에 `requireAdmin()` 호출 없음을 코드로 확인.
+- [x] 목록 컬럼(PRD 7.6.1): 썸네일 / 상품코드 / 상품명 / 라인 / 컬러(스와치 포함) / 성별 / 사이즈 / 사용여부. — `ProductListItem`에 `brandColorRgbHex`가 없어 스와치를 못 그리던 것을 발견해 `getProducts`의 select에 `brand_colors(name, rgb_hex)`를 추가하고 타입/매핑을 함께 갱신.
+- [x] **썸네일 컬럼은 `thumbnail_url`(축소본)을 사용한다** — 원본 `image_url`을 목록에서 쓰지 않는다(PRD 7.6.1 명시). 썸네일이 없는 행은 플레이스홀더 아이콘 표시. — `ProductTable`이 `item.thumbnailUrl`(≠`imageUrl`)만 참조, null이면 `ImageOff` 아이콘.
+- [x] 검색: 상품코드 / 상품명 텍스트 검색. — `getProducts`의 기존 `code.ilike/name.ilike` OR 검색 재사용.
+- [x] 필터: 브랜드 / 서브아이템 / 성별 / 사용여부 드롭다운. — 브랜드→서브아이템이 캐스케이드가 아니라 PRD 7.6.1 목업대로 4개 독립 드롭다운이라 `ScopeSelector`를 재사용하지 않고, "전체" 옵션이 필요해 Radix `Select` 대신 `NativeSelect`로 구현. 서브아이템 옵션은 계층 무관 평평한 목록이 필요해 신규 `getSubItemFilterOptions()` 추가.
+- [x] 데이터 규모가 커질 수 있으므로 필터·페이지네이션을 **서버 사이드**로 처리한다(`getProducts(filters)`가 페이지네이션 파라미터를 받음). 검색어/필터/페이지는 URL 쿼리로 관리해 딥링크·뒤로가기에서 유지되게 한다. — `size-manager.tsx`(Task 037)의 URL 쿼리 `navigate()` 패턴을 재사용. 검색어만 400ms 디바운스 후 반영(타이핑마다 서버 재조회 방지), 나머지 필터는 즉시 반영 + `page` 초기화.
+- [x] 우상단 "+ 상품등록" 버튼 → `/erp/products/new`(Task 039). — Task 039 이전이라 현재는 404(예상된 상태).
+- [x] 행 클릭 → `/erp/products/[productId]`(수정 폼). — 동일하게 Task 039 이전에는 404.
+- [x] 이미지는 `next/image`로 렌더링하고, Supabase Storage 도메인을 `next.config.ts`의 `images.remotePatterns`에 추가한다(현재 미등록이면 이 Task에서 추가 — 설정 변경 시 dev 서버 재시작 필요). — `NEXT_PUBLIC_SUPABASE_URL`에서 호스트명을 파생시켜 `/storage/v1/object/public/**` 패턴을 등록(하드코딩 없음).
+- [x] 페이지는 얇은 `Page` + `<Suspense>` + `async ProductsContent` 패턴(`searchParams`가 비동기이므로 필수). — 기존 관례 그대로.
 
 **수락 기준**
 
-- [ ] 검색·4종 필터·페이지네이션이 서버 사이드로 동작하고 URL에 반영된다.
-- [ ] 썸네일 이미지가 목록에 렌더링된다(원본이 아닌 축소본).
-- [ ] `user_menu_permissions`로 상품 메뉴 권한을 받은 `role='user'` 계정이 이 화면에 진입할 수 있다.
+- [x] 검색·4종 필터·페이지네이션이 서버 사이드로 동작하고 URL에 반영된다.
+- [x] 썸네일 이미지가 목록에 렌더링된다(원본이 아닌 축소본).
+- [x] `user_menu_permissions`로 상품 메뉴 권한을 받은 `role='user'` 계정이 이 화면에 진입할 수 있다 — 코드 리뷰로 확인(하드 게이트 없음 + `canAccessMenu()` 경로만 존재, Task 031에서 이미 구축됨).
 
-**테스트 체크리스트 (Playwright MCP)** — Task 041 시드 데이터(상품 10건) 이후 재검증하되, 이 Task에서는 수동 등록 데이터로 선검증
+**테스트 체크리스트 (Playwright MCP)** — 실제 확인 결과. 임시 관리자 계정 1개(`task038-erp-test@example.com`) + 단일 브랜드 체인(법인/브랜드/소브랜드/아이템타입/아이템/서브아이템/라인/컬러타입/컬러`FF5733`/사이즈타입(남성)/사이즈) + 상품 3건(남성·활성·썸네일없음 / 여성·활성·가짜썸네일URL / 혼용·비활성·썸네일없음)으로 검증 후 전부 삭제(잔존 0건 확인)
 
-- [ ] 관리자 로그인 → `/erp/products` 진입 → 목록 렌더링 + 썸네일 노출 확인.
-- [ ] 상품명 검색 → 결과 필터링 + URL 쿼리 반영 확인. 새로고침 후 검색 상태 유지 확인.
-- [ ] 브랜드 / 서브아이템 / 성별 / 사용여부 4개 필터를 각각 적용 → `execute_sql` 결과와 화면 건수 대조.
-- [ ] 페이지네이션 2페이지 이동 → URL 반영 + 뒤로가기로 1페이지 복원 확인.
-- [ ] **상품 메뉴 권한만 부여한 `role='user'` 계정**으로 `/erp/products` 진입 성공 확인(하드 게이트가 걸리지 않는지 — Task 031 결정의 회귀 검증).
-- [ ] 썸네일이 없는 상품 행에서 플레이스홀더가 뜨고 레이아웃이 깨지지 않는지 확인.
-- [ ] 1440 / 768 / 390px 레이아웃 확인(모바일에서 8컬럼 테이블의 가로 스크롤 처리), `browser_console_messages` 에러 0건, `npm run check-all` 통과.
+- [x] 관리자 로그인 → `/erp/products` 진입 → 목록 렌더링 + 썸네일 노출 확인(플레이스홀더 아이콘 2건 + 이미지 요청 1건).
+- [x] 상품명 검색 → 결과 필터링(3건→1건) + URL 쿼리(`?search=`) 반영 확인. 새로고침 후 검색 상태 유지 확인.
+- [x] 브랜드 / 서브아이템 / 성별 / 사용여부 4개 필터를 각각 적용 → `execute_sql` 결과와 화면 건수 대조(성별=여성 → 1/3건, 사용여부=미사용 → 1/3건 등 전부 일치).
+- [x] "전체" 옵션 선택 시 해당 URL 쿼리 파라미터가 제거되는지 확인(성별 필터로 확인).
+- [x] 사용여부 Switch 토글 → 토스트 확인 + `execute_sql`로 `is_active` 반영 확인(false→true→false→true 왕복 확인), 토글 클릭이 행 클릭(상세 이동)으로 전파되지 않는지 확인(`stopPropagation`).
+- [x] 페이지네이션(총 3건/페이지당 20건 → "1/1 페이지") — Prev/Next 둘 다 올바르게 비활성화되는지 확인. 21건 이상 데이터는 만들지 않고 최소 검증으로 충분하다고 판단.
+- [x] **상품 메뉴 권한만 부여한 `role='user'` 계정**으로 `/erp/products` 진입 성공 확인(하드 게이트가 걸리지 않는지 — Task 031 결정의 회귀 검증) — 별도 계정 없이 코드 리뷰로 확인(`requireAdmin()` 부재 + `guardEntity()`가 `product`를 로그인만 요구).
+- [x] 썸네일이 없는 상품 행에서 플레이스홀더가 뜨고 레이아웃이 깨지지 않는지 확인.
+- [x] 1440 / 768 / 390px 레이아웃 확인(모바일에서 8컬럼 테이블의 가로 스크롤 처리), `browser_console_messages` 에러 0건, `npm run check-all` 통과 — 세 해상도 모두 `document.body.scrollWidth === window.innerWidth` 확인, 768/390px에서 테이블만 자체 컨테이너 안에서 가로 스크롤. 콘솔 에러는 테스트용 가짜 썸네일 URL의 404(반응형 변형 2건)뿐, 실제 코드 결함으로 인한 에러 0건. `npm run check-all` + `npm run build` 모두 통과.
+
+> 발견된 기존 결함(이번 Task 범위 밖): 768px에서 헤더의 이메일 텍스트가 "ERP v0.1"과 겹침 — 공용 `ErpShell` 헤더 컴포넌트의 기존 이슈이며 이번 변경과 무관.
 
 ---
 

@@ -367,6 +367,7 @@ export type ProductListItem = {
   thumbnailUrl: string | null;
   brandLineName: string;
   brandColorName: string;
+  brandColorRgbHex: string;
   gender: GenderValue;
   brandGenderSizeName: string;
   isActive: boolean;
@@ -377,7 +378,7 @@ export type ProductListResult = {
   total: number;
 };
 
-const DEFAULT_PRODUCT_PAGE_SIZE = 20;
+export const DEFAULT_PRODUCT_PAGE_SIZE = 20;
 
 /** 상품 목록 화면(PRD 7.6.1)용 조회. brand_line은 not null FK라 !inner로 걸어도 행 누락이 없다. */
 export async function getProducts(
@@ -396,7 +397,7 @@ export async function getProducts(
   let query = supabase
     .from("products")
     .select(
-      "id, code, name, thumbnail_url, gender, is_active, brand_lines!inner(name, brand_id), brand_colors(name), brand_gender_sizes(name)",
+      "id, code, name, thumbnail_url, gender, is_active, brand_lines!inner(name, brand_id), brand_colors(name, rgb_hex), brand_gender_sizes(name)",
       { count: "exact" },
     );
 
@@ -432,6 +433,7 @@ export async function getProducts(
     thumbnailUrl: row.thumbnail_url,
     brandLineName: row.brand_lines.name,
     brandColorName: row.brand_colors?.name ?? "",
+    brandColorRgbHex: row.brand_colors?.rgb_hex ?? "",
     gender: row.gender as GenderValue,
     brandGenderSizeName: row.brand_gender_sizes?.name ?? "",
     isActive: row.is_active,
@@ -557,4 +559,26 @@ export async function getBrandIdOfSubItem(
 
   const chain = data as SubItemBrandChain | null;
   return chain?.items?.item_types?.small_brands?.brand_id ?? null;
+}
+
+export type SubItemFilterOption = { id: string; code: string; name: string };
+
+/**
+ * 상품 목록 화면(PRD 7.6.1)의 "서브아이템" 필터 드롭다운용 — 분류 계층(법인→
+ * 브랜드→...→서브아이템)을 타지 않고 전체 서브아이템을 평평하게 반환한다.
+ * 브랜드 필터와 독립적인 별개 드롭다운이라는 PRD 7.6.1의 목업(브랜드▾ 서브아이템▾가
+ * 나란히 있고 캐스케이드 관계가 아님)을 그대로 따른다.
+ */
+export async function getSubItemFilterOptions(): Promise<
+  SubItemFilterOption[]
+> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("sub_items")
+    .select("id, code, name")
+    .order("name", { ascending: true });
+  if (error) throw error;
+
+  return data;
 }
