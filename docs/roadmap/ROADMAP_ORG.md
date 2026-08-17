@@ -422,7 +422,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 049: `get_org_chart_members()` SECURITY DEFINER 함수 구현
+### Task 049: `get_org_chart_members()` SECURITY DEFINER 함수 구현 ✅
 
 **목표**: `profiles`의 RLS를 **전혀 건드리지 않고** 조직도에 필요한 최소 컬럼만 전 로그인 사용자에게 노출한다. 이 로드맵에서 가장 보안 민감도가 높은 Task다. **관리 화면(Task 053)과 헤더 팝업(Task 054) 둘 다 이 함수를 공유한다.**
 
@@ -434,7 +434,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] PRD 3.2절 SQL을 그대로 적용한다:
+- [x] PRD 3.2절 SQL을 그대로 적용한다:
   ```sql
   create or replace function public.get_org_chart_members()
   returns table (id uuid, name text, department_id uuid, avatar_key text, role text, is_active boolean)
@@ -450,28 +450,28 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
   revoke all on function public.get_org_chart_members() from public;
   grant execute on function public.get_org_chart_members() to authenticated;
   ```
-  - [ ] PRD 원문의 `set search_path = public` 대신 **`set search_path = ''` + 스키마 정규화(`public.profiles`)** 로 적용한다 — 기존 6개 DB 함수가 전부 이 컨벤션이고, Supabase advisor의 `function_search_path_mutable` 경고를 피하는 방식이다. **반환 컬럼 목록은 PRD와 정확히 동일하게 유지**한다.
-  - [ ] **`where department_id is not null` 같은 필터를 넣지 않는다** — 그룹사/법인/부문/부서 리더로 지정될 임원이 특정 팀 소속이 아닐 수 있는데(`profiles.department_id` nullable), 여기서 걸러내면 Task 050의 `getOrgLeaders()` 매칭에서 그 리더의 이름이 조회되지 않는다(PRD 3.2절). 팀 소속 필터링이 필요한 조회(구성원 목록)는 호출부에서 결과를 `department_id`로 걸러 쓴다.
-  - [ ] `anon`에는 `execute`를 부여하지 않는다(로그인 사용자 전용).
-- [ ] **반환 컬럼에 `phone_number` / `bio` / `email`이 포함되지 않았는지 SQL 본문으로 재확인**한다 — 이 함수의 존재 이유다(PRD 3.2).
-- [ ] 함수 상단에 주석으로 "이 함수는 `profiles` RLS를 우회한다. 컬럼을 추가할 때는 개인정보 노출 범위를 반드시 재검토할 것"을 남긴다.
-- [ ] `get_advisors`(security) 확인 — `SECURITY DEFINER` WARN이 나오는 것은 기존 7개 함수와 동일한 패턴이므로, "반환 컬럼이 고정되어 있고 `authenticated`에게만 부여됨"이라는 상쇄 근거를 이 Task에 기록한다.
-- [ ] **`profiles` 테이블의 정책·컬럼을 변경하는 SQL이 마이그레이션에 없음을 재확인**한다.
+  - [x] PRD 원문의 `set search_path = public` 대신 **`set search_path = ''` + 스키마 정규화(`public.profiles`)** 로 적용했다 — 기존 6개 DB 함수가 전부 이 컨벤션이고, Supabase advisor의 `function_search_path_mutable` 경고를 피하는 방식이다. **반환 컬럼 목록은 PRD와 정확히 동일하게 유지**했다.
+  - [x] **`where department_id is not null` 같은 필터를 넣지 않았다** — 그룹사/법인/부문/부서 리더로 지정될 임원이 특정 팀 소속이 아닐 수 있는데(`profiles.department_id` nullable), 여기서 걸러내면 Task 050의 `getOrgLeaders()` 매칭에서 그 리더의 이름이 조회되지 않는다(PRD 3.2절). 팀 소속 필터링이 필요한 조회(구성원 목록)는 호출부에서 결과를 `department_id`로 걸러 쓴다.
+  - [x] `anon`에는 `execute`를 부여하지 않았다(로그인 사용자 전용). **⚠️ 실제 적용 중 발견한 함정**: `revoke all on function ... from public`만으로는 부족했다 — Supabase 프로젝트는 함수 생성 시 `ALTER DEFAULT PRIVILEGES`로 `anon`/`authenticated`/`service_role`에 **명시적** EXECUTE를 자동 부여하는데, `PUBLIC`에서의 revoke는 이 명시적 grant를 제거하지 않는다(`pg_proc.proacl`로 확인함 — `revoke ... from public` 직후에도 `anon=X/postgres`가 그대로 남아 있었고, `set local role anon`으로 실제 호출해 63건이 반환되는 것으로 재현). **`revoke execute on function public.get_org_chart_members() from anon;`을 별도 마이그레이션으로 추가 적용**해 `proacl`에서 `anon` 항목을 제거하고, 재테스트로 `42501`이 반환됨을 확인했다. PRD 3.2절 SQL을 그대로 베끼는 다음 작업(헤더 팝업 등에서 유사 함수를 새로 만들 경우)은 이 함정을 반드시 재확인할 것.
+- [x] **반환 컬럼에 `phone_number` / `bio` / `email`이 포함되지 않았는지 SQL 본문으로 재확인**했다 — `pg_get_functiondef` 결과에 해당 문자열 없음.
+- [x] 함수 상단에 주석으로 "이 함수는 `profiles` RLS를 우회한다. 컬럼을 추가할 때는 개인정보 노출 범위를 반드시 재검토할 것"을 남겼다.
+- [x] `get_advisors`(security) 확인 — `get_org_chart_members()`가 `authenticated_security_definer_function_executable`(기존 7개 함수와 동일 패턴, 의도된 노출)에는 등장하지만 `anon_security_definer_function_executable` 목록에는 **등장하지 않음**을 확인했다(anon revoke가 advisor 레벨에서도 반영됨).
+- [x] **`profiles` 테이블의 정책·컬럼을 변경하는 SQL이 마이그레이션에 없음을 재확인**했다.
 
 **수락 기준**
 
-- [ ] `role='user'` 세션에서 `select * from public.get_org_chart_members()` 호출 시 **`profiles` 63건 전체**(팀 소속 여부와 무관하게)가 반환된다.
-- [ ] 같은 세션에서 `select * from public.profiles` 직접 조회 시 **여전히 본인 1건만** 반환된다 (RPC 우회가 기존 RLS를 깨지 않았음).
-- [ ] 반환 컬럼이 정확히 6개(`id`, `name`, `department_id`, `avatar_key`, `role`, `is_active`)다.
-- [ ] `anon` 롤에서는 실행이 거부된다.
+- [x] `role='user'` 세션에서 `select * from public.get_org_chart_members()` 호출 시 **`profiles` 63건 전체**(팀 소속 여부와 무관하게)가 반환된다.
+- [x] 같은 세션에서 `select * from public.profiles` 직접 조회 시 **여전히 본인 1건만** 반환된다 (RPC 우회가 기존 RLS를 깨지 않았음).
+- [x] 반환 컬럼이 정확히 6개(`id`, `name`, `department_id`, `avatar_key`, `role`, `is_active`)다.
+- [x] `anon` 롤에서는 실행이 거부된다(위 함정 수정 후 `42501` 확인).
 
 **테스트 체크리스트 (execute_sql)**
 
-- [ ] `set local role authenticated` + `set_config('request.jwt.claims', ...)`로 일반 사용자 세션 시뮬레이션 → 함수 호출 결과 63건 확인.
-- [ ] 동일 세션에서 `select count(*) from public.profiles` → 1건 확인(본인만). **이 두 결과의 대비가 이 Task의 핵심 증거다.**
-- [ ] `set local role anon` → 함수 실행 시 권한 오류 확인.
-- [ ] `information_schema.routines`/`pg_get_functiondef`로 반환 컬럼 6개와 `security definer`/`stable`/`search_path` 설정을 확인.
-- [ ] 함수 본문에 `phone_number`/`bio`/`email`/`where` 문자열이 없는지 `pg_get_functiondef` 결과로 확인(필터 없음을 재확인).
+- [x] `set local role authenticated` + `set_config('request.jwt.claims', ...)`로 일반 사용자(표유진) 세션 시뮬레이션 → 함수 호출 결과 63건 확인.
+- [x] 동일 세션에서 `select count(*) from public.profiles` → 1건 확인(본인만). **이 두 결과의 대비가 이 Task의 핵심 증거다.**
+- [x] `set local role anon` → 최초 시도에서는 63건이 반환되는 함정을 발견(위 anon 자동 grant 이슈) → `revoke execute ... from anon` 추가 적용 후 재시도해 `42501` 권한 오류 확인.
+- [x] `pg_get_functiondef`로 반환 컬럼 6개와 `security definer`/`stable`/`search_path = ''` 설정을 확인.
+- [x] 함수 본문에 `phone_number`/`bio`/`email`/`where` 문자열이 없는지 `pg_get_functiondef` 결과로 확인(필터 없음을 재확인).
 
 ---
 

@@ -1755,6 +1755,17 @@ export type Database = {
     Functions: {
       current_department_id: { Args: never; Returns: string };
       current_organization_id: { Args: never; Returns: string };
+      get_org_chart_members: {
+        Args: never;
+        Returns: {
+          avatar_key: string;
+          department_id: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          role: string;
+        }[];
+      };
       get_profile_identities: {
         Args: { profile_ids: string[] };
         Returns: {
