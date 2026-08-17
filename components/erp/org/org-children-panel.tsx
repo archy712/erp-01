@@ -61,6 +61,15 @@ export function OrgChildrenPanel({
           >
             <div className="flex items-center gap-1.5">
               <span className="truncate text-sm font-medium">{child.name}</span>
+              {child.level === "section" ? (
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 text-[10px]"
+                  title="부서"
+                >
+                  부서
+                </Badge>
+              ) : null}
               {!child.isActive ? (
                 <Badge variant="outline" className="shrink-0 text-[10px]">
                   비활성

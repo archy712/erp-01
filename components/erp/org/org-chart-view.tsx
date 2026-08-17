@@ -26,7 +26,9 @@ import {
 import type { OrgLeader, OrgMember, OrgTreeNode } from "@/lib/erp/org/types";
 import type { UserRole } from "@/lib/erp/types";
 import { OrgChildrenPanel } from "./org-children-panel";
+import { OrgGroupCompanyActions } from "./org-group-company-actions";
 import { OrgLeaderPanel } from "./org-leader-panel";
+import { OrgSectionActions } from "./org-section-actions";
 
 function toMasterTreeNodes(nodes: OrgTreeNode[]): MasterTreeNode[] {
   return nodes.map((node) => ({
@@ -162,7 +164,27 @@ export function OrgChartView({
               </div>
             </div>
 
-            <OrgLeaderPanel level={selectedNode.level} leader={leader} />
+            <OrgGroupCompanyActions
+              node={selectedNode}
+              currentUserRole={currentUserRole}
+            />
+
+            <OrgLeaderPanel
+              node={selectedNode}
+              leader={leader}
+              members={members}
+              currentUserRole={currentUserRole}
+              currentUserOrganizationId={currentUserOrganizationId}
+              ancestorDivisionId={ancestorDivisionId}
+            />
+
+            <OrgSectionActions
+              node={selectedNode}
+              currentUserRole={currentUserRole}
+              currentUserOrganizationId={currentUserOrganizationId}
+              ancestorDivisionId={ancestorDivisionId}
+              selectedPath={selectedPath}
+            />
 
             <OrgChildrenPanel
               node={selectedNode}

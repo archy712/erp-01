@@ -12,7 +12,15 @@ import type { ActionResult } from "@/lib/erp/actions";
 import type { Database } from "@/lib/supabase/database.types";
 import type { ErpUser } from "@/lib/erp/types";
 import { ORG_CODE_DB_ENTITY } from "./code";
-import { getOrgChartMembers, getOrgLeaders, getOrgTree } from "./queries";
+import {
+  getOrgChartMembers,
+  getOrgLeaders,
+  getOrgTree,
+  getUnmappedDivisions,
+  getUnmappedTeamsInDivision,
+  type UnmappedDivision,
+  type UnmappedTeam,
+} from "./queries";
 import type { OrgLeader, OrgLevel, OrgMember, OrgTreeNode } from "./types";
 
 // 조직도 관리 화면(Task 053) 전용 Server Action 규약.
@@ -682,4 +690,251 @@ export async function getOrgChartPopupDataAction(): Promise<OrgChartPopupData> {
   const leaders = await getOrgLeaders(members);
 
   return { tree, leaders: Array.from(leaders.values()), members };
+}
+
+// --- 그룹사/법인 편집 다이얼로그(Task 055) 전용 읽기 액션 ---
+//
+// org_groups/org_companies의 SELECT RLS는 로그인 사용자 전체를 허용한다
+// (PRD_ORG.md 4.4절 — Master 도메인과 분리된 신규 테이블이라 role 스코프
+// 규칙이 없다). 이름/사용여부/정렬순서는 이미 getOrgTree()의 OrgTreeNode가
+// 담고 있어 화면 쪽에서 다시 조회할 필요가 없고, 여기서는 그 안에 없는
+// code/note, 그리고 매핑 다이얼로그의 선택지(전체 법인 목록·미매핑 부문
+// 목록)만 얇게 조회한다. 편집 버튼 자체는 superadmin에게만 보이므로
+// (OrgGroupCompanyActions) 여기서는 getCurrentErpUser()로 인증만 재확인한다.
+
+export type OrgGroupDetail = {
+  id: string;
+  code: string;
+  name: string;
+  note: string | null;
+  isActive: boolean;
+};
+
+/** 그룹사 수정 다이얼로그가 필요로 하는 code/note까지 포함한 상세 조회(싱글턴이라 인자 없음). */
+export async function getOrgGroupDetailAction(): Promise<OrgGroupDetail | null> {
+  await getCurrentErpUser();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_groups")
+    .select("id, code, name, note, is_active")
+    .maybeSingle();
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    code: data.code,
+    name: data.name,
+    note: data.note,
+    isActive: data.is_active,
+  };
+}
+
+export type OrgCompanyDetail = {
+  id: string;
+  code: string;
+  name: string;
+  note: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  orgGroupId: string;
+  orgGroupName: string;
+};
+
+/** 법인 수정 다이얼로그가 필요로 하는 code/note(+상위 그룹사명)까지 포함한 상세 조회. */
+export async function getOrgCompanyDetailAction(
+  id: string,
+): Promise<OrgCompanyDetail | null> {
+  await getCurrentErpUser();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_companies")
+    .select(
+      "id, code, name, note, is_active, sort_order, org_group_id, org_groups(name)",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    code: data.code,
+    name: data.name,
+    note: data.note,
+    isActive: data.is_active,
+    sortOrder: data.sort_order,
+    orgGroupId: data.org_group_id,
+    orgGroupName: data.org_groups?.name ?? "",
+  };
+}
+
+export type OrgCompanyOption = {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+};
+
+/** 부문↔법인 매핑 다이얼로그의 "소속 법인" 선택지용 전체 법인 목록. */
+export async function getOrgCompaniesAction(): Promise<OrgCompanyOption[]> {
+  await getCurrentErpUser();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_companies")
+    .select("id, name, code, is_active")
+    .order("sort_order", { ascending: true });
+  if (error || !data) return [];
+
+  return data.map((company) => ({
+    id: company.id,
+    name: company.name,
+    code: company.code,
+    isActive: company.is_active,
+  }));
+}
+
+/**
+ * getUnmappedDivisions()(lib/erp/org/queries.ts, 서버 컴포넌트 전용 조회 함수)를
+ * 클라이언트 다이얼로그에서 직접 호출할 수 있도록 감싼 얇은 래퍼. 조회 전용이라
+ * role 가드를 두지 않는다(원 함수와 동일한 관례, PRD_ORG.md 8.4절 getOrgChartPopupDataAction과 동일).
+ */
+export async function getUnmappedDivisionsAction(): Promise<
+  UnmappedDivision[]
+> {
+  return getUnmappedDivisions();
+}
+
+// --- 부서 등록/수정/삭제 다이얼로그, 팀 소속 관리 다이얼로그(Task 056) 전용 ---
+//
+// 아래 3개 조회 액션은 다이얼로그를 열기 직전에 최신 데이터를 가져오는
+// 용도라 requireAdmin()만 확인한다. 부문 스코프 위반 여부는 실제 변경을
+// 일으키는 액션(createOrgSectionAction 등)이 항상 assertDivisionScope()로
+// 최종 방어하므로, 읽기 전용 조회 시점에는 재확인하지 않는다(RLS도 이중 방어선).
+
+export async function getUnmappedTeamsInDivisionAction(
+  organizationId: string,
+): Promise<UnmappedTeam[]> {
+  await requireAdmin();
+  return getUnmappedTeamsInDivision(organizationId);
+}
+
+export type OrgSectionDetail = {
+  id: string;
+  code: string;
+  note: string | null;
+  organizationId: string;
+};
+
+/** 부서 수정 다이얼로그가 열리기 전에 code/note/organizationId를 채운다(OrgTreeNode에는 없는 필드). */
+export async function getOrgSectionDetailAction(
+  id: string,
+): Promise<OrgSectionDetail | null> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_sections")
+    .select("id, code, note, organization_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    code: data.code,
+    note: data.note,
+    organizationId: data.organization_id,
+  };
+}
+
+export type SectionMappedTeam = { departmentId: string; name: string };
+
+/**
+ * 부서에 매핑된 팀 목록(이름 포함)을 반환한다. 부서 삭제 확인 다이얼로그의
+ * "소속 팀 N개가 부문 직속으로 바뀝니다" 안내와 팀 소속 관리 다이얼로그의
+ * "배정된 팀" 목록이 이 액션 하나를 공유한다.
+ */
+export async function getSectionTeamsAction(
+  sectionId: string,
+): Promise<SectionMappedTeam[]> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_section_teams")
+    .select("department_id, departments(name)")
+    .eq("section_id", sectionId);
+  if (error || !data) return [];
+
+  return data
+    .map((row) => ({
+      departmentId: row.department_id,
+      name: row.departments?.name ?? "",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+/** 같은 부문 안에서 부서끼리 정렬순서를 한 칸 바꾼다(moveOrgCompanyAction과 동일 패턴). */
+export async function moveOrgSectionAction(
+  id: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  const user = await requireAdmin();
+
+  const supabase = await createClient();
+
+  const { data: target, error: targetError } = await supabase
+    .from("org_sections")
+    .select("id, sort_order, organization_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (targetError || !target) {
+    return { success: false, message: "대상을 찾을 수 없습니다." };
+  }
+
+  const scopeError = await assertDivisionScope(
+    supabase,
+    user,
+    target.organization_id,
+  );
+  if (scopeError) {
+    return { success: false, message: scopeError };
+  }
+
+  const { data: siblings, error: siblingsError } = await supabase
+    .from("org_sections")
+    .select("id, sort_order")
+    .eq("organization_id", target.organization_id)
+    .order("sort_order", { ascending: true });
+  if (siblingsError || !siblings) {
+    return { success: false, message: "형제 항목 조회에 실패했습니다." };
+  }
+
+  const index = siblings.findIndex((sibling) => sibling.id === id);
+  const swapIndex = direction === "up" ? index - 1 : index + 1;
+  if (index === -1 || swapIndex < 0 || swapIndex >= siblings.length) {
+    return { success: false, message: "더 이상 이동할 수 없습니다." };
+  }
+
+  const current = siblings[index];
+  const swapTarget = siblings[swapIndex];
+
+  const [{ error: currentError }, { error: swapError }] = await Promise.all([
+    supabase
+      .from("org_sections")
+      .update({ sort_order: swapTarget.sort_order })
+      .eq("id", current.id),
+    supabase
+      .from("org_sections")
+      .update({ sort_order: current.sort_order })
+      .eq("id", swapTarget.id),
+  ]);
+  if (currentError || swapError) {
+    return { success: false, message: "정렬순서 변경에 실패했습니다." };
+  }
+
+  revalidatePath("/erp/admin/org");
+  return { success: true };
 }
