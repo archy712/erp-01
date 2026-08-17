@@ -355,6 +355,12 @@ export interface Dictionary {
       orgChartTriggerLabel: string;
       orgChartTriggerAriaLabel: string;
     };
+    commandPalette: {
+      triggerAriaLabel: string;
+      placeholder: string;
+      emptyMessage: string;
+      quickActionsGroup: string;
+    };
     rail: {
       ariaLabel: string;
     };

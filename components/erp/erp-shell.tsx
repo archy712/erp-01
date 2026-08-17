@@ -3,10 +3,13 @@ import type { ReactNode } from "react";
 import { ErpFooter } from "./erp-footer";
 import { ErpHeader } from "./erp-header";
 import { ErpTreePanel } from "./erp-tree-panel";
+import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 type ErpShellProps = {
   dict: Dictionary;
+  /** 헤더의 커맨드 팔레트(⌘K) 검색 대상 — rail/tree/mobileNav와 같은 데이터 소스(getVisibleMenuTree). */
+  categories: MenuNode[];
   /** 데스크탑/태블릿(md 이상)에서 노출되는 좌측 대분류 아이콘 레일 */
   rail?: ReactNode;
   /** 모바일(md 미만)에서 레일 대신 노출되는 햄버거 트리거 + Sheet */
@@ -43,6 +46,7 @@ type ErpShellProps = {
 // 렌더링한다(components/erp/page-header.tsx).
 export function ErpShell({
   dict,
+  categories,
   rail,
   mobileNav,
   tree,
@@ -50,7 +54,7 @@ export function ErpShell({
 }: ErpShellProps) {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ErpHeader dict={dict} mobileNav={mobileNav} />
+      <ErpHeader dict={dict} mobileNav={mobileNav} categories={categories} />
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden shrink-0 md:flex">

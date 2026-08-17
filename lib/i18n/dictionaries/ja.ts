@@ -456,6 +456,12 @@ export const ja: Dictionary = {
       orgChartTriggerLabel: "組織図",
       orgChartTriggerAriaLabel: "組織図を見る",
     },
+    commandPalette: {
+      triggerAriaLabel: "クイック検索 (⌘K)",
+      placeholder: "メニューを検索...",
+      emptyMessage: "検索結果がありません。",
+      quickActionsGroup: "クイック移動",
+    },
     rail: {
       ariaLabel: "大分類",
     },

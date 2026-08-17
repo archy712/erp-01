@@ -452,6 +452,12 @@ export const ko: Dictionary = {
       orgChartTriggerLabel: "조직도",
       orgChartTriggerAriaLabel: "조직도 보기",
     },
+    commandPalette: {
+      triggerAriaLabel: "빠른 이동 검색 (⌘K)",
+      placeholder: "메뉴 검색 또는 이동할 화면 입력...",
+      emptyMessage: "검색 결과가 없습니다.",
+      quickActionsGroup: "빠른 이동",
+    },
     rail: {
       ariaLabel: "대분류",
     },

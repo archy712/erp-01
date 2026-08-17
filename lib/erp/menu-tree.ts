@@ -93,6 +93,46 @@ export function getActiveMenuId(
   return fromPath ?? searchParams?.get("menu") ?? undefined;
 }
 
+export type MenuLeafEntry = {
+  id: string;
+  topCategoryId: string;
+  name: string;
+  /** 최상위 대분류부터 자신 바로 위 부모까지의 이름 경로(자기 자신 제외) */
+  breadcrumb: string[];
+};
+
+/**
+ * 커맨드 팔레트(⌘K, components/erp/erp-command-palette.tsx) 등 "검색 가능한
+ * 목적지 전체 목록"이 필요한 곳에서 쓰는 평면 목록. children이 없는
+ * 노드(리프)만 포함하며, menuNodeToTreeItem/ErpCategoryRail과 동일하게
+ * "children 유무로 리프 판정"하므로 하위가 없는 대분류(예: "경영정보")도
+ * 자기 자신이 목적지인 리프 항목으로 포함된다.
+ */
+export function flattenMenuLeaves(categories: MenuNode[]): MenuLeafEntry[] {
+  const result: MenuLeafEntry[] = [];
+
+  function walk(node: MenuNode, topCategoryId: string, ancestors: string[]) {
+    if (node.children.length === 0) {
+      result.push({
+        id: node.id,
+        topCategoryId,
+        name: node.name,
+        breadcrumb: ancestors,
+      });
+      return;
+    }
+    for (const child of node.children) {
+      walk(child, topCategoryId, [...ancestors, node.name]);
+    }
+  }
+
+  for (const category of categories) {
+    walk(category, category.id, []);
+  }
+
+  return result;
+}
+
 /**
  * 루트부터 id로 지정한 노드까지의 경로(대분류 → ... → 자기 자신)를 반환한다.
  * 대상이 없으면 undefined. `lib/erp/queries.ts`의 동명 함수(`getMenuBreadcrumb`)는

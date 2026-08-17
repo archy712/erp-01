@@ -435,6 +435,12 @@ export const zh: Dictionary = {
       orgChartTriggerLabel: "组织架构",
       orgChartTriggerAriaLabel: "查看组织架构",
     },
+    commandPalette: {
+      triggerAriaLabel: "快速导航搜索 (⌘K)",
+      placeholder: "搜索菜单或跳转页面...",
+      emptyMessage: "未找到结果。",
+      quickActionsGroup: "快速操作",
+    },
     rail: {
       ariaLabel: "大类",
     },

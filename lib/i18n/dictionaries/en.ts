@@ -456,6 +456,12 @@ export const en: Dictionary = {
       orgChartTriggerLabel: "Org Chart",
       orgChartTriggerAriaLabel: "View org chart",
     },
+    commandPalette: {
+      triggerAriaLabel: "Quick navigation search (⌘K)",
+      placeholder: "Search menus or jump to a page...",
+      emptyMessage: "No results found.",
+      quickActionsGroup: "Quick actions",
+    },
     rail: {
       ariaLabel: "Categories",
     },
