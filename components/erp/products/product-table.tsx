@@ -1,12 +1,31 @@
 "use client";
 
-import { ImageOff } from "lucide-react";
+import { ChevronDown, ImageOff } from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Pagination,
   PaginationContent,
@@ -23,7 +42,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { setMasterActiveAction } from "@/lib/erp/master/actions";
+import {
+  bulkDeleteMasterAction,
+  bulkSetMasterActiveAction,
+  setMasterActiveAction,
+} from "@/lib/erp/master/actions";
 import { getGenderLabel } from "@/lib/erp/master/gender";
 import type { ProductListItem } from "@/lib/erp/master/queries";
 
@@ -49,6 +72,23 @@ export function ProductTable({
   const searchParams = useSearchParams();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkPending, startBulkTransition] = useTransition();
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  // 페이지/필터가 바뀌거나 일괄작업 후 목록이 새로 내려오면(=items 참조가
+  // 바뀌면) 더 이상 화면에 없는 행이 선택 상태로 남지 않도록 선택을 비운다.
+  // 렌더링 중 state를 조정하는 React 공식 패턴(effect 없이 prop 변경 감지)이다.
+  const [itemsSnapshot, setItemsSnapshot] = useState(items);
+  if (items !== itemsSnapshot) {
+    setItemsSnapshot(items);
+    setSelectedIds(new Set());
+  }
+
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+
+  const selectedIdList = useMemo(() => [...selectedIds], [selectedIds]);
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
@@ -86,14 +126,111 @@ export function ProductTable({
     [],
   );
 
+  function toggleAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(items.map((i) => i.id)));
+  }
+
+  function toggleOne(id: string, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function handleBulkActive(next: boolean) {
+    startBulkTransition(async () => {
+      const result = await bulkSetMasterActiveAction(
+        "product",
+        selectedIdList,
+        next,
+      );
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+      toast.success(
+        next
+          ? `${selectedIdList.length}건을 사용으로 전환했습니다.`
+          : `${selectedIdList.length}건을 미사용으로 전환했습니다.`,
+      );
+    });
+  }
+
+  function handleBulkDelete(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    startBulkTransition(async () => {
+      const result = await bulkDeleteMasterAction("product", selectedIdList);
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+      toast.success(`${selectedIdList.length}건을 삭제했습니다.`);
+      setBulkDeleteOpen(false);
+    });
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
-      <p className="text-sm text-muted-foreground">총 {total}건</p>
+      {selectedIds.size > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/40 px-3 py-2">
+          <p className="text-sm font-medium">{selectedIds.size}개 선택됨</p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={bulkPending}
+            onClick={() => setSelectedIds(new Set())}
+          >
+            선택 해제
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bulkPending}
+                className="ml-auto"
+              >
+                일괄작업
+                <ChevronDown className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleBulkActive(true)}>
+                사용으로 전환
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkActive(false)}>
+                미사용으로 전환
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                삭제
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">총 {total}건</p>
+      )}
 
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={someSelected ? "indeterminate" : allSelected}
+                  onCheckedChange={toggleAll}
+                  disabled={items.length === 0 || bulkPending}
+                  aria-label="전체 선택"
+                />
+              </TableHead>
               <TableHead>썸네일</TableHead>
               <TableHead>상품코드</TableHead>
               <TableHead>상품명</TableHead>
@@ -111,6 +248,7 @@ export function ProductTable({
                   key={item.id}
                   tabIndex={0}
                   role="button"
+                  data-state={selectedIds.has(item.id) ? "selected" : undefined}
                   className="cursor-pointer outline-hidden focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                   onClick={() => goToDetail(item.id)}
                   onKeyDown={(event) => {
@@ -120,6 +258,20 @@ export function ProductTable({
                     }
                   }}
                 >
+                  <TableCell onClick={(event) => event.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={(checked) =>
+                        toggleOne(item.id, checked === true)
+                      }
+                      disabled={bulkPending}
+                      aria-label={
+                        selectedIds.has(item.id)
+                          ? `${item.name} 선택 해제`
+                          : `${item.name} 선택`
+                      }
+                    />
+                  </TableCell>
                   <TableCell>
                     {item.thumbnailUrl ? (
                       <Image
@@ -182,7 +334,7 @@ export function ProductTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   등록된 상품이 없습니다.
                 </TableCell>
               </TableRow>
@@ -226,6 +378,27 @@ export function ProductTable({
           </PaginationContent>
         </Pagination>
       </div>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>상품 일괄 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              선택한 {selectedIdList.length}개 상품을 삭제하시겠습니까? 이
+              작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkPending}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={bulkPending}
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

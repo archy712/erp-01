@@ -430,6 +430,45 @@ export async function setMasterActiveAction(
   return { success: true };
 }
 
+// 목록 화면의 다중선택 일괄작업(현재는 상품 목록에서만 사용) 전용. 이미
+// guardEntity()·revalidatePath()·Storage 정리(product)까지 처리된
+// setMasterActiveAction/deleteMasterAction을 건별로 재사용해, 단건 경로와
+// 실패 사유(23503 등)가 항상 같게 유지한다.
+export async function bulkSetMasterActiveAction(
+  entity: MasterCodeEntity,
+  ids: string[],
+  isActive: boolean,
+): Promise<ActionResult> {
+  const results = await Promise.all(
+    ids.map((id) => setMasterActiveAction(entity, id, isActive)),
+  );
+  const failedCount = results.filter((result) => !result.success).length;
+  if (failedCount > 0) {
+    return {
+      success: false,
+      message: `${ids.length}건 중 ${failedCount}건 처리에 실패했습니다.`,
+    };
+  }
+  return { success: true };
+}
+
+export async function bulkDeleteMasterAction(
+  entity: MasterCodeEntity,
+  ids: string[],
+): Promise<ActionResult> {
+  const results = await Promise.all(
+    ids.map((id) => deleteMasterAction(entity, id)),
+  );
+  const failedCount = results.filter((result) => !result.success).length;
+  if (failedCount > 0) {
+    return {
+      success: false,
+      message: `${ids.length}건 중 ${failedCount}건 삭제에 실패했습니다. 하위 데이터가 있는 항목은 사용여부를 끄세요.`,
+    };
+  }
+  return { success: true };
+}
+
 // --- 정렬순서 이동(SortOrderCell, components/erp/master/sort-order-cell.tsx 전용) ---
 //
 // lib/erp/actions.ts의 moveMenuAction(Task 016)과 동일한 "같은 부모의 형제만
