@@ -1,9 +1,11 @@
 import type { OrgTreeNode } from "./types";
 
-// getOrgTree()(queries.ts)가 6개 테이블(org_groups/org_companies/
+// getOrgTree()(queries.ts)가 org_groups/companies/org_group_companies/
 // org_company_divisions/organizations/org_sections/org_section_teams/
-// departments)에서 조회한 평면 행을 이 형태로 정규화해 넘긴다. 이 파일은
-// DB를 전혀 모르는 순수 함수만 둔다(단위 테스트 용이성 — PRD_ORG.md 4.2절).
+// departments에서 조회한 평면 행을 이 형태로 정규화해 넘긴다. 법인은
+// companies(Master 도메인 공유)를 org_group_companies로 그룹사에 엮은
+// 것이다(PRD_ORG_COMPANY_MERGE.md). 이 파일은 DB를 전혀 모르는 순수
+// 함수만 둔다(단위 테스트 용이성 — PRD_ORG.md 4.2절).
 export type OrgTreeGroupRow = {
   id: string;
   name: string;
@@ -22,7 +24,7 @@ export type OrgTreeCompanyRow = {
 // 온다(이 행은 "법인 ↔ 부문" 연결과 정렬순서만 담당).
 export type OrgTreeDivisionRow = {
   organizationId: string;
-  orgCompanyId: string;
+  companyId: string;
   sortOrder: number;
 };
 
@@ -122,7 +124,7 @@ export function buildOrgTree(source: OrgTreeSource): OrgTreeNode[] {
   );
   const divisionsByCompanyId = groupBy(
     source.divisions,
-    (division) => division.orgCompanyId,
+    (division) => division.companyId,
   );
 
   function buildTeamNode(

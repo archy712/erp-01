@@ -16,8 +16,10 @@ import {
   getOrgChartMembers,
   getOrgLeaders,
   getOrgTree,
+  getUnassignedCompanies,
   getUnmappedDivisions,
   getUnmappedTeamsInDivision,
+  type UnassignedCompany,
   type UnmappedDivision,
   type UnmappedTeam,
 } from "./queries";
@@ -114,123 +116,89 @@ export async function updateOrgGroupAction(
   return { success: true };
 }
 
-// --- 법인 ---
+// --- 법인 ↔ 그룹사 배정 ---
+//
+// 법인(companies) 자체의 등록/수정/삭제는 이 파일에 없다 — Master 도메인
+// (lib/erp/master/actions.ts의 createMasterAction("company", …) 등)이
+// 유일한 창구다(PRD_ORG_COMPANY_MERGE.md 3장). 조직도는 "이미 있는 법인을
+// 그룹사에 배정"만 담당한다 — 부문(organizations)을 법인에 매핑할 때와
+// 완전히 같은 패턴을 그룹사↔법인에 적용한 것이다.
 
-export type OrgCompanyInput = {
-  orgGroupId: string;
-  name: string;
-  sortOrder?: number;
-  isActive?: boolean;
-  note?: string | null;
-};
-
-export async function createOrgCompanyAction(
-  input: OrgCompanyInput,
-): Promise<ActionResult & { code?: string }> {
-  await requireSuperadmin();
-
-  const name = input.name.trim();
-  if (!name) {
-    return { success: false, message: "이름을 입력해 주세요." };
-  }
-
-  const supabase = await createClient();
-
-  const { data: code, error: codeError } = await supabase.rpc(
-    "next_master_code",
-    { p_entity: ORG_CODE_DB_ENTITY.orgCompany },
-  );
-  if (codeError || !code) {
-    return { success: false, message: "코드 채번에 실패했습니다." };
-  }
-
-  const { error } = await supabase.from("org_companies").insert({
-    code,
-    name,
-    org_group_id: input.orgGroupId,
-    sort_order: input.sortOrder ?? 0,
-    is_active: input.isActive ?? true,
-    note: input.note ?? null,
-  });
-
-  if (error) {
-    if (error.code === "23505") {
-      return { success: false, message: "이미 사용 중인 코드입니다." };
-    }
-    if (error.code === "23503") {
-      return {
-        success: false,
-        message: "참조한 상위 데이터가 존재하지 않습니다.",
-      };
-    }
-    return { success: false, message: "등록에 실패했습니다." };
-  }
-
-  revalidatePath("/erp/admin/org");
-  return { success: true, code: code as string };
-}
-
-export async function updateOrgCompanyAction(
-  id: string,
-  input: Partial<Omit<OrgCompanyInput, "orgGroupId">> & { code?: string },
+/**
+ * 법인을 그룹사에 배정(또는 재배정)한다. company_id가 org_group_companies에서
+ * 완전한 unique 제약이라 upsert(onConflict: "company_id")로 "법인은 그룹사
+ * 1곳에만 소속" 제약을 그대로 활용한다(setDivisionCompanyAction과 동일 패턴).
+ */
+export async function setCompanyGroupAction(
+  companyId: string,
+  orgGroupId: string,
 ): Promise<ActionResult> {
   await requireSuperadmin();
 
-  const row: Record<string, unknown> = {};
-  if (input.name !== undefined) {
-    const name = input.name.trim();
-    if (!name) {
-      return { success: false, message: "이름을 입력해 주세요." };
-    }
-    row.name = name;
-  }
-  if (input.sortOrder !== undefined) row.sort_order = input.sortOrder;
-  if (input.isActive !== undefined) row.is_active = input.isActive;
-  if (input.note !== undefined) row.note = input.note;
-  if (input.code !== undefined) row.code = input.code;
-
   const supabase = await createClient();
-  const { error } = await looseTable(supabase, "org_companies")
-    .update(row)
-    .eq("id", id);
+  const { error } = await supabase
+    .from("org_group_companies")
+    .upsert(
+      { company_id: companyId, org_group_id: orgGroupId },
+      { onConflict: "company_id" },
+    );
 
   if (error) {
-    if (error.code === "23505") {
-      return { success: false, message: "이미 사용 중인 코드입니다." };
-    }
-    return { success: false, message: "수정에 실패했습니다." };
+    return { success: false, message: "그룹사 배정에 실패했습니다." };
   }
 
   revalidatePath("/erp/admin/org");
   return { success: true };
 }
 
-/** 하위 부문 매핑이 있으면 FK restrict(23503)로 막힌다 — 먼저 부문 연결을 해제해야 한다. */
-export async function deleteOrgCompanyAction(
-  id: string,
+/**
+ * 그룹사 배정을 해제한다. 하위에 매핑된 부문이 있으면(org_company_divisions)
+ * 해제 시 그 부문 전체가 트리에서 사라지므로, 앱 레벨에서 먼저 막고 안내한다
+ * (DB는 FK restrict가 아니라 매핑 테이블 자체가 별개라 이 가드가 없으면 조용히
+ * 성공해버린다).
+ */
+export async function clearCompanyGroupAction(
+  companyId: string,
 ): Promise<ActionResult> {
   await requireSuperadmin();
 
   const supabase = await createClient();
-  const { error } = await supabase.from("org_companies").delete().eq("id", id);
+
+  const { count, error: countError } = await supabase
+    .from("org_company_divisions")
+    .select("organization_id", { count: "exact", head: true })
+    .eq("company_id", companyId);
+  if (countError) {
+    return { success: false, message: "부문 연결 확인에 실패했습니다." };
+  }
+  if (count && count > 0) {
+    return {
+      success: false,
+      message: `이 법인에 연결된 부문 ${count}개가 있어 그룹사 배정을 해제할 수 없습니다.`,
+    };
+  }
+
+  const { error } = await supabase
+    .from("org_group_companies")
+    .delete()
+    .eq("company_id", companyId);
 
   if (error) {
-    if (error.code === "23503") {
-      return {
-        success: false,
-        message: "하위 데이터가 있어 삭제할 수 없습니다.",
-      };
-    }
-    return { success: false, message: "삭제에 실패했습니다." };
+    return { success: false, message: "그룹사 배정 해제에 실패했습니다." };
   }
 
   revalidatePath("/erp/admin/org");
   return { success: true };
+}
+
+/** 그룹사 배정 다이얼로그의 후보 목록(getUnassignedCompanies() 래퍼, getUnmappedDivisionsAction과 동일 패턴). */
+export async function getCompaniesForOrgAction(): Promise<UnassignedCompany[]> {
+  return getUnassignedCompanies();
 }
 
 /** 같은 그룹사(싱글턴이라 사실상 전체) 안에서 법인끼리 정렬순서를 한 칸 바꾼다. */
-export async function moveOrgCompanyAction(
-  id: string,
+export async function moveOrgGroupCompanyAction(
+  companyId: string,
   direction: "up" | "down",
 ): Promise<ActionResult> {
   await requireSuperadmin();
@@ -238,16 +206,16 @@ export async function moveOrgCompanyAction(
   const supabase = await createClient();
 
   const { data: target, error: targetError } = await supabase
-    .from("org_companies")
+    .from("org_group_companies")
     .select("id, sort_order, org_group_id")
-    .eq("id", id)
+    .eq("company_id", companyId)
     .maybeSingle();
   if (targetError || !target) {
     return { success: false, message: "대상을 찾을 수 없습니다." };
   }
 
   const { data: siblings, error: siblingsError } = await supabase
-    .from("org_companies")
+    .from("org_group_companies")
     .select("id, sort_order")
     .eq("org_group_id", target.org_group_id)
     .order("sort_order", { ascending: true });
@@ -255,7 +223,7 @@ export async function moveOrgCompanyAction(
     return { success: false, message: "형제 항목 조회에 실패했습니다." };
   }
 
-  const index = siblings.findIndex((sibling) => sibling.id === id);
+  const index = siblings.findIndex((sibling) => sibling.id === target.id);
   const swapIndex = direction === "up" ? index - 1 : index + 1;
   if (index === -1 || swapIndex < 0 || swapIndex >= siblings.length) {
     return { success: false, message: "더 이상 이동할 수 없습니다." };
@@ -266,11 +234,11 @@ export async function moveOrgCompanyAction(
 
   const [{ error: currentError }, { error: swapError }] = await Promise.all([
     supabase
-      .from("org_companies")
+      .from("org_group_companies")
       .update({ sort_order: swapTarget.sort_order })
       .eq("id", current.id),
     supabase
-      .from("org_companies")
+      .from("org_group_companies")
       .update({ sort_order: current.sort_order })
       .eq("id", swapTarget.id),
   ]);
@@ -291,7 +259,7 @@ export async function moveOrgCompanyAction(
  */
 export async function setDivisionCompanyAction(
   organizationId: string,
-  orgCompanyId: string,
+  companyId: string,
 ): Promise<ActionResult> {
   await requireSuperadmin();
 
@@ -299,7 +267,7 @@ export async function setDivisionCompanyAction(
   const { error } = await supabase
     .from("org_company_divisions")
     .upsert(
-      { organization_id: organizationId, org_company_id: orgCompanyId },
+      { organization_id: organizationId, company_id: companyId },
       { onConflict: "organization_id" },
     );
 
@@ -555,7 +523,7 @@ export async function removeTeamFromSectionAction(
 
 const LEADER_TARGET_COLUMN: Record<Exclude<OrgLevel, "member">, string> = {
   group: "org_group_id",
-  company: "org_company_id",
+  company: "company_id",
   division: "organization_id",
   section: "org_section_id",
   team: "department_id",
@@ -741,31 +709,46 @@ export type OrgCompanyDetail = {
   orgGroupName: string;
 };
 
-/** 법인 수정 다이얼로그가 필요로 하는 code/note(+상위 그룹사명)까지 포함한 상세 조회. */
+/**
+ * 법인 노드 패널이 읽기 전용으로 표시할 code/note(+상위 그룹사명)까지 포함한
+ * 상세 조회. 법인 자체는 companies(Master 도메인) 소유이므로 code/note/is_active는
+ * 거기서, 그룹사 소속은 org_group_companies에서 각각 가져와 합친다. 이 법인이
+ * 아직 어떤 그룹사에도 배정되지 않았으면 null을 반환한다(그룹사 노드가 없는
+ * 법인은 이 화면에 진입할 방법이 없으므로 정상적으로 발생하지 않는다).
+ */
 export async function getOrgCompanyDetailAction(
   id: string,
 ): Promise<OrgCompanyDetail | null> {
   await getCurrentErpUser();
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("org_companies")
-    .select(
-      "id, code, name, note, is_active, sort_order, org_group_id, org_groups(name)",
-    )
-    .eq("id", id)
-    .maybeSingle();
-  if (error || !data) return null;
+
+  const [
+    { data: company, error: companyError },
+    { data: mapping, error: mappingError },
+  ] = await Promise.all([
+    supabase
+      .from("companies")
+      .select("id, code, name, note, is_active")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("org_group_companies")
+      .select("sort_order, org_group_id, org_groups(name)")
+      .eq("company_id", id)
+      .maybeSingle(),
+  ]);
+  if (companyError || !company || mappingError || !mapping) return null;
 
   return {
-    id: data.id,
-    code: data.code,
-    name: data.name,
-    note: data.note,
-    isActive: data.is_active,
-    sortOrder: data.sort_order,
-    orgGroupId: data.org_group_id,
-    orgGroupName: data.org_groups?.name ?? "",
+    id: company.id,
+    code: company.code,
+    name: company.name,
+    note: company.note,
+    isActive: company.is_active,
+    sortOrder: mapping.sort_order,
+    orgGroupId: mapping.org_group_id,
+    orgGroupName: mapping.org_groups?.name ?? "",
   };
 }
 
@@ -776,23 +759,26 @@ export type OrgCompanyOption = {
   isActive: boolean;
 };
 
-/** 부문↔법인 매핑 다이얼로그의 "소속 법인" 선택지용 전체 법인 목록. */
+/** 부문↔법인 매핑 다이얼로그의 "소속 법인" 선택지용 전체 법인 목록(그룹사에 배정된 법인만). */
 export async function getOrgCompaniesAction(): Promise<OrgCompanyOption[]> {
   await getCurrentErpUser();
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("org_companies")
-    .select("id, name, code, is_active")
+    .from("org_group_companies")
+    .select("sort_order, companies(id, name, code, is_active)")
     .order("sort_order", { ascending: true });
   if (error || !data) return [];
 
-  return data.map((company) => ({
-    id: company.id,
-    name: company.name,
-    code: company.code,
-    isActive: company.is_active,
-  }));
+  return data
+    .map((row) => row.companies)
+    .filter((company): company is NonNullable<typeof company> => !!company)
+    .map((company) => ({
+      id: company.id,
+      name: company.name,
+      code: company.code,
+      isActive: company.is_active,
+    }));
 }
 
 /**

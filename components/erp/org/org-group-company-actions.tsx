@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,35 +21,36 @@ import {
 } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { isValidOrgCode } from "@/lib/erp/org/code";
 import {
-  createOrgCompanyAction,
-  deleteOrgCompanyAction,
+  clearCompanyGroupAction,
+  getCompaniesForOrgAction,
   getOrgCompaniesAction,
   getOrgCompanyDetailAction,
   getOrgGroupDetailAction,
   getUnmappedDivisionsAction,
-  moveOrgCompanyAction,
+  moveOrgGroupCompanyAction,
+  setCompanyGroupAction,
   setDivisionCompanyAction,
-  updateOrgCompanyAction,
   updateOrgGroupAction,
   type OrgCompanyDetail,
   type OrgCompanyOption,
   type OrgGroupDetail,
 } from "@/lib/erp/org/actions";
-import type { UnmappedDivision } from "@/lib/erp/org/queries";
+import type {
+  UnassignedCompany,
+  UnmappedDivision,
+} from "@/lib/erp/org/queries";
 import type { OrgTreeNode } from "@/lib/erp/org/types";
 import type { UserRole } from "@/lib/erp/types";
 
-// deleteOrgCompanyAction(lib/erp/org/actions.ts)은 FK restrict(23503) 위반 시
-// 이 문구를 그대로 반환한다(master-delete-dialog.tsx와 동일한 메시지 기반 분기 관례).
-const RESTRICT_MESSAGE_HINT = "하위 데이터가 있어 삭제할 수 없습니다";
-
 /**
- * 그룹사(싱글턴)/법인 노드 선택 시의 편집 버튼 묶음(Task 055).
- * "division"(부문) 노드에서는 "소속 법인 변경" 버튼 하나만 내보낸다 —
- * 부문 자체(organizations)의 이름 편집 UI는 이번 범위 밖이다.
- * 부문 노드의 다른 편집 어포던스(부서 등록 등)는 Task 056이 별도 컴포넌트로 추가한다.
+ * 그룹사(싱글턴)/법인 노드 선택 시의 편집 버튼 묶음(Task 055 → PRD_ORG_COMPANY_MERGE.md로 축소).
+ * 법인(companies) 자체의 등록/수정/삭제 UI는 여기 없다 — 기준정보 관리
+ * (`/erp/master/companies`)가 유일한 창구이고, 이 컴포넌트는 "이미 있는
+ * 법인을 그룹사에 배정"만 담당한다. "division"(부문) 노드에서는 "소속 법인
+ * 변경" 버튼 하나만 내보낸다 — 부문 자체(organizations)의 이름 편집 UI는
+ * 이번 범위 밖이다. 부문 노드의 다른 편집 어포던스(부서 등록 등)는 Task 056이
+ * 별도 컴포넌트로 추가한다.
  */
 export function OrgGroupCompanyActions({
   node,
@@ -68,9 +60,8 @@ export function OrgGroupCompanyActions({
   currentUserRole: UserRole;
 }) {
   const [groupEditOpen, setGroupEditOpen] = useState(false);
-  const [companyCreateOpen, setCompanyCreateOpen] = useState(false);
-  const [companyEditOpen, setCompanyEditOpen] = useState(false);
-  const [companyDeleteOpen, setCompanyDeleteOpen] = useState(false);
+  const [companyAssignOpen, setCompanyAssignOpen] = useState(false);
+  const [companyDetailOpen, setCompanyDetailOpen] = useState(false);
   const [mappingOpen, setMappingOpen] = useState(false);
   const [isMovePending, startMoveTransition] = useTransition();
 
@@ -90,7 +81,7 @@ export function OrgGroupCompanyActions({
 
   function handleMove(direction: "up" | "down") {
     startMoveTransition(async () => {
-      const result = await moveOrgCompanyAction(node.id, direction);
+      const result = await moveOrgGroupCompanyAction(node.id, direction);
       if (!result.success) {
         toast.error(result.message);
         return;
@@ -116,9 +107,9 @@ export function OrgGroupCompanyActions({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setCompanyCreateOpen(true)}
+              onClick={() => setCompanyAssignOpen(true)}
             >
-              + 법인 등록
+              법인 배정
             </Button>
           </>
         ) : null}
@@ -129,17 +120,9 @@ export function OrgGroupCompanyActions({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setCompanyEditOpen(true)}
+              onClick={() => setCompanyDetailOpen(true)}
             >
-              법인 수정
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={() => setCompanyDeleteOpen(true)}
-            >
-              법인 삭제
+              그룹사 배정 변경
             </Button>
             <Button
               type="button"
@@ -193,28 +176,19 @@ export function OrgGroupCompanyActions({
       ) : null}
 
       {node.level === "group" ? (
-        <OrgCompanyCreateDialog
+        <CompanyAssignDialog
           orgGroupId={node.id}
           orgGroupName={node.name}
-          open={companyCreateOpen}
-          onOpenChange={setCompanyCreateOpen}
+          open={companyAssignOpen}
+          onOpenChange={setCompanyAssignOpen}
         />
       ) : null}
 
       {node.level === "company" ? (
-        <OrgCompanyEditDialog
+        <CompanyDetailDialog
           companyId={node.id}
-          open={companyEditOpen}
-          onOpenChange={setCompanyEditOpen}
-        />
-      ) : null}
-
-      {node.level === "company" ? (
-        <OrgCompanyDeleteDialog
-          companyId={node.id}
-          companyName={node.name}
-          open={companyDeleteOpen}
-          onOpenChange={setCompanyDeleteOpen}
+          open={companyDetailOpen}
+          onOpenChange={setCompanyDetailOpen}
         />
       ) : null}
 
@@ -405,9 +379,9 @@ function OrgGroupEditForm({
   );
 }
 
-// --- 법인 등록 ---
+// --- 법인 배정 (그룹사 노드에서: 미배정 법인을 이 그룹사에 배정) ---
 
-function OrgCompanyCreateDialog({
+function CompanyAssignDialog({
   orgGroupId,
   orgGroupName,
   open,
@@ -422,15 +396,14 @@ function OrgCompanyCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>법인 등록</DialogTitle>
+          <DialogTitle>법인 배정</DialogTitle>
           <DialogDescription>
-            코드는 저장 시 자동으로 채번됩니다. (OC####)
+            {`이미 등록된 법인 중 아직 어떤 그룹사에도 배정되지 않은 법인을 '${orgGroupName}'에 배정합니다.`}
           </DialogDescription>
         </DialogHeader>
         {open ? (
-          <OrgCompanyCreateFields
+          <CompanyAssignLoader
             orgGroupId={orgGroupId}
-            orgGroupName={orgGroupName}
             onOpenChange={onOpenChange}
           />
         ) : null}
@@ -439,47 +412,102 @@ function OrgCompanyCreateDialog({
   );
 }
 
-function OrgCompanyCreateFields({
+function CompanyAssignLoader({
   orgGroupId,
-  orgGroupName,
   onOpenChange,
 }: {
   orgGroupId: string;
-  orgGroupName: string;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [name, setName] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState(0);
-  const [isActive, setIsActive] = useState(true);
-  const [note, setNote] = useState("");
+  const [companies, setCompanies] = useState<UnassignedCompany[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCompaniesForOrgAction()
+      .then((result) => {
+        if (cancelled) return;
+        setCompanies(result);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgGroupId]);
+
+  if (loadFailed) {
+    return (
+      <p className="py-6 text-sm text-destructive">
+        법인 목록을 불러오지 못했습니다.
+      </p>
+    );
+  }
+
+  if (!companies) {
+    return <p className="py-6 text-sm text-muted-foreground">불러오는 중...</p>;
+  }
+
+  if (companies.length === 0) {
+    return (
+      <div className="flex flex-col gap-4 py-2">
+        <p className="text-sm text-muted-foreground">
+          배정할 수 있는 법인이 없습니다. 새 법인은 기준정보 관리 &gt; 법인
+          관리에서 등록해 주세요.
+        </p>
+        <Link
+          href="/erp/master/companies"
+          className="text-sm font-medium underline underline-offset-4"
+        >
+          기준정보 관리 &gt; 법인 관리로 이동
+        </Link>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            닫기
+          </Button>
+        </DialogFooter>
+      </div>
+    );
+  }
+
+  return (
+    <CompanyAssignForm
+      orgGroupId={orgGroupId}
+      companies={companies}
+      onOpenChange={onOpenChange}
+    />
+  );
+}
+
+function CompanyAssignForm({
+  orgGroupId,
+  companies,
+  onOpenChange,
+}: {
+  orgGroupId: string;
+  companies: UnassignedCompany[];
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [companyId, setCompanyId] = useState(companies[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit() {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setNameError("법인명을 입력해 주세요.");
+    if (!companyId) {
+      toast.error("배정할 법인을 선택해 주세요.");
       return;
     }
-    setNameError(null);
-
     startTransition(async () => {
-      const result = await createOrgCompanyAction({
-        orgGroupId,
-        name: trimmedName,
-        sortOrder,
-        isActive,
-        note: note.trim() ? note.trim() : null,
-      });
+      const result = await setCompanyGroupAction(companyId, orgGroupId);
       if (!result.success) {
         toast.error(result.message);
         return;
       }
-      toast.success(
-        result.code
-          ? `법인을 등록했습니다. (코드: ${result.code})`
-          : "법인을 등록했습니다.",
-      );
+      toast.success("법인을 배정했습니다.");
       onOpenChange(false);
     });
   }
@@ -488,62 +516,20 @@ function OrgCompanyCreateFields({
     <>
       <div className="flex flex-col gap-4 py-2">
         <div className="flex flex-col gap-1.5">
-          <Label>코드</Label>
-          <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            자동 생성(OC####)
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-name">법인명</Label>
-          <Input
-            id="org-company-name"
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              if (nameError) setNameError(null);
-            }}
-            aria-invalid={nameError ? true : undefined}
-          />
-          {nameError ? (
-            <p className="text-sm text-destructive">{nameError}</p>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label>상위 그룹사</Label>
-          <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            {orgGroupName}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-sort-order">정렬순서</Label>
-          <Input
-            id="org-company-sort-order"
-            type="number"
-            value={sortOrder}
-            onChange={(event) => setSortOrder(Number(event.target.value))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-md border px-3 py-2">
-          <Label htmlFor="org-company-active">사용여부</Label>
-          <Switch
-            id="org-company-active"
-            checked={isActive}
-            onCheckedChange={setIsActive}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-note">비고</Label>
-          <Textarea
-            id="org-company-note"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            rows={3}
-          />
+          <Label htmlFor="org-company-assign-target">배정할 법인</Label>
+          <NativeSelect
+            id="org-company-assign-target"
+            className="w-full"
+            value={companyId}
+            onChange={(event) => setCompanyId(event.target.value)}
+          >
+            {companies.map((company) => (
+              <NativeSelectOption key={company.id} value={company.id}>
+                {company.code} · {company.name}
+                {company.isActive ? "" : " (비활성)"}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
         </div>
       </div>
 
@@ -557,16 +543,16 @@ function OrgCompanyCreateFields({
           취소
         </Button>
         <Button type="button" onClick={handleSubmit} disabled={isPending}>
-          등록
+          배정
         </Button>
       </DialogFooter>
     </>
   );
 }
 
-// --- 법인 수정 ---
+// --- 법인 상세(읽기 전용) + 그룹사 배정 해제 ---
 
-function OrgCompanyEditDialog({
+function CompanyDetailDialog({
   companyId,
   open,
   onOpenChange,
@@ -579,11 +565,14 @@ function OrgCompanyEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>법인 수정</DialogTitle>
-          <DialogDescription>정보를 수정한 뒤 저장하세요.</DialogDescription>
+          <DialogTitle>법인 정보</DialogTitle>
+          <DialogDescription>
+            법인 자체의 코드/명칭/사용여부/비고는 기준정보 관리에서 수정합니다.
+            여기서는 그룹사 배정만 변경할 수 있습니다.
+          </DialogDescription>
         </DialogHeader>
         {open ? (
-          <OrgCompanyEditLoader
+          <CompanyDetailLoader
             companyId={companyId}
             onOpenChange={onOpenChange}
           />
@@ -593,7 +582,7 @@ function OrgCompanyEditDialog({
   );
 }
 
-function OrgCompanyEditLoader({
+function CompanyDetailLoader({
   companyId,
   onOpenChange,
 }: {
@@ -634,59 +623,26 @@ function OrgCompanyEditLoader({
     return <p className="py-6 text-sm text-muted-foreground">불러오는 중...</p>;
   }
 
-  return <OrgCompanyEditForm detail={detail} onOpenChange={onOpenChange} />;
+  return <CompanyDetailView detail={detail} onOpenChange={onOpenChange} />;
 }
 
-function OrgCompanyEditForm({
+function CompanyDetailView({
   detail,
   onOpenChange,
 }: {
   detail: OrgCompanyDetail;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [code, setCode] = useState(detail.code);
-  const [codeError, setCodeError] = useState<string | null>(null);
-  const [name, setName] = useState(detail.name);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState(detail.sortOrder);
-  const [isActive, setIsActive] = useState(detail.isActive);
-  const [note, setNote] = useState(detail.note ?? "");
   const [isPending, startTransition] = useTransition();
 
-  function handleSubmit() {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setNameError("법인명을 입력해 주세요.");
-      return;
-    }
-    setNameError(null);
-
-    const normalizedCode = code.trim().toUpperCase();
-    if (!isValidOrgCode("orgCompany", normalizedCode)) {
-      setCodeError("법인 코드 형식이 올바르지 않습니다. (예: OC0001)");
-      return;
-    }
-    setCodeError(null);
-
+  function handleUnassign() {
     startTransition(async () => {
-      const result = await updateOrgCompanyAction(detail.id, {
-        code: normalizedCode,
-        name: trimmedName,
-        sortOrder,
-        isActive,
-        note: note.trim() ? note.trim() : null,
-      });
+      const result = await clearCompanyGroupAction(detail.id);
       if (!result.success) {
-        // 코드 unique 위반 등 코드 관련 서버 에러는 코드 필드 인라인 에러로 보여준다
-        // (master-form-sheet.tsx와 동일한 이중 방어 관례).
-        if (result.message.includes("코드")) {
-          setCodeError(result.message);
-        } else {
-          toast.error(result.message);
-        }
+        toast.error(result.message);
         return;
       }
-      toast.success("법인 정보를 수정했습니다.");
+      toast.success("그룹사 배정을 해제했습니다.");
       onOpenChange(false);
     });
   }
@@ -695,71 +651,55 @@ function OrgCompanyEditForm({
     <>
       <div className="flex flex-col gap-4 py-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-code">코드</Label>
-          <Input
-            id="org-company-code"
-            value={code}
-            onChange={(event) => {
-              setCode(event.target.value.toUpperCase());
-              if (codeError) setCodeError(null);
-            }}
-            aria-invalid={codeError ? true : undefined}
-          />
-          {codeError ? (
-            <p className="text-sm text-destructive">{codeError}</p>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-edit-name">법인명</Label>
-          <Input
-            id="org-company-edit-name"
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              if (nameError) setNameError(null);
-            }}
-            aria-invalid={nameError ? true : undefined}
-          />
-          {nameError ? (
-            <p className="text-sm text-destructive">{nameError}</p>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label>상위 그룹사</Label>
+          <Label>코드</Label>
           <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            {detail.orgGroupName}
+            {detail.code}
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-edit-sort-order">정렬순서</Label>
-          <Input
-            id="org-company-edit-sort-order"
-            type="number"
-            value={sortOrder}
-            onChange={(event) => setSortOrder(Number(event.target.value))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-md border px-3 py-2">
-          <Label htmlFor="org-company-edit-active">사용여부</Label>
-          <Switch
-            id="org-company-edit-active"
-            checked={isActive}
-            onCheckedChange={setIsActive}
-          />
+          <Label>법인명</Label>
+          <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            {detail.name}
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="org-company-edit-note">비고</Label>
-          <Textarea
-            id="org-company-edit-note"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            rows={3}
-          />
+          <Label>사용여부</Label>
+          <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            {detail.isActive ? "사용" : "미사용"}
+          </p>
+        </div>
+
+        {detail.note ? (
+          <div className="flex flex-col gap-1.5">
+            <Label>비고</Label>
+            <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+              {detail.note}
+            </p>
+          </div>
+        ) : null}
+
+        <Link
+          href="/erp/master/companies"
+          className="text-sm font-medium underline underline-offset-4"
+        >
+          기준정보 관리에서 수정
+        </Link>
+
+        <div className="flex flex-col gap-1.5 rounded-md border p-3">
+          <Label>소속 그룹사</Label>
+          <p className="text-sm text-muted-foreground">{detail.orgGroupName}</p>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="mt-2 w-fit"
+            onClick={handleUnassign}
+            disabled={isPending}
+          >
+            그룹사 배정 해제
+          </Button>
         </div>
       </div>
 
@@ -770,104 +710,10 @@ function OrgCompanyEditForm({
           onClick={() => onOpenChange(false)}
           disabled={isPending}
         >
-          취소
-        </Button>
-        <Button type="button" onClick={handleSubmit} disabled={isPending}>
-          저장
+          닫기
         </Button>
       </DialogFooter>
     </>
-  );
-}
-
-// --- 법인 삭제 ---
-
-function OrgCompanyDeleteDialog({
-  companyId,
-  companyName,
-  open,
-  onOpenChange,
-}: {
-  companyId: string;
-  companyName: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [blocked, setBlocked] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  function handleOpenChange(next: boolean) {
-    if (!next) setBlocked(false);
-    onOpenChange(next);
-  }
-
-  function handleDelete(event: { preventDefault: () => void }) {
-    // AlertDialogAction은 Radix Dialog.Close와 동일하게 클릭 시 기본적으로
-    // 다이얼로그를 닫는다 — 삭제 실패(하위 부문 매핑 존재) 시 "사용여부 끄기"
-    // 안내로 전환하려면 preventDefault()로 그 기본 닫힘을 막아야 한다
-    // (master-delete-dialog.tsx와 동일한 관례).
-    event.preventDefault();
-    startTransition(async () => {
-      const result = await deleteOrgCompanyAction(companyId);
-      if (!result.success) {
-        if (result.message.includes(RESTRICT_MESSAGE_HINT)) {
-          setBlocked(true);
-        } else {
-          toast.error(result.message);
-        }
-        return;
-      }
-      toast.success("법인을 삭제했습니다.");
-      handleOpenChange(false);
-    });
-  }
-
-  function handleDeactivate() {
-    startTransition(async () => {
-      const result = await updateOrgCompanyAction(companyId, {
-        isActive: false,
-      });
-      if (!result.success) {
-        toast.error(result.message);
-        return;
-      }
-      toast.success("사용여부를 껐습니다.");
-      handleOpenChange(false);
-    });
-  }
-
-  return (
-    <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {blocked ? "삭제할 수 없습니다" : "법인 삭제"}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {blocked
-              ? "하위 데이터가 있어 삭제할 수 없습니다. 대신 사용여부를 꺼주세요."
-              : `'${companyName}'을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          {blocked ? (
-            <>
-              <AlertDialogCancel disabled={isPending}>닫기</AlertDialogCancel>
-              <Button onClick={handleDeactivate} disabled={isPending}>
-                사용여부 끄기
-              </Button>
-            </>
-          ) : (
-            <>
-              <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} disabled={isPending}>
-                삭제
-              </AlertDialogAction>
-            </>
-          )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }
 

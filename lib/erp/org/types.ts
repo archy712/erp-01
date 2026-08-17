@@ -1,11 +1,11 @@
 import type { UserRole } from "../types";
 
-// 그룹사(org_groups, 신규) → 법인(org_companies, 신규) → 부문(organizations,
-// 기존 재해석) → 부서(org_sections, 신규·선택적) → 팀(departments, 기존) →
-// 구성원(profiles, 기존) 6단계를 화면이 소비하는 단일 뷰로 통일한 레벨 키다
-// (PRD_ORG.md 4.1절). "member"는 트리 노드로 펼치지 않고 팀 선택 시 우측
-// 목록으로만 쓰이지만(PRD_ORG.md 6.3절), OrgMember 타입과 짝을 맞추기 위해
-// 열거값에는 포함한다.
+// 그룹사(org_groups) → 법인(companies, Master 도메인 공유 — PRD_ORG_COMPANY_MERGE.md)
+// → 부문(organizations, 기존 재해석) → 부서(org_sections, 신규·선택적) →
+// 팀(departments, 기존) → 구성원(profiles, 기존) 6단계를 화면이 소비하는
+// 단일 뷰로 통일한 레벨 키다(PRD_ORG.md 4.1절). "member"는 트리 노드로
+// 펼치지 않고 팀 선택 시 우측 목록으로만 쓰이지만(PRD_ORG.md 6.3절),
+// OrgMember 타입과 짝을 맞추기 위해 열거값에는 포함한다.
 export type OrgLevel =
   "group" | "company" | "division" | "section" | "team" | "member";
 
@@ -22,7 +22,7 @@ export type OrgTreeNode = {
 };
 
 // org_unit_leaders 1행의 뷰 타입. targetId는 5개 FK 컬럼
-// (org_group_id/org_company_id/organization_id/org_section_id/department_id)
+// (org_group_id/company_id/organization_id/org_section_id/department_id)
 // 중 값이 있는 컬럼 하나를 level에 맞게 꺼낸 것이다(PRD_ORG.md 5.6절).
 export type OrgLeader = {
   id: string;

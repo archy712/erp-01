@@ -721,92 +721,28 @@ export type Database = {
           },
         ];
       };
-      org_companies: {
-        Row: {
-          code: string;
-          created_at: string;
-          created_by: string | null;
-          id: string;
-          is_active: boolean;
-          name: string;
-          note: string | null;
-          org_group_id: string;
-          sort_order: number;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          code: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name: string;
-          note?: string | null;
-          org_group_id: string;
-          sort_order?: number;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          code?: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name?: string;
-          note?: string | null;
-          org_group_id?: string;
-          sort_order?: number;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "org_companies_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "org_companies_org_group_id_fkey";
-            columns: ["org_group_id"];
-            isOneToOne: false;
-            referencedRelation: "org_groups";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "org_companies_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       org_company_divisions: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           id: string;
-          org_company_id: string;
           organization_id: string;
           sort_order: number;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
-          org_company_id: string;
           organization_id: string;
           sort_order?: number;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
-          org_company_id?: string;
           organization_id?: string;
           sort_order?: number;
         };
@@ -820,9 +756,9 @@ export type Database = {
           },
           {
             foreignKeyName: "org_company_divisions_org_company_id_fkey";
-            columns: ["org_company_id"];
+            columns: ["company_id"];
             isOneToOne: false;
-            referencedRelation: "org_companies";
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
@@ -830,6 +766,55 @@ export type Database = {
             columns: ["organization_id"];
             isOneToOne: true;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      org_group_companies: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          org_group_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          org_group_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          org_group_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_group_companies_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: true;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_group_companies_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_group_companies_org_group_id_fkey";
+            columns: ["org_group_id"];
+            isOneToOne: false;
+            referencedRelation: "org_groups";
             referencedColumns: ["id"];
           },
         ];
@@ -1003,10 +988,10 @@ export type Database = {
       };
       org_unit_leaders: {
         Row: {
+          company_id: string | null;
           created_at: string;
           department_id: string | null;
           id: string;
-          org_company_id: string | null;
           org_group_id: string | null;
           org_section_id: string | null;
           organization_id: string | null;
@@ -1016,10 +1001,10 @@ export type Database = {
           updated_by: string | null;
         };
         Insert: {
+          company_id?: string | null;
           created_at?: string;
           department_id?: string | null;
           id?: string;
-          org_company_id?: string | null;
           org_group_id?: string | null;
           org_section_id?: string | null;
           organization_id?: string | null;
@@ -1029,10 +1014,10 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
+          company_id?: string | null;
           created_at?: string;
           department_id?: string | null;
           id?: string;
-          org_company_id?: string | null;
           org_group_id?: string | null;
           org_section_id?: string | null;
           organization_id?: string | null;
@@ -1051,9 +1036,9 @@ export type Database = {
           },
           {
             foreignKeyName: "org_unit_leaders_org_company_id_fkey";
-            columns: ["org_company_id"];
+            columns: ["company_id"];
             isOneToOne: false;
-            referencedRelation: "org_companies";
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {

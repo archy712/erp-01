@@ -17,6 +17,11 @@ export type OrgTreeResult = {
   // 그 부문(과 하위 팀/구성원 전부)이 트리에서 누락된다는 뜻이라 개발 중
   // 콘솔 경고로만 알리고 화면은 그대로 렌더링한다(Task 046 적용 후에는 0이어야 함).
   orphanDivisionCount: number;
+  // org_group_companies에 아직 연결되지 않은 companies 수. 기준정보 관리에서
+  // 법인만 만들고 그룹사 배정을 아직 안 한 정상적인 중간 상태이므로 화면은
+  // 그대로 렌더링하고 콘솔 경고만 남긴다(PRD_ORG_COMPANY_MERGE.md — orphanDivisionCount와
+  // 동일한 패턴, 이번 통합으로 새로 생기는 고아 유형).
+  unassignedCompanyCount: number;
 };
 
 /**
@@ -28,7 +33,8 @@ export async function getOrgTree(): Promise<OrgTreeResult> {
 
   const [
     { data: group, error: groupError },
-    { data: companies, error: companiesError },
+    { data: groupCompanies, error: groupCompaniesError },
+    { data: companyRows, error: companyRowsError },
     { data: divisions, error: divisionsError },
     { data: organizations, error: organizationsError },
     { data: sections, error: sectionsError },
@@ -37,11 +43,12 @@ export async function getOrgTree(): Promise<OrgTreeResult> {
   ] = await Promise.all([
     supabase.from("org_groups").select("id, name, is_active").maybeSingle(),
     supabase
-      .from("org_companies")
-      .select("id, org_group_id, name, is_active, sort_order"),
+      .from("org_group_companies")
+      .select("org_group_id, company_id, sort_order"),
+    supabase.from("companies").select("id, name, is_active"),
     supabase
       .from("org_company_divisions")
-      .select("organization_id, org_company_id, sort_order"),
+      .select("organization_id, company_id, sort_order"),
     supabase.from("organizations").select("id, name, archived_at"),
     supabase
       .from("org_sections")
@@ -55,7 +62,8 @@ export async function getOrgTree(): Promise<OrgTreeResult> {
   ]);
 
   if (groupError) throw groupError;
-  if (companiesError) throw companiesError;
+  if (groupCompaniesError) throw groupCompaniesError;
+  if (companyRowsError) throw companyRowsError;
   if (divisionsError) throw divisionsError;
   if (organizationsError) throw organizationsError;
   if (sectionsError) throw sectionsError;
@@ -74,20 +82,43 @@ export async function getOrgTree(): Promise<OrgTreeResult> {
     );
   }
 
+  const assignedCompanyIds = new Set(
+    groupCompanies.map((row) => row.company_id),
+  );
+  const unassignedCompanyCount = companyRows.filter(
+    (company) => !assignedCompanyIds.has(company.id),
+  ).length;
+  if (unassignedCompanyCount > 0) {
+    console.warn(
+      `[org] ${unassignedCompanyCount}개 법인이 어떤 그룹사에도 배정되지 않아 조직도 트리에서 누락됩니다.`,
+    );
+  }
+
+  const companyById = new Map(
+    companyRows.map((company) => [company.id, company]),
+  );
+  const companies = groupCompanies
+    .map((row) => {
+      const company = companyById.get(row.company_id);
+      if (!company) return null;
+      return {
+        id: company.id,
+        orgGroupId: row.org_group_id,
+        name: company.name,
+        isActive: company.is_active,
+        sortOrder: row.sort_order,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null);
+
   const tree = buildOrgTree({
     group: group
       ? { id: group.id, name: group.name, isActive: group.is_active }
       : null,
-    companies: companies.map((company) => ({
-      id: company.id,
-      orgGroupId: company.org_group_id,
-      name: company.name,
-      isActive: company.is_active,
-      sortOrder: company.sort_order,
-    })),
+    companies,
     divisions: divisions.map((division) => ({
       organizationId: division.organization_id,
-      orgCompanyId: division.org_company_id,
+      companyId: division.company_id,
       sortOrder: division.sort_order,
     })),
     organizations: organizations.map((organization) => ({
@@ -115,7 +146,7 @@ export async function getOrgTree(): Promise<OrgTreeResult> {
     })),
   });
 
-  return { tree, orphanDivisionCount };
+  return { tree, orphanDivisionCount, unassignedCompanyCount };
 }
 
 /** org_unit_leaders 1행에서 값이 채워진 FK 하나를 골라 레벨/대상 id로 정규화한다(CHECK로 정확히 1개만 보장됨). */
@@ -123,8 +154,7 @@ function resolveLeaderTarget(
   row: Tables<"org_unit_leaders">,
 ): { level: OrgLevel; targetId: string } | null {
   if (row.org_group_id) return { level: "group", targetId: row.org_group_id };
-  if (row.org_company_id)
-    return { level: "company", targetId: row.org_company_id };
+  if (row.company_id) return { level: "company", targetId: row.company_id };
   if (row.organization_id)
     return { level: "division", targetId: row.organization_id };
   if (row.org_section_id)
@@ -221,6 +251,46 @@ export async function getUnmappedDivisions(): Promise<UnmappedDivision[]> {
       id: organization.id,
       name: organization.name,
       isActive: organization.archived_at === null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+export type UnassignedCompany = {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+};
+
+/**
+ * org_group_companies에 아직 연결되지 않은 법인(companies) 목록
+ * (그룹사 배정 다이얼로그의 후보 목록용). 법인은 Master 도메인(companies)
+ * 소유이므로 lib/erp/master/**의 getCompanies()를 재사용하지 않고 이
+ * 파일에서 직접 조회한다 — Master 쪽 조회는 select("*") + Master 정렬
+ * 규칙이라 조직도가 필요로 하는 "그룹사 미배정 여부" 필터와 어긋난다.
+ */
+export async function getUnassignedCompanies(): Promise<UnassignedCompany[]> {
+  const supabase = await createClient();
+
+  const [
+    { data: companies, error: companiesError },
+    { data: groupCompanies, error: groupCompaniesError },
+  ] = await Promise.all([
+    supabase.from("companies").select("id, code, name, is_active"),
+    supabase.from("org_group_companies").select("company_id"),
+  ]);
+  if (companiesError) throw companiesError;
+  if (groupCompaniesError) throw groupCompaniesError;
+
+  const assignedIds = new Set(groupCompanies.map((row) => row.company_id));
+
+  return companies
+    .filter((company) => !assignedIds.has(company.id))
+    .map((company) => ({
+      id: company.id,
+      code: company.code,
+      name: company.name,
+      isActive: company.is_active,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 }
