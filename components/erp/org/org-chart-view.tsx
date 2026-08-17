@@ -18,8 +18,13 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { ORG_LEVELS } from "@/lib/erp/org/levels";
-import { buildOrgNodeKey, flattenOrgTreeByKey } from "@/lib/erp/org/node-key";
+import {
+  buildOrgNodeKey,
+  findOrgNodePath,
+  flattenOrgTreeByKey,
+} from "@/lib/erp/org/node-key";
 import type { OrgLeader, OrgMember, OrgTreeNode } from "@/lib/erp/org/types";
+import type { UserRole } from "@/lib/erp/types";
 import { OrgChildrenPanel } from "./org-children-panel";
 import { OrgLeaderPanel } from "./org-leader-panel";
 
@@ -42,11 +47,17 @@ export function OrgChartView({
   tree,
   leaders,
   members,
+  currentUserRole,
+  currentUserOrganizationId,
 }: {
   breadcrumb?: string[];
   tree: OrgTreeNode[];
   leaders: OrgLeader[];
   members: OrgMember[];
+  /** 편집 버튼 노출 판정용(Task 055~057). 최종 차단은 항상 Server Action + RLS. */
+  currentUserRole: UserRole;
+  /** DB current_organization_id() 그대로 — 관리자 본인 소속 팀의 부문 id, 없으면 null. */
+  currentUserOrganizationId: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -63,6 +74,26 @@ export function OrgChartView({
     return map;
   }, [leaders]);
 
+  // 그룹사(트리 루트)가 없으면(Task 046 이전 상태) 트리 자체를 렌더링할
+  // 것이 없다 — 빈 상태 안내만 보여준다.
+  const rootKey = tree[0] ? buildOrgNodeKey(tree[0].level, tree[0].id) : null;
+
+  // 딥링크(?node=team:<uuid>)로 들어왔을 때만 그 값을 쓰고, 없거나 트리에
+  // 없는 값이면 그룹사 노드를 기본 선택한다(초기 진입 시 법인까지 펼친
+  // 상태로 시작한다는 요구사항 — TreeView는 initialSelectedItemId로 선택된
+  // 노드까지의 경로를 자동으로 펼친다).
+  const requestedKey = searchParams.get("node");
+  const selectedKey =
+    requestedKey && nodesByKey.has(requestedKey) ? requestedKey : rootKey;
+
+  // 선택 노드의 루트→자신 경로. "이 팀/부서가 어느 부문 소속인가"가 필요한
+  // Task 056(부서 CRUD 스코프 판정, 팀의 소속 부서 표시)/057(리더 지정 스코프
+  // 판정)이 `selectedPath.find((n) => n.level === "division")` 형태로 쓴다.
+  const selectedPath = useMemo(
+    () => (selectedKey ? findOrgNodePath(tree, selectedKey) : []),
+    [tree, selectedKey],
+  );
+
   function handleSelect(key: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("node", key);
@@ -70,9 +101,6 @@ export function OrgChartView({
     setMobileTreeOpen(false);
   }
 
-  // 그룹사(트리 루트)가 없으면(Task 046 이전 상태) 트리 자체를 렌더링할
-  // 것이 없다 — 빈 상태 안내만 보여준다.
-  const rootKey = tree[0] ? buildOrgNodeKey(tree[0].level, tree[0].id) : null;
   if (!rootKey) {
     return (
       <div className="flex flex-1 flex-col">
@@ -92,17 +120,16 @@ export function OrgChartView({
     );
   }
 
-  // 딥링크(?node=team:<uuid>)로 들어왔을 때만 그 값을 쓰고, 없거나 트리에
-  // 없는 값이면 그룹사 노드를 기본 선택한다(초기 진입 시 법인까지 펼친
-  // 상태로 시작한다는 요구사항 — TreeView는 initialSelectedItemId로 선택된
-  // 노드까지의 경로를 자동으로 펼친다).
-  const requestedKey = searchParams.get("node");
-  const selectedKey =
-    requestedKey && nodesByKey.has(requestedKey) ? requestedKey : rootKey;
-  const selectedNode = nodesByKey.get(selectedKey) ?? null;
-  if (!selectedNode) return null;
+  const selectedNode = selectedKey
+    ? (nodesByKey.get(selectedKey) ?? null)
+    : null;
+  if (!selectedNode || !selectedKey) return null;
 
   const leader = leaderByKey.get(selectedKey) ?? null;
+  // 선택 노드 자신이 부문이면 자기 자신의 id, 부서/팀이면 그 상위 부문의
+  // id, 그룹사/법인이면 null(부문 조상이 없음) — Task 056/057이 그대로 쓴다.
+  const ancestorDivisionId =
+    selectedPath.find((node) => node.level === "division")?.id ?? null;
 
   return (
     <div className="flex flex-1 flex-col">

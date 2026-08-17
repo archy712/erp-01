@@ -30,3 +30,24 @@ export function flattenOrgTreeByKey(
   }
   return map;
 }
+
+/**
+ * 루트부터 targetKey 노드까지의 경로를 순서대로 반환한다(마지막 원소가
+ * targetKey 자신). 못 찾으면 빈 배열. `OrgTreeNode`는 부모 참조를 갖지
+ * 않으므로(Task 053 — 순수 트리 구조), "이 팀/부서가 어느 부문 소속인가"
+ * 같은 조상 조회가 필요한 화면(Task 056/057)이 이 경로에서 원하는 레벨을
+ * 찾아 쓴다(예: `path.find((n) => n.level === "division")`).
+ */
+export function findOrgNodePath(
+  nodes: OrgTreeNode[],
+  targetKey: string,
+): OrgTreeNode[] {
+  for (const node of nodes) {
+    if (buildOrgNodeKey(node.level, node.id) === targetKey) return [node];
+    if (node.children.length > 0) {
+      const childPath = findOrgNodePath(node.children, targetKey);
+      if (childPath.length > 0) return [node, ...childPath];
+    }
+  }
+  return [];
+}
