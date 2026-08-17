@@ -2,7 +2,7 @@
 
 import { Building2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/erp/page-header";
 import { MasterDetailLayout } from "@/components/erp/master/master-detail-layout";
@@ -11,6 +11,13 @@ import {
   type MasterTreeNode,
 } from "@/components/erp/master/master-tree-panel";
 import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   Empty,
   EmptyDescription,
@@ -153,9 +160,38 @@ export function OrgChartView({
         content={
           <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
             <div>
-              <p className="text-xs text-muted-foreground">
-                {ORG_LEVELS[selectedNode.level].label}
-              </p>
+              {/* 조상 경로(그룹사→...→선택 노드 바로 위)를 클릭 가능한
+                  브레드크럼으로 보여준다 — 선택 노드 자신의 이름은 아래 h2가
+                  이미 표시하므로 여기서는 중복하지 않고, 대신 마지막 세그먼트로
+                  현재 레벨 라벨("부문" 등)을 붙여 기존에 있던 정보를 그대로
+                  유지한다. */}
+              <Breadcrumb>
+                <BreadcrumbList className="gap-1 text-xs sm:gap-1">
+                  {selectedPath.slice(0, -1).map((node) => {
+                    const key = buildOrgNodeKey(node.level, node.id);
+                    return (
+                      <Fragment key={key}>
+                        <BreadcrumbItem>
+                          <BreadcrumbLink asChild>
+                            <button
+                              type="button"
+                              onClick={() => handleSelect(key)}
+                            >
+                              {node.name}
+                            </button>
+                          </BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator className="[&>svg]:size-3" />
+                      </Fragment>
+                    );
+                  })}
+                  <BreadcrumbItem>
+                    <span className="truncate">
+                      {ORG_LEVELS[selectedNode.level].label}
+                    </span>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-medium">{selectedNode.name}</h2>
                 {!selectedNode.isActive ? (
