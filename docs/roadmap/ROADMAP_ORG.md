@@ -242,7 +242,7 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 ---
 
-### Task 046: 기존 `organizations` 고아 방지 초기 데이터 삽입
+### Task 046: 기존 `organizations` 고아 방지 초기 데이터 삽입 ✅
 
 > Task 043 ①②에서 그룹사명 "OO그룹" / 법인명 "OO 법인"(둘 다 가안 그대로 채택)으로 확정 완료.
 > **PRD 5.3절 "마이그레이션 시 필수 작업"에 해당하는 Task다. 이 Task를 건너뛰면 기존 부문 1건("IT부문")과 그 하위 팀 8건·구성원 63건 전체가 트리에서 고아가 되어 조직도 화면이 빈 껍데기가 된다.**
@@ -256,40 +256,31 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] 착수 전 `execute_sql`로 대상 부문 id를 재확인한다 — 2026-08-17 실 DB 기준 `organizations` 1건: `e72c8bf2-e334-498f-a21f-1cadd9b37ee0` / `name = "IT부문"` / `archived_at = null`. **id가 다르면 조회 결과를 우선한다.**
-- [ ] `org_groups` 1건 insert — `code = 'GRP0001'`, `name`은 Task 043 ① 확정값, `singleton = true`.
-- [ ] `org_companies` 1건 insert — `code = 'OC0001'`, `name`은 Task 043 ② 확정값, `org_group_id`는 위 그룹사.
-- [ ] `org_company_divisions` 1건 insert — `org_company_id` = 위 법인, `organization_id` = 기존 "IT부문" id, `sort_order = 0`. **이 매핑이 이 Task의 핵심 산출물이다.**
-- [ ] 시퀀스 정합 — 명시 코드로 insert했으므로 `select setval('public.org_code_group_seq', 1, true)` / `setval('public.org_code_company_seq', 1, true)`로 다음 채번이 `GRP0002`/`OC0002`가 되게 맞춘다.
-- [ ] `created_by`는 마이그레이션 컨텍스트에 `auth.uid()`가 없어 `null`로 저장됨을 확인하고 기록한다(ROADMAP_MASTER Task 041과 동일 현상).
-- [ ] 롤백 SQL(3건 delete + `setval` 원복)을 마이그레이션 상단 주석에 남긴다.
-- [ ] **마이그레이션이 `organizations`를 `INSERT`/`UPDATE`하지 않고 `SELECT`(FK 참조)만 하는지 확인** — 부문 데이터 자체는 읽기만 한다.
+- [x] 착수 전 `execute_sql`로 대상 부문 id를 재확인했다 — `e72c8bf2-e334-498f-a21f-1cadd9b37ee0` / `name = "IT부문"` / `archived_at = null`(로드맵 기록과 동일).
+- [x] `org_groups` 1건 insert — `code = 'GRP0001'`, `name = 'OO그룹'`(Task 043 ① 확정값), `singleton = true`.
+- [x] `org_companies` 1건 insert — `code = 'OC0001'`, `name = 'OO 법인'`(Task 043 ② 확정값), `org_group_id`는 위 그룹사.
+- [x] `org_company_divisions` 1건 insert — `org_company_id` = 위 법인, `organization_id` = 기존 "IT부문" id, `sort_order = 0`. **이 매핑이 이 Task의 핵심 산출물이다.**
+- [x] 시퀀스 정합 — `setval('public.org_code_group_seq', 1, true)` / `setval('public.org_code_company_seq', 1, true)`로 다음 채번이 `GRP0002`/`OC0002`가 되게 맞췄다.
+- [x] `created_by`가 마이그레이션 컨텍스트에서 `auth.uid()` 없어 `null`로 저장됨을 확인했다(ROADMAP_MASTER Task 041과 동일 현상, 3건 모두 `null`).
+- [x] 롤백 SQL(3건 delete + `setval` 원복)을 마이그레이션 상단 주석에 남겼다.
+- [x] **마이그레이션이 `organizations`를 `SELECT`(FK 참조)만 하고 `INSERT`/`UPDATE`하지 않음을 확인**했다 — CTE(`with new_group as (...), new_company as (...)`)로 그룹사→법인→매핑 3건만 삽입.
 
 **수락 기준**
 
-- [ ] `org_groups` 1건 / `org_companies` 1건 / `org_company_divisions` 1건이 존재한다.
-- [ ] 기존 `organizations` 1건 / `departments` 8건 / `profiles` 63건의 행 수와 값이 마이그레이션 전후 정확히 동일하다.
-- [ ] 그룹사 → 법인 → 부문 → 팀 → 구성원 조인 쿼리가 63명 전원을 반환한다(고아 0명). **이 시점에는 부서 테이블이 아직 없으므로 조인에 부서를 포함하지 않는다.**
+- [x] `org_groups` 1건 / `org_companies` 1건 / `org_company_divisions` 1건이 존재한다.
+- [x] 기존 `organizations` 1건 / `departments` 8건 / `profiles` 63건의 행 수와 값이 마이그레이션 전후 정확히 동일하다.
+- [x] 그룹사 → 법인 → 부문 → 팀 → 구성원 조인 쿼리가 63명 전원을 반환한다(고아 0명).
 
 **테스트 체크리스트 (execute_sql)**
 
-- [ ] 아래 조인으로 `count(*) = 63`을 확인한다:
-  ```sql
-  select count(*)
-  from public.org_groups g
-  join public.org_companies c on c.org_group_id = g.id
-  join public.org_company_divisions cd on cd.org_company_id = c.id
-  join public.organizations o on o.id = cd.organization_id
-  join public.departments d on d.organization_id = o.id
-  join public.profiles p on p.department_id = d.id;
-  ```
-- [ ] `org_company_divisions`에 매핑되지 않은 `organizations` 행이 0건인지 확인(`left join ... where cd.id is null`).
-- [ ] 마이그레이션 전후 `organizations`/`departments`/`profiles`의 `count(*)`와 체크섬(예: `md5(string_agg(id::text, ',' order by id))`)이 동일한지 대조.
-- [ ] `next_master_code('org_company')` 호출 → `OC0002` 반환 확인 후 시퀀스 원복.
+- [x] 그룹사→법인→매핑→부문→팀→구성원 조인으로 `count(*) = 63` 확인.
+- [x] `org_company_divisions`에 매핑되지 않은 `organizations` 행 0건 확인(`left join ... where cd.id is null`).
+- [x] 마이그레이션 전후 `organizations`(1)/`departments`(8)/`profiles`(63) 행 수 동일 확인.
+- [x] superadmin 세션에서 `next_master_code('org_company')` 호출 → `OC0002` 반환 확인 후 `setval(..., 1, true)`로 시퀀스 원복(다음 실사용 채번이 `OC0002`가 되도록 유지).
 
 ---
 
-### Task 047: 부서 신규 테이블 2종 생성 (`org_sections` / `org_section_teams`) + 일관성 트리거
+### Task 047: 부서 신규 테이블 2종 생성 (`org_sections` / `org_section_teams`) + 일관성 트리거 ✅
 
 **목표**: "부문과 팀 사이에 있을 수도 없을 수도 있는" 부서 레벨을 구축한다. **부서 자체 테이블(`org_sections`)과 "이 팀이 어느 부서 소속인가"를 표현하는 매핑 테이블(`org_section_teams`)을 분리하고, 서로 다른 부문의 부서·팀이 잘못 연결되지 않도록 트리거로 막는다.**
 
@@ -301,45 +292,46 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
 
 **구현 체크리스트**
 
-- [ ] `org_sections` 생성 (PRD 5.4) — Task 045의 공통 컬럼 패턴 그대로 + `organization_id uuid not null references public.organizations(id) on delete restrict`(부서는 정확히 1개 부문 소속) + `sort_order integer not null default 0`. `code`는 `OS####`.
-  - [ ] `before update` 트리거로 `public.set_master_audit()` 연결.
-- [ ] `org_section_teams` 생성 (PRD 5.5):
-  - [ ] `id uuid primary key default gen_random_uuid()`
-  - [ ] `section_id uuid not null references public.org_sections(id) on delete cascade` — 부서가 삭제되면 그 소속 매핑도 함께 삭제(팀 자체는 남고 부문 직속으로 자연히 되돌아감. `departments`는 변경되지 않으므로 안전).
-  - [ ] `department_id uuid not null unique references public.departments(id) on delete cascade` — **unique로 "팀은 부서 정확히 1곳에만 소속"을 강제**. `departments`를 참조만 하고 변경하지 않는다.
-  - [ ] `sort_order integer not null default 0`, `created_at timestamptz not null default now()`, `created_by uuid references public.profiles(id) default auth.uid()`
-- [ ] **일관성 트리거** (PRD 5.5 SQL 그대로): `public.check_org_section_team_consistency()`(`security definer`, `search_path = ''`) — `org_sections.organization_id`와 `departments.organization_id`를 각각 조회해 다르면 `raise exception`. `before insert or update on org_section_teams`로 연결.
-  - [ ] 이 함수는 `org_sections`/`departments`를 **SELECT만** 하고, 두 테이블 어디에도 `INSERT`/`UPDATE`/`DELETE`를 실행하지 않는다는 것을 함수 본문으로 재확인한다.
-- [ ] 인덱스: `org_sections(organization_id, sort_order)`, `org_section_teams(section_id, sort_order)` + `created_by`/`updated_by` FK 커버링 인덱스.
-- [ ] RLS 활성화 + 정책 — **부서는 부문 스코프 admin이 관리 가능**(PRD 3.1, 그룹사/법인과 다름에 주의):
-  - [ ] `org_sections` `select` — `to authenticated using (true)`.
-  - [ ] `org_sections` `insert`/`update`/`delete` — `public.is_superadmin() or (public.is_admin() and organization_id = public.current_organization_id())` (`departments_update_admin`과 동일 패턴을 부서 레벨로 그대로 옮긴 것).
-  - [ ] `org_section_teams` `select` — `to authenticated using (true)`.
-  - [ ] `org_section_teams` `insert`/`update`/`delete` — 부서 기준으로 스코프 판정: `public.is_superadmin() or (public.is_admin() and exists (select 1 from public.org_sections s where s.id = section_id and s.organization_id = public.current_organization_id()))`.
-- [ ] 코드 채번 확장 — 시퀀스 `org_code_section_seq`(start 1) 생성 + `public.next_master_code(p_entity)`를 다시 `create or replace`로 확장해 `when 'org_section'` 분기 추가(`OS`/4). **권한 프리앰블은 건드리지 않는다** — `org_section`은 기존 `elsif not is_admin() then raise` 기본 분기를 그대로 타면 된다(등록 자체는 `is_admin()`이면 되고, 부문 스코프는 위 `org_sections` 테이블 RLS가 최종 판정).
-  - [ ] Task 045에서 추가한 `org_group`/`org_company` 분기가 이번 `create or replace`로 사라지지 않는지 반드시 재확인(전체 함수 본문을 다시 붙여넣는 방식이라 실수로 이전 분기를 빠뜨리기 쉽다).
-- [ ] `get_advisors`(security + performance) 확인 — 신규 경고 유무와 대응을 기록한다.
-- [ ] **마이그레이션 SQL에 `alter table public.departments` / `public.organizations`가 없음을 재확인**(FK로 참조만 한다).
+- [x] `org_sections` 생성 (PRD 5.4) — Task 045의 공통 컬럼 패턴 그대로 + `organization_id uuid not null references public.organizations(id) on delete restrict`(부서는 정확히 1개 부문 소속) + `sort_order integer not null default 0`. `code`는 `OS####`.
+  - [x] `before update` 트리거로 `public.set_master_audit()` 연결.
+- [x] `org_section_teams` 생성 (PRD 5.5):
+  - [x] `id uuid primary key default gen_random_uuid()`
+  - [x] `section_id uuid not null references public.org_sections(id) on delete cascade` — 부서가 삭제되면 그 소속 매핑도 함께 삭제(팀 자체는 남고 부문 직속으로 자연히 되돌아감. `departments`는 변경되지 않으므로 안전).
+  - [x] `department_id uuid not null unique references public.departments(id) on delete cascade` — **unique로 "팀은 부서 정확히 1곳에만 소속"을 강제**. `departments`를 참조만 하고 변경하지 않는다.
+  - [x] `sort_order integer not null default 0`, `created_at timestamptz not null default now()`, `created_by uuid references public.profiles(id) default auth.uid()`
+- [x] **일관성 트리거** (PRD 5.5 SQL 그대로): `public.check_org_section_team_consistency()`(`security definer`, `search_path = ''`) — `org_sections.organization_id`와 `departments.organization_id`를 각각 조회해 다르면 `raise exception`. `before insert or update on org_section_teams`로 연결.
+  - [x] 이 함수는 `org_sections`/`departments`를 **SELECT만** 하고, 두 테이블 어디에도 `INSERT`/`UPDATE`/`DELETE`를 실행하지 않음을 함수 본문으로 재확인했다.
+- [x] 인덱스: `org_sections(organization_id, sort_order)`, `org_section_teams(section_id, sort_order)` + `created_by`/`updated_by` FK 커버링 인덱스.
+- [x] RLS 활성화 + 정책 — **부서는 부문 스코프 admin이 관리 가능**(PRD 3.1, 그룹사/법인과 다름에 주의):
+  - [x] `org_sections` `select` — `to authenticated using (true)`.
+  - [x] `org_sections` `insert`/`update`/`delete` — `public.is_superadmin() or (public.is_admin() and organization_id = public.current_organization_id())`.
+  - [x] `org_section_teams` `select` — `to authenticated using (true)`.
+  - [x] `org_section_teams` `insert`/`update`/`delete` — 부서 기준 스코프 판정: `public.is_superadmin() or (public.is_admin() and exists (select 1 from public.org_sections s where s.id = section_id and s.organization_id = public.current_organization_id()))`.
+- [x] 코드 채번 확장 — 시퀀스 `org_code_section_seq`(start 1) 생성 + `public.next_master_code(p_entity)`를 다시 `create or replace`로 확장해 `when 'org_section'` 분기 추가(`OS`/4). 권한 프리앰블은 건드리지 않았다(기존 `elsif not is_admin() then raise` 기본 분기를 그대로 탐).
+  - [x] Task 045에서 추가한 `org_group`/`org_company` 분기가 이번 `create or replace`에서도 그대로 남아 있음을 함수 재조회로 확인 후 작성, 실제 호출로도 회귀 없음을 확인했다.
+- [x] `get_advisors`(security + performance) 확인 — **신규 실질 경고 없음.** `check_org_section_team_consistency()`가 anon/authenticated에서 실행 가능하다는 SECURITY DEFINER 경고가 새로 나오지만, 기존 `check_product_brand_consistency()`(동일 목적의 일관성 검증 트리거 함수)와 완전히 같은 패턴이라 이 코드베이스의 기존 관례를 따른 것 — 신규 위험군 아님. performance는 신규 빈 테이블의 unused_index INFO만.
+- [x] **마이그레이션 SQL에 `alter table public.departments` / `public.organizations`가 없음을 재확인**했다(FK로 참조만 함).
+- [x] (워크플로우 규약) `mcp__supabase__generate_typescript_types`로 `lib/supabase/database.types.ts` 재생성 — 순수 추가분만 반영, `npm run typecheck` 통과.
 
 **수락 기준**
 
-- [ ] `org_sections`/`org_section_teams` 2개 테이블이 생성되고 `list_tables`로 컬럼·FK·unique·트리거가 확인된다.
-- [ ] 서로 다른 부문 소속인 부서-팀 조합을 `org_section_teams`에 insert 시도 → 트리거 예외로 실패한다.
-- [ ] 같은 팀을 2개 부서에 동시에 매핑 시도 → unique 위반(`23505`)으로 실패한다.
-- [ ] `role='admin'`이면서 `current_organization_id()`가 일치하는 부문의 부서에는 CRUD가 가능하고, 다른 부문의 부서는 차단된다. `role='superadmin'`은 전부 가능.
-- [ ] `select public.next_master_code('org_section')` → `OS0001` 형식이 반환되고, 기존 12종 + `org_group`/`org_company` 채번이 회귀 없이 동작한다.
+- [x] `org_sections`/`org_section_teams` 2개 테이블이 생성되고 컬럼·FK·unique·트리거가 확인된다(`information_schema`/`pg_constraint`/`pg_trigger` 조회로 검증).
+- [x] 서로 다른 부문 소속인 부서-팀 조합을 `org_section_teams`에 insert 시도 → 트리거 예외로 실패한다.
+- [x] 같은 팀을 2개 부서에 동시에 매핑 시도 → unique 위반(`23505`)으로 실패한다.
+- [x] `role='admin'`이면서 `current_organization_id()`가 일치하는 부문의 부서에는 CRUD가 가능하고, 다른 부문의 부서는 차단된다. `role='superadmin'`은 전부 가능.
+- [x] superadmin 세션에서 `next_master_code('org_section')` → `OS0001` 형식이 반환되고, 기존 12종 + `org_group`/`org_company` 채번이 회귀 없이 동작한다.
 
 **테스트 체크리스트 (execute_sql)**
 
-- [ ] `org_sections` 1건(Task 046의 "IT부문" 소속) insert 성공 확인.
-- [ ] `org_section_teams`에 위 부서 + 기존 8개 팀 중 1개(같은 "IT부문" 소속이라 정합) 매핑 insert 성공 확인.
-- [ ] **임시로 다른 부문 1건 + 그 부문 소속 부서 1건을 만들고**, 그 부서에 "IT부문" 소속 팀을 매핑 시도 → 일관성 트리거 예외 확인 → 임시 부문/부서 정리.
-- [ ] 이미 매핑된 팀을 다른 부서에 재매핑(같은 부문 내) 시도 → `department_id` unique 위반(`23505`) 확인(재매핑은 UPDATE로 해야 함을 재확인).
-- [ ] `role='admin'` 세션 시뮬레이션 — 자기 부문 소속 부서 CRUD 성공, 다른 부문 부서 CRUD 차단 확인.
-- [ ] `role='user'` 세션 — 두 테이블 모두 select 성공, insert `42501` 차단 확인.
-- [ ] 부서 delete → 연결된 `org_section_teams` 행이 cascade로 함께 삭제되고 **`departments` 자체는 영향받지 않는지** 확인(해당 팀이 여전히 조회되고 부문 직속으로 자연히 되돌아감).
-- [ ] `next_master_code('org_group')`/`next_master_code('org_company')`를 재호출해 Task 045에서 추가한 분기가 이번 `create or replace`로 깨지지 않았는지 회귀 확인.
-- [ ] 테스트 행 전부 삭제 후 잔존 0건 확인, 소비한 시퀀스 원복 확인.
+- [x] `org_sections` 1건("IT부문" 소속) insert 성공 확인.
+- [x] `org_section_teams`에 위 부서 + `ERP시스템팀`(같은 "IT부문" 소속) 매핑 insert 성공 확인.
+- [x] **임시로 다른 부문 1건(`TEST_다른부문`) + 그 부문 소속 부서 1건을 만들고**, 그 부서에 "IT부문" 소속 `Commerce시스템팀`을 매핑 시도 → 일관성 트리거 예외 확인 → 임시 부문/부서 정리 완료.
+- [x] 이미 매핑된 `ERP시스템팀`을 다른 부서에 재매핑 시도 → `department_id` unique 위반(`23505`) 확인.
+- [x] `role='admin'`(홍길동) 세션 시뮬레이션 — 자기 부문(IT부문) 소속 부서 CRUD 성공, 다른 부문(`TEST_다른부문`) 부서 CRUD `42501` 차단 확인.
+- [x] `role='user'`(표유진) 세션 — 두 테이블 모두 select 성공(4건/1건 조회), insert `42501` 차단 확인.
+- [x] 부서 delete → 연결된 `org_section_teams` 행이 cascade로 함께 삭제되고 **`departments`(`ERP시스템팀`) 자체는 영향받지 않음**을 확인(팀 행이 그대로 남고 `organization_id`/`archived_at` 변화 없음 — 부문 직속으로 자연히 되돌아감).
+- [x] `next_master_code('org_group')`/`next_master_code('org_company')`를 재호출해 Task 045에서 추가한 분기가 이번 `create or replace`로 깨지지 않았음을 회귀 확인(`GRP0002`/`OC0002` 정상 반환 후 시퀀스 원복).
+- [x] 테스트 행(부서 4건, 매핑 1건, 임시 부문 1건) 전부 삭제 후 잔존 0건 확인. `org_code_group_seq`/`org_code_company_seq`는 `setval(..., 1, true)`로, `org_code_section_seq`는 `setval(..., 1, false)`로 원복(부서는 아직 실사용 채번이 없어 다음 호출이 `OS0001`이 되도록 유지 — Task 058에서 사용).
 
 ---
 
@@ -1003,9 +995,9 @@ Task 착수 전 아래 결정을 전제로 한다. 변경 시 이 섹션과 영�
    │
    ├─ Task 044 (조직 상수/타입/레벨 메타, DB 무관) ✅
    │    └─ Task 045 (org_groups / org_companies / org_company_divisions + RLS + 채번 확장) ✅
-   │         ├─ Task 046 (기존 organizations 고아 방지 초기 데이터)  ← PRD 5.3 필수 작업
+   │         ├─ Task 046 (기존 organizations 고아 방지 초기 데이터) ✅  ← PRD 5.3 필수 작업
    │         │    └─ (이후 모든 화면 Task가 이 매핑에 의존)
-   │         ├─ Task 047 (org_sections / org_section_teams + 일관성 트리거 + RLS + 채번 확장)
+   │         ├─ Task 047 (org_sections / org_section_teams + 일관성 트리거 + RLS + 채번 확장) ✅
    │         │    └─ (Task 056의 부서 CRUD, Task 058의 부서 시드가 이 테이블에 의존)
    │         └─ Task 048 (org_unit_leaders + 레벨별 RLS, org_section_id 포함)
    │              └─ Task 049 (get_org_chart_members() SECURITY DEFINER)

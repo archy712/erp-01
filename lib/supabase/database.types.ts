@@ -888,6 +888,119 @@ export type Database = {
           },
         ];
       };
+      org_section_teams: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          department_id: string;
+          id: string;
+          section_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          department_id: string;
+          id?: string;
+          section_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          department_id?: string;
+          id?: string;
+          section_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_section_teams_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_section_teams_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: true;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_section_teams_section_id_fkey";
+            columns: ["section_id"];
+            isOneToOne: false;
+            referencedRelation: "org_sections";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      org_sections: {
+        Row: {
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          note: string | null;
+          organization_id: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          note?: string | null;
+          organization_id: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          note?: string | null;
+          organization_id?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_sections_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_sections_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_sections_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           archived_at: string | null;
