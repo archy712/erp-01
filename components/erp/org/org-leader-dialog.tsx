@@ -1,18 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import type {
   OrgTreeNode,
 } from "@/lib/erp/org/types";
 import type { UserRole } from "@/lib/erp/types";
+import { cn } from "@/lib/utils";
 
 // 조직도 관리 화면은 다국어(dict) 대상이 아니라 한국어 고정이므로(CLAUDE.md
 // 컨벤션), lib/erp/role-labels.ts의 getRoleLabel(dict) 대신 여기서만 쓰는
@@ -178,49 +180,60 @@ function OrgLeaderDialogFields({
       <div className="flex flex-col gap-4 py-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="org-leader-member">구성원</Label>
-          <Combobox
-            items={sortedMembers}
-            value={selectedMember}
-            onValueChange={(next) => {
-              setSelectedMember(next);
-              if (memberError) setMemberError(null);
-            }}
-            itemToStringLabel={(member) => member.name ?? "이름 없음"}
-            isItemEqualToValue={(a, b) => a.id === b.id}
+          <Command
+            id="org-leader-member"
+            className="rounded-md border"
+            defaultValue={initialMember?.id}
+            aria-invalid={memberError ? true : undefined}
           >
-            <ComboboxInput
-              id="org-leader-member"
-              placeholder="이름으로 검색"
-              className="w-full"
-              aria-invalid={memberError ? true : undefined}
-            />
-            <ComboboxContent>
-              <ComboboxEmpty>검색 결과가 없습니다.</ComboboxEmpty>
-              <ComboboxList>
-                {(member: OrgMember) => (
-                  <ComboboxItem key={member.id} value={member}>
-                    <div className="flex min-w-0 flex-col">
-                      <span className="flex items-center gap-1.5 truncate">
-                        {member.name ?? "이름 없음"}
-                        <Badge
-                          variant={ROLE_BADGE_VARIANT[member.role]}
-                          className="text-[10px]"
-                        >
-                          {ROLE_LABEL_KO[member.role]}
-                        </Badge>
-                        {member.departmentId &&
-                        priorityDepartmentIds.has(member.departmentId) ? (
-                          <Badge variant="outline" className="text-[10px]">
-                            같은 조직
+            <CommandInput placeholder="이름으로 검색" />
+            <CommandList>
+              <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
+              <CommandGroup>
+                {sortedMembers.map((member) => {
+                  const isSelected = selectedMember?.id === member.id;
+                  return (
+                    <CommandItem
+                      key={member.id}
+                      value={member.id}
+                      keywords={[member.name ?? "이름 없음"]}
+                      onSelect={() => {
+                        setSelectedMember(member);
+                        if (memberError) setMemberError(null);
+                      }}
+                      className={cn(
+                        isSelected && "bg-accent text-accent-foreground",
+                      )}
+                    >
+                      <Check
+                        className={cn(
+                          "size-4",
+                          isSelected ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      <div className="flex min-w-0 flex-col">
+                        <span className="flex items-center gap-1.5 truncate">
+                          {member.name ?? "이름 없음"}
+                          <Badge
+                            variant={ROLE_BADGE_VARIANT[member.role]}
+                            className="text-[10px]"
+                          >
+                            {ROLE_LABEL_KO[member.role]}
                           </Badge>
-                        ) : null}
-                      </span>
-                    </div>
-                  </ComboboxItem>
-                )}
-              </ComboboxList>
-            </ComboboxContent>
-          </Combobox>
+                          {member.departmentId &&
+                          priorityDepartmentIds.has(member.departmentId) ? (
+                            <Badge variant="outline" className="text-[10px]">
+                              같은 조직
+                            </Badge>
+                          ) : null}
+                        </span>
+                      </div>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
           {memberError ? (
             <p className="text-sm text-destructive">{memberError}</p>
           ) : null}
