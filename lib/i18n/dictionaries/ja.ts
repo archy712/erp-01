@@ -47,7 +47,6 @@ export const ja: Dictionary = {
       componentGallery: "コンポーネントギャラリー",
       iconGallery: "アイコンギャラリー",
       techStack: "技術スタック",
-      developedBy: "制作",
     },
   },
   login: {

@@ -47,7 +47,6 @@ export const ko: Dictionary = {
       componentGallery: "컴포넌트 갤러리",
       iconGallery: "아이콘 갤러리",
       techStack: "기술 스택",
-      developedBy: "제작",
     },
   },
   login: {

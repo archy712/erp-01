@@ -47,7 +47,6 @@ export const en: Dictionary = {
       componentGallery: "Component Gallery",
       iconGallery: "Icon Gallery",
       techStack: "Tech Stack",
-      developedBy: "Developed by",
     },
   },
   login: {

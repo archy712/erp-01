@@ -45,7 +45,6 @@ export const zh: Dictionary = {
       componentGallery: "组件展示馆",
       iconGallery: "图标展示馆",
       techStack: "技术栈",
-      developedBy: "开发者",
     },
   },
   login: {

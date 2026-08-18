@@ -85,7 +85,11 @@ export function ErpShell({
         </main>
       </div>
 
-      <ErpFooter dict={dict} />
+      {/* ErpFooter도 usePathname()으로 대시보드 메인 화면 여부를 판별하므로
+          동일한 이유로 Suspense 경계가 필요하다. */}
+      <Suspense fallback={null}>
+        <ErpFooter dict={dict} />
+      </Suspense>
     </div>
   );
 }

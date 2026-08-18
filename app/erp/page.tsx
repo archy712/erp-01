@@ -13,7 +13,6 @@ import { KpiSummary } from "@/components/erp/dashboard/kpi-summary";
 import { RevenueProfitChart } from "@/components/erp/dashboard/revenue-profit-chart";
 import { WeeklyRevenueChart } from "@/components/erp/dashboard/weekly-revenue-chart";
 import { PasswordChangeBanner } from "@/components/erp/password-change-banner";
-import { SiteFooter } from "@/components/site-footer";
 import { Badge } from "@/components/ui/badge";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -73,8 +72,6 @@ async function ErpHomeContent() {
 
         <WeeklyRevenueChart dict={dict} />
       </div>
-
-      <SiteFooter dict={dict} />
     </div>
   );
 }

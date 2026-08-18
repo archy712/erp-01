@@ -28,7 +28,6 @@ export interface Dictionary {
       componentGallery: string;
       iconGallery: string;
       techStack: string;
-      developedBy: string;
     };
   };
   login: {
