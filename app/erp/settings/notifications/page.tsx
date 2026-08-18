@@ -10,13 +10,21 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ErpFormPageSkeleton } from "@/components/erp/erp-form-page-skeleton";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 
 export default function SettingsNotificationsPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <ErpFormPageSkeleton
+          maxWidthClassName="w-full max-w-md md:max-w-xl lg:max-w-2xl"
+          fieldCount={3}
+        />
+      }
+    >
       <SettingsNotificationsContent />
     </Suspense>
   );

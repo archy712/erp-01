@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { ProductForm } from "@/components/erp/products/product-form";
+import { ErpFormPageSkeleton } from "@/components/erp/erp-form-page-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import { getCompanies } from "@/lib/erp/master/queries";
 
@@ -8,7 +9,9 @@ import { getCompanies } from "@/lib/erp/master/queries";
 // 전체에 개방된다(PRD 1.2/3.1, Task 023 ③).
 export default function NewProductPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={<ErpFormPageSkeleton showPageHeader showTabs fieldCount={5} />}
+    >
       <NewProductContent />
     </Suspense>
   );

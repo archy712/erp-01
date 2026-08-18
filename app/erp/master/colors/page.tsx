@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { ColorManager } from "@/components/erp/master/color-manager";
+import { MasterDetailSkeleton } from "@/components/erp/master/master-detail-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import {
   getBrandColors,
@@ -21,7 +22,7 @@ export default function MasterColorsPage({
   searchParams: ColorsPageSearchParams;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MasterDetailSkeleton />}>
       <MasterColorsContent searchParams={searchParams} />
     </Suspense>
   );

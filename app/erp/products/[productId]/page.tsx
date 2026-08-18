@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ProductForm } from "@/components/erp/products/product-form";
+import { ErpFormPageSkeleton } from "@/components/erp/erp-form-page-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import {
   getBrandColorTypes,
@@ -29,7 +30,9 @@ export default function EditProductPage({
   params: ProductPageParams;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={<ErpFormPageSkeleton showPageHeader showTabs fieldCount={5} />}
+    >
       <EditProductContent params={params} />
     </Suspense>
   );

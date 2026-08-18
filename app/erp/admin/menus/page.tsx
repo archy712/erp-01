@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { PageHeader } from "@/components/erp/page-header";
 import { MenuManager } from "@/components/erp/admin/menu-manager";
+import { MenuManagerSkeleton } from "@/components/erp/admin/menu-manager-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import { getAllMenus } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -9,7 +10,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function AdminMenusPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MenuManagerSkeleton />}>
       <AdminMenusContent />
     </Suspense>
   );

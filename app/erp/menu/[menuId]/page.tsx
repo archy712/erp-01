@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { AccessDenied } from "@/components/erp/access-denied";
 import { MenuPlaceholder } from "@/components/erp/menu-placeholder";
+import { MenuPlaceholderSkeleton } from "@/components/erp/menu-placeholder-skeleton";
 import { canAccessMenu, getCurrentErpUser } from "@/lib/erp/auth";
 import { getRouteForMenuPath } from "@/lib/erp/menu-routes";
 import { getMenuBreadcrumb } from "@/lib/erp/queries";
@@ -15,7 +16,7 @@ export default function ErpMenuPage({
   params: Promise<{ menuId: string }>;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MenuPlaceholderSkeleton />}>
       <ErpMenuContent params={params} />
     </Suspense>
   );

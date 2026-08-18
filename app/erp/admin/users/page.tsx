@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { PageHeader } from "@/components/erp/page-header";
 import { UserTable } from "@/components/erp/admin/user-table";
+import { ErpListPageSkeleton } from "@/components/erp/erp-list-page-skeleton";
 import { getCurrentErpUser } from "@/lib/erp/auth";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import { getUsers } from "@/lib/erp/queries";
@@ -10,7 +11,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function AdminUsersPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ErpListPageSkeleton />}>
       <AdminUsersContent />
     </Suspense>
   );

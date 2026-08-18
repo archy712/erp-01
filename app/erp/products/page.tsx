@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/erp/page-header";
+import { ErpListPageSkeleton } from "@/components/erp/erp-list-page-skeleton";
 import { ProductFilters } from "@/components/erp/products/product-filters";
 import { ProductTable } from "@/components/erp/products/product-table";
 import { isGenderValue } from "@/lib/erp/master/gender";
@@ -44,7 +45,7 @@ export default function ProductsPage({
   searchParams: ProductsPageSearchParams;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ErpListPageSkeleton showFilters columnCount={9} />}>
       <ProductsContent searchParams={searchParams} />
     </Suspense>
   );

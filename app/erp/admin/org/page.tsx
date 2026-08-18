@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { OrgChartView } from "@/components/erp/org/org-chart-view";
+import { MasterDetailSkeleton } from "@/components/erp/master/master-detail-skeleton";
 import { getCurrentErpUser } from "@/lib/erp/auth";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import {
@@ -12,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export default function AdminOrgPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MasterDetailSkeleton />}>
       <AdminOrgContent />
     </Suspense>
   );

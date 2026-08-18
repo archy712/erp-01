@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { PageHeader } from "@/components/erp/page-header";
 import { PermissionEditor } from "@/components/erp/admin/permission-editor";
+import { PermissionEditorSkeleton } from "@/components/erp/admin/permission-editor-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import { getAllMenus, getUsers } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -9,7 +10,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function AdminPermissionsPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PermissionEditorSkeleton />}>
       <AdminPermissionsContent />
     </Suspense>
   );

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/profile-form";
+import { ErpFormPageSkeleton } from "@/components/erp/erp-form-page-skeleton";
 import { getDepartments } from "@/lib/erp/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -10,7 +11,7 @@ import { DEFAULT_AVATAR_KEY } from "@/lib/erp/avatar-options";
 
 export default function SettingsProfilePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ErpFormPageSkeleton fieldCount={6} />}>
       <SettingsProfileContent />
     </Suspense>
   );

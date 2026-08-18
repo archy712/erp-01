@@ -9,12 +9,20 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { ErpFormPageSkeleton } from "@/components/erp/erp-form-page-skeleton";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
 
 export default function SettingsThemePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <ErpFormPageSkeleton
+          maxWidthClassName="w-full max-w-md md:max-w-xl lg:max-w-2xl"
+          fieldCount={1}
+        />
+      }
+    >
       <SettingsThemeContent />
     </Suspense>
   );

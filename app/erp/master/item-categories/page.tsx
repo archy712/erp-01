@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { ItemCategoryManager } from "@/components/erp/master/item-category-manager";
+import { MasterDetailSkeleton } from "@/components/erp/master/master-detail-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import {
   getBrands,
@@ -27,7 +28,7 @@ export default function MasterItemCategoriesPage({
   searchParams: ItemCategoriesPageSearchParams;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MasterDetailSkeleton />}>
       <MasterItemCategoriesContent searchParams={searchParams} />
     </Suspense>
   );

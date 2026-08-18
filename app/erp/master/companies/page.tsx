@@ -1,12 +1,15 @@
 import { Suspense } from "react";
 
 import { CompanyManager } from "@/components/erp/master/company-manager";
+import { ErpListPageSkeleton } from "@/components/erp/erp-list-page-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import { getCompanies } from "@/lib/erp/master/queries";
 
 export default function MasterCompaniesPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={<ErpListPageSkeleton showHeaderAction columnCount={6} />}
+    >
       <MasterCompaniesContent />
     </Suspense>
   );

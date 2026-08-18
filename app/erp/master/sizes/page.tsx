@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { SizeManager } from "@/components/erp/master/size-manager";
+import { MasterDetailSkeleton } from "@/components/erp/master/master-detail-skeleton";
 import {
   GENDERS,
   isGenderValue,
@@ -27,7 +28,7 @@ export default function MasterSizesPage({
   searchParams: SizesPageSearchParams;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MasterDetailSkeleton />}>
       <MasterSizesContent searchParams={searchParams} />
     </Suspense>
   );

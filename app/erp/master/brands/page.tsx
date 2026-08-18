@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { BrandStructureManager } from "@/components/erp/master/brand-structure-manager";
+import { MasterDetailSkeleton } from "@/components/erp/master/master-detail-skeleton";
 import { getMenuPathForRoute } from "@/lib/erp/menu-routes";
 import {
   getBrandLines,
@@ -21,7 +22,7 @@ export default function MasterBrandsPage({
   searchParams: BrandsPageSearchParams;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MasterDetailSkeleton />}>
       <MasterBrandsContent searchParams={searchParams} />
     </Suspense>
   );
