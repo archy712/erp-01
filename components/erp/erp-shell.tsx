@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { ErpFooter } from "./erp-footer";
 import { ErpHeader } from "./erp-header";
+import { ErpRouteProgress } from "./erp-route-progress";
 import { ErpTreePanel } from "./erp-tree-panel";
 import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -54,6 +55,11 @@ export function ErpShell({
 }: ErpShellProps) {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
+      {/* usePathname()/useSearchParams()를 쓰므로 자체 Suspense 경계가
+          필요하다(rail/tree/mobileNav와 동일한 이유, CLAUDE.md 참고). */}
+      <Suspense fallback={null}>
+        <ErpRouteProgress />
+      </Suspense>
       <ErpHeader dict={dict} mobileNav={mobileNav} categories={categories} />
 
       <div className="flex flex-1 overflow-hidden">

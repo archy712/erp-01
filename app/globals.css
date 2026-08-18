@@ -38,6 +38,10 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* 스켈레톤 전용 색상. --accent(0 0% 96.1%)는 --background(0 0% 100%)와
+       명도차가 3.9%p뿐이라 뚜렷하게 보이지 않아 분리했다. --border(89.8%)보다
+       한 단계 더 어두운 중간 톤 회색으로, 배경과 명확히 구분된다. */
+    --skeleton: 0 0% 82%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -73,6 +77,9 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* 라이트 모드와 동일한 이유. --accent(14.9%)는 --background(3.9%)와
+       11%p 차이라 라이트보단 낫지만, 배경보다 확실히 밝은 톤으로 더 키웠다. */
+    --skeleton: 0 0% 26%;
   }
 }
 
@@ -87,38 +94,89 @@
 
 /* useLinkStatus 기반 Link pending 힌트(components/erp/erp-link-pending-indicator.tsx).
    next.js 문서(use-link-status.md)의 link-hint 패턴을 그대로 따른다: 항상
-   렌더링되는 고정 크기 점을 opacity/visibility로만 토글해 layout shift 없이
-   표시하고, 내비게이션이 실제로 지연될 때만(100ms 딜레이 후) 서서히
-   드러나도록 한다. background는 currentColor라 부모의 text 색상(예:
-   text-accent-foreground)을 그대로 따라간다. */
+   렌더링되는 고정 크기 요소를 opacity/visibility로만 토글해 layout shift
+   없이 표시하고, 내비게이션이 실제로 지연될 때만(100ms 딜레이 후) 서서히
+   드러나도록 한다.
+   이전에는 0.4rem 점을 currentColor(부모 텍스트 색)로, 최대 opacity
+   0.6으로만 표시해 놓치기 쉬웠다. 크기를 키우고 회전하는 링 스피너로
+   바꿔 "로딩 중"이라는 의미를 더 명확히 전달하며, 색도 hover/active 상태에
+   따라 바뀌는 currentColor 대신 --primary로 고정해 어떤 배경 위에서도
+   항상 뚜렷하게 보이도록 했다. */
 .erp-link-hint {
   display: inline-block;
-  width: 0.4rem;
-  height: 0.4rem;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 9999px;
-  background: currentColor;
+  border: 2px solid hsl(var(--primary) / 0.3);
+  border-top-color: hsl(var(--primary));
   opacity: 0;
   visibility: hidden;
 }
 
 .erp-link-hint.is-pending {
   visibility: visible;
-  animation-name: erp-link-hint-fade-in, erp-link-hint-pulse;
-  animation-duration: 200ms, 1s;
+  animation-name: erp-link-hint-fade-in, erp-link-hint-spin;
+  animation-duration: 200ms, 700ms;
   animation-delay: 100ms, 100ms;
-  animation-timing-function: ease, ease-in-out;
+  animation-timing-function: ease, linear;
   animation-iteration-count: 1, infinite;
   animation-fill-mode: forwards, none;
 }
 
 @keyframes erp-link-hint-fade-in {
   to {
-    opacity: 0.6;
+    opacity: 1;
   }
 }
 
-@keyframes erp-link-hint-pulse {
-  50% {
-    opacity: 0.25;
+@keyframes erp-link-hint-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-link-hint.is-pending {
+    animation-name: erp-link-hint-fade-in;
+    animation-duration: 200ms;
+    animation-delay: 100ms;
+    animation-timing-function: ease;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+  }
+}
+
+/* Skeleton(components/ui/skeleton.tsx) shimmer 애니메이션. 기존
+   animate-pulse(opacity 1→0.5 반복)는 저점에서 --accent 배경과 명도 차가
+   라이트 모드 3.9%p/다크 모드 11%p에 불과해 거의 안 보인다는 피드백을
+   받았다. opacity를 낮추는 대신 --skeleton 베이스 위로 밝은 그라디언트
+   밴드가 좌→우로 스윕하도록 바꿔서, 애니메이션 내내 완전 불투명을
+   유지하며 "지금 작업 중"이라는 인상을 더 뚜렷하게 준다.
+   prefers-reduced-motion 사용자에게는 스윕을 끄고 --skeleton 단색만
+   정적으로 보여준다. */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--skeleton)) 25%,
+    color-mix(in oklab, hsl(var(--skeleton)), hsl(var(--foreground)) 12%) 50%,
+    hsl(var(--skeleton)) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    background: hsl(var(--skeleton));
+    animation: none;
   }
 }

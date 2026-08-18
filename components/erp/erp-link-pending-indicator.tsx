@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 // `<Link>`의 자식으로 심기만 하면 된다.
 //
 // 항상 렌더링되는 고정 크기 요소의 opacity/visibility만 토글해서(문서
-// 권장 패턴) layout shift 없이 표시한다. 실제 페이드인 + 은은한 펄스
+// 권장 패턴) layout shift 없이 표시한다. 실제 페이드인 + 회전 스피너
 // 애니메이션은 app/globals.css의 `.erp-link-hint`/`.is-pending` 규칙과
-// `erp-link-hint-fade-in`/`erp-link-hint-pulse` 키프레임에 정의되어 있다.
+// `erp-link-hint-fade-in`/`erp-link-hint-spin` 키프레임에 정의되어 있다.
 // 내비게이션이 실제로 느릴 때만(100ms 지연 후) 보이도록 해서, 빠른 전환에서
 // 불필요하게 깜빡이지 않게 한다.
 export function ErpLinkPendingIndicator({ className }: { className?: string }) {
