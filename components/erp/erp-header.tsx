@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
-import { Boxes } from "lucide-react";
+import { Boxes, Home } from "lucide-react";
 
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,21 @@ export function ErpHeader({
   return (
     <header className="flex h-16 w-full shrink-0 items-center border-b border-b-foreground/10 px-4 md:px-6">
       <div className="relative flex h-full w-full items-center">
-        <div className="flex flex-1 items-center">
+        <div className="flex flex-1 items-center gap-1">
+          {/* 업무 중 공개 웹사이트 메인(/)으로 돌아갈 방법이 없었다 —
+              로고/타이틀은 의도적으로 둘 다 /erp만 가리키므로(위 주석 참고)
+              별도로 헤더 맨 왼쪽에 홈 아이콘을 둔다. */}
+          <Button
+            asChild
+            size="icon"
+            variant="ghost"
+            className="shrink-0"
+            aria-label={dict.erp.header.homeAriaLabel}
+          >
+            <Link href="/">
+              <Home className="size-5" />
+            </Link>
+          </Button>
           <div className="md:hidden">{mobileNav}</div>
           {/* md 이상에서는 햄버거 대신 로고 아이콘을 노출한다 —
               다른 메뉴 아이콘과 동일한 lucide-react 톤을 유지한다. */}

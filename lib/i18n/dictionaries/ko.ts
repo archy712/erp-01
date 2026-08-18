@@ -453,6 +453,7 @@ export const ko: Dictionary = {
   },
   erp: {
     header: {
+      homeAriaLabel: "웹사이트 홈으로 이동",
       logoAriaLabel: "ERP 홈으로 이동",
       orgChartTriggerLabel: "조직도",
       orgChartTriggerAriaLabel: "조직도 보기",

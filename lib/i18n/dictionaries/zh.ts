@@ -435,6 +435,7 @@ export const zh: Dictionary = {
   },
   erp: {
     header: {
+      homeAriaLabel: "前往网站首页",
       logoAriaLabel: "前往 ERP 首页",
       orgChartTriggerLabel: "组织架构",
       orgChartTriggerAriaLabel: "查看组织架构",
