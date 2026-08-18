@@ -14,7 +14,15 @@ function wrapHistoryMethod(method: "pushState" | "replaceState") {
     unused: string,
     url?: string | URL | null,
   ) {
-    window.dispatchEvent(new Event(NAVIGATION_START_EVENT));
+    // Next 라우터 자체가 useInsertionEffect 안에서 pushState/replaceState를
+    // 호출한다(app-router.js) — 그 호출 스택 안에서 곧바로 dispatchEvent →
+    // setVisible(state 업데이트)까지 동기로 이어지면 "useInsertionEffect must
+    // not schedule updates" 에러가 난다. 마이크로태스크로 한 틱 미뤄서
+    // insertionEffect 실행이 끝난 뒤에 이벤트가 발생하도록 한다(사용자 체감
+    // 지연은 없음).
+    queueMicrotask(() => {
+      window.dispatchEvent(new Event(NAVIGATION_START_EVENT));
+    });
     return original(data, unused, url);
   };
 }
