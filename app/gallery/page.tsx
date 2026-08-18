@@ -6,6 +6,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { ChartGallery } from "@/components/charts/chart-gallery";
 import { AiElementsSection } from "@/components/gallery/ai-elements-section";
 import { ButtonsSection } from "@/components/gallery/buttons-section";
 import { DataDisplaySection } from "@/components/gallery/data-display-section";
@@ -24,6 +25,7 @@ const CATEGORIES = [
   { value: "layout", label: "레이아웃", content: <LayoutSection /> },
   { value: "feedback", label: "피드백", content: <FeedbackSection /> },
   { value: "data", label: "데이터 표시", content: <DataDisplaySection /> },
+  { value: "charts", label: "차트", content: <ChartGallery /> },
   { value: "ai", label: "AI 채팅 요소", content: <AiElementsSection /> },
   {
     value: "recommended",
