@@ -49,6 +49,20 @@ const TRICKLE_TARGET = 80;
 const TRICKLE_INTERVAL_MS = 200;
 const COMPLETE_HOLD_MS = 200;
 
+// pathname/searchParams(React 값)와 window.location(브라우저 즉시값) 양쪽에서
+// 똑같은 포맷의 키를 만들어야 "같은 URL로의 내비게이션"을 정확히 비교할 수
+// 있다 — search는 선행 "?" 없이 받는다(URLSearchParams.toString()과 동일).
+function buildKey(pathname: string, search: string): string {
+  return search ? `${pathname}?${search}` : pathname;
+}
+
+function currentLocationKey(): string {
+  return buildKey(
+    window.location.pathname,
+    window.location.search.replace(/^\?/, ""),
+  );
+}
+
 // 전역 상단 로딩 프로그레스 바(GitHub/YouTube 스타일). 개별 화면의 스켈레톤
 // 모양과 무관하게 "클릭이 즉시 반응했다"는 확신을 주는 것이 목적이라, 위치와
 // 색이 항상 동일한 얇은 바 하나로 충분하다. 내비게이션 시작은
@@ -63,18 +77,43 @@ export function ErpRouteProgress() {
   const [visible, setVisible] = useState(false);
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const currentKeyRef = useRef(`${pathname}?${searchParams.toString()}`);
+  const currentKeyRef = useRef(buildKey(pathname, searchParams.toString()));
 
   useEffect(() => {
     patchHistoryOnce();
   }, []);
 
   useEffect(() => {
+    function completeImmediately() {
+      if (trickleRef.current) {
+        clearInterval(trickleRef.current);
+        trickleRef.current = null;
+      }
+      setVisible(true);
+      setProgress(100);
+      hideRef.current = setTimeout(() => {
+        setVisible(false);
+        setProgress(0);
+      }, COMPLETE_HOLD_MS);
+    }
+
     function handleNavigationStart() {
       if (hideRef.current) {
         clearTimeout(hideRef.current);
         hideRef.current = null;
       }
+
+      // pushState/replaceState가 지금 보고 있는 URL과 똑같은 곳으로 호출된
+      // 경우(예: 현재 카테고리를 다시 클릭) pathname/searchParams가 실제로는
+      // 바뀌지 않으므로, 아래 "완료 감지" effect가 영원히 발동하지 않는다 —
+      // 바가 트리클된 채로 멈춰 남는 버그였다. 이 시점의 window.location은
+      // pushState 호출이 이미 반영된 뒤라 최신 URL을 담고 있으므로, 여기서
+      // 직접 비교해 같은 URL이면 곧바로 완료 처리한다.
+      if (currentLocationKey() === currentKeyRef.current) {
+        completeImmediately();
+        return;
+      }
+
       if (trickleRef.current) clearInterval(trickleRef.current);
 
       setVisible(true);
@@ -97,7 +136,7 @@ export function ErpRouteProgress() {
   // pathname/searchParams가 실제로 바뀐 시점 = 새 라우트가 커밋된 시점이므로,
   // 여기서 100%로 스냅하고 짧게 유지한 뒤 사라진다.
   useEffect(() => {
-    const key = `${pathname}?${searchParams.toString()}`;
+    const key = buildKey(pathname, searchParams.toString());
     if (currentKeyRef.current === key) return;
     currentKeyRef.current = key;
 
