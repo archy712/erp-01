@@ -22,12 +22,12 @@ export interface Dictionary {
     categoriesDescription: string;
     features: { title: string; description: string }[];
     footer: {
-      about: string;
-      techStack: string;
+      projectIntro: string;
+      requirements: string;
+      mvpTask: string;
       componentGallery: string;
       iconGallery: string;
-      chartGallery: string;
-      avatarGallery: string;
+      techStack: string;
       developedBy: string;
     };
   };
