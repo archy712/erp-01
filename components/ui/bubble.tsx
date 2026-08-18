@@ -5,17 +5,23 @@ import { Slot } from "radix-ui";
 import { cn } from "@/lib/utils";
 
 function BubbleGroup({ className, ...props }: React.ComponentProps<"div">) {
+  // max-w-[80%]는 Bubble이 아니라 여기(BubbleGroup)에 둔다. align=end일 때
+  // Bubble에 퍼센트 max-width를 직접 주면 중첩 flex-col + align-self 조합에서
+  // 브라우저가 max-content 폭을 잘못 계산해 짧은 텍스트도 불필요하게 줄바꿈된다.
   return (
     <div
       data-slot="bubble-group"
-      className={cn("flex min-w-0 flex-col gap-2", className)}
+      className={cn(
+        "flex max-w-[80%] min-w-0 flex-col gap-2 group-data-[align=end]/message:self-end",
+        className,
+      )}
       {...props}
     />
   );
 }
 
 const bubbleVariants = cva(
-  "group/bubble relative flex w-fit max-w-[80%] min-w-0 flex-col gap-1 group-data-[align=end]/message:self-end data-[align=end]:self-end data-[variant=ghost]:max-w-full",
+  "group/bubble relative flex w-fit min-w-0 flex-col gap-1 data-[align=end]:self-end data-[variant=ghost]:max-w-full",
   {
     variants: {
       variant: {
