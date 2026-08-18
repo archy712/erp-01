@@ -406,13 +406,13 @@ export const zh: Dictionary = {
     ],
   },
   gallery: {
-    headerTitle: "shadcn/ui 组件展示馆",
+    headerTitle: "组件展示馆",
     heading: "组件展示馆",
     description:
       "浏览 shadcn/ui 官方注册表中的全部组件，以及实际项目中常用的扩展组件。",
   },
   icons: {
-    headerTitle: "lucide-react 图标展示馆",
+    headerTitle: "图标展示馆",
     heading: "图标展示馆",
     description:
       "搜索本项目内置的全部 lucide-react 图标，立即复制 import 语句。",

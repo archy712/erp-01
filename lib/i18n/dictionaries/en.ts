@@ -427,13 +427,13 @@ export const en: Dictionary = {
     ],
   },
   gallery: {
-    headerTitle: "shadcn/ui Component Gallery",
+    headerTitle: "Component Gallery",
     heading: "Component Gallery",
     description:
       "Browse every component in the official shadcn/ui registry alongside extension components commonly used in real projects.",
   },
   icons: {
-    headerTitle: "lucide-react Icon Gallery",
+    headerTitle: "Icon Gallery",
     heading: "Icon Gallery",
     description:
       "Search every lucide-react icon bundled with this project and copy its import statement instantly.",

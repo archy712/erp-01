@@ -427,13 +427,13 @@ export const ja: Dictionary = {
     ],
   },
   gallery: {
-    headerTitle: "shadcn/ui コンポーネントギャラリー",
+    headerTitle: "コンポーネントギャラリー",
     heading: "コンポーネントギャラリー",
     description:
       "shadcn/ui公式レジストリの全コンポーネントと、実務でよく使われる拡張コンポーネントを一緒に確認できます。",
   },
   icons: {
-    headerTitle: "lucide-react アイコンギャラリー",
+    headerTitle: "アイコンギャラリー",
     heading: "アイコンギャラリー",
     description:
       "このプロジェクトに含まれるlucide-reactの全アイコンを検索し、すぐにimport文をコピーできます。",

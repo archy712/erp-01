@@ -423,13 +423,13 @@ export const ko: Dictionary = {
     ],
   },
   gallery: {
-    headerTitle: "shadcn/ui 컴포넌트 갤러리",
+    headerTitle: "컴포넌트 갤러리",
     heading: "컴포넌트 갤러리",
     description:
       "shadcn/ui 공식 레지스트리의 모든 컴포넌트와, 실무에서 자주 쓰이는 확장 컴포넌트를 함께 모아 살펴볼 수 있습니다.",
   },
   icons: {
-    headerTitle: "lucide-react 아이콘 갤러리",
+    headerTitle: "아이콘 갤러리",
     heading: "아이콘 갤러리",
     description:
       "이 프로젝트에 포함된 lucide-react의 모든 아이콘을 검색하고 바로 import 구문을 복사할 수 있습니다.",
