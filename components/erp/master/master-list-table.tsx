@@ -2,9 +2,11 @@
 
 import {
   type ColumnDef,
+  type SortingState,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -17,6 +19,7 @@ import {
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -73,6 +76,7 @@ export function MasterListTable<T extends MasterListRow>({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   // SortOrderCell의 위/아래 비활성화는 검색 필터와 무관하게 "형제 전체 안에서의
   // 위치"를 기준으로 판정해야 한다(검색 중에도 실제 이동 대상은 전체 형제이므로).
@@ -119,14 +123,18 @@ export function MasterListTable<T extends MasterListRow>({
     const base: ColumnDef<T>[] = [
       {
         accessorKey: "code",
-        header: "코드",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="코드" />
+        ),
         cell: ({ row }) => (
           <span className="font-mono text-sm">{row.original.code}</span>
         ),
       },
       {
         accessorKey: "name",
-        header: "명칭",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="명칭" />
+        ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <span className="truncate">{row.original.name}</span>
@@ -139,8 +147,10 @@ export function MasterListTable<T extends MasterListRow>({
         ),
       },
       {
-        id: "isActive",
-        header: "사용여부",
+        accessorKey: "isActive",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="사용여부" />
+        ),
         cell: ({ row }) => (
           <div onClick={(event) => event.stopPropagation()}>
             <Switch
@@ -155,8 +165,10 @@ export function MasterListTable<T extends MasterListRow>({
         ),
       },
       {
-        id: "sortOrder",
-        header: "정렬순서",
+        accessorKey: "sortOrder",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="정렬순서" />
+        ),
         cell: ({ row }) => {
           const index = orderIndex.get(row.original.id) ?? 0;
           return (
@@ -171,7 +183,13 @@ export function MasterListTable<T extends MasterListRow>({
       },
       {
         accessorKey: "note",
-        header: "비고",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="비고" />
+        ),
+        sortingFn: (rowA, rowB, columnId) =>
+          (rowA.getValue(columnId) ?? "")
+            .toString()
+            .localeCompare((rowB.getValue(columnId) ?? "").toString()),
         cell: ({ row }) => (
           <span className="truncate text-sm text-muted-foreground">
             {row.original.note ?? "-"}
@@ -192,10 +210,12 @@ export function MasterListTable<T extends MasterListRow>({
   const table = useReactTable({
     data: filtered,
     columns,
-    state: { pagination },
+    state: { pagination, sorting },
     onPaginationChange: setPagination,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (

@@ -1,9 +1,21 @@
 "use client";
 
-import { ChevronDown, ImageOff } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ImageOff,
+} from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -48,14 +60,60 @@ import {
   setMasterActiveAction,
 } from "@/lib/erp/master/actions";
 import { getGenderLabel } from "@/lib/erp/master/gender";
-import type { ProductListItem } from "@/lib/erp/master/queries";
+import type {
+  ProductListItem,
+  ProductSortField,
+} from "@/lib/erp/master/queries";
 
 type ProductTableProps = {
   items: ProductListItem[];
   total: number;
   page: number;
   pageSize: number;
+  sortBy?: ProductSortField;
+  sortDir?: "asc" | "desc";
 };
+
+type SortableHeadProps = {
+  field: ProductSortField;
+  sortBy?: ProductSortField;
+  sortDir?: "asc" | "desc";
+  onSort: (field: ProductSortField) => void;
+  children: ReactNode;
+  className?: string;
+};
+
+// 상품 목록은 서버 사이드 정렬(getProducts의 sortBy/sortDir)이라 클릭 시 URL의
+// sortBy/sortDir을 바꿔 서버 컴포넌트를 재조회한다 — MasterListTable/UserTable의
+// 클라이언트 사이드 react-table 정렬과는 다른 방식이다.
+function SortableHead({
+  field,
+  sortBy,
+  sortDir,
+  onSort,
+  children,
+  className,
+}: SortableHeadProps) {
+  const active = sortBy === field;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        className="-ml-2 inline-flex items-center gap-1.5 rounded px-2 py-1 text-left font-medium hover:bg-accent"
+        onClick={() => onSort(field)}
+      >
+        <span>{children}</span>
+        {active && sortDir === "asc" ? (
+          <ArrowUp className="size-3.5" />
+        ) : active && sortDir === "desc" ? (
+          <ArrowDown className="size-3.5" />
+        ) : (
+          <ChevronsUpDown className="size-3.5 text-muted-foreground/50" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
 
 // 검색·필터·페이지네이션 전부 서버 사이드(getProducts)로 처리되므로(PRD
 // 7.6.1), MasterListTable(Task 032)과 달리 클라이언트에서 재필터링/재정렬하지
@@ -66,6 +124,8 @@ export function ProductTable({
   total,
   page,
   pageSize,
+  sortBy,
+  sortDir,
 }: ProductTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -106,6 +166,21 @@ export function ProductTable({
       router.push(`/erp/products/${id}`);
     },
     [router],
+  );
+
+  // 같은 컬럼을 다시 클릭하면 오름차순 ↔ 내림차순을 토글하고, 다른 컬럼을
+  // 클릭하면 오름차순부터 시작한다. 정렬 결과 자체(=몇 건인지)는 바뀌지
+  // 않지만 사용자가 보던 순서가 바뀌므로 첫 페이지로 되돌린다.
+  const handleSort = useCallback(
+    (field: ProductSortField) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const nextDir = sortBy === field && sortDir === "asc" ? "desc" : "asc";
+      params.set("sortBy", field);
+      params.set("sortDir", nextDir);
+      params.delete("page");
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams, sortBy, sortDir],
   );
 
   const handleActiveToggle = useCallback(
@@ -232,13 +307,41 @@ export function ProductTable({
                 />
               </TableHead>
               <TableHead>썸네일</TableHead>
-              <TableHead>상품코드</TableHead>
-              <TableHead>상품명</TableHead>
+              <SortableHead
+                field="code"
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={handleSort}
+              >
+                상품코드
+              </SortableHead>
+              <SortableHead
+                field="name"
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={handleSort}
+              >
+                상품명
+              </SortableHead>
               <TableHead>라인</TableHead>
               <TableHead>컬러</TableHead>
-              <TableHead>성별</TableHead>
+              <SortableHead
+                field="gender"
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={handleSort}
+              >
+                성별
+              </SortableHead>
               <TableHead>사이즈</TableHead>
-              <TableHead>사용여부</TableHead>
+              <SortableHead
+                field="isActive"
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={handleSort}
+              >
+                사용여부
+              </SortableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -2,9 +2,11 @@
 
 import {
   type ColumnDef,
+  type SortingState,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -30,6 +32,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -82,6 +85,7 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -145,17 +149,23 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
       },
       {
         accessorKey: "email",
-        header: t.columnEmail,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t.columnEmail} />
+        ),
         cell: ({ row }) => row.original.email ?? "-",
       },
       {
         accessorKey: "name",
-        header: t.columnName,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t.columnName} />
+        ),
         cell: ({ row }) => row.original.name ?? "-",
       },
       {
         accessorKey: "role",
-        header: t.columnRole,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t.columnRole} />
+        ),
         cell: ({ row }) => {
           const role = row.original.role as UserRole;
           return (
@@ -227,8 +237,10 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
         },
       },
       {
-        id: "isActive",
-        header: t.columnIsActive,
+        accessorKey: "is_active",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t.columnIsActive} />
+        ),
         cell: ({ row }) => {
           const user = row.original;
           const isRowPending = pendingId === user.id;
@@ -246,7 +258,9 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
       },
       {
         accessorKey: "created_at",
-        header: t.columnCreatedAt,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t.columnCreatedAt} />
+        ),
         cell: ({ row }) => formatDate(row.original.created_at),
       },
     ],
@@ -256,10 +270,12 @@ export function UserTable({ users, currentUserId, dict }: UserTableProps) {
   const table = useReactTable({
     data: filtered,
     columns,
-    state: { pagination },
+    state: { pagination, sorting },
     onPaginationChange: setPagination,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (

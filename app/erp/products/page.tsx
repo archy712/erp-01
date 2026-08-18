@@ -10,7 +10,19 @@ import {
   getBrands,
   getProducts,
   getSubItemFilterOptions,
+  type ProductSortField,
 } from "@/lib/erp/master/queries";
+
+const PRODUCT_SORT_FIELDS: readonly ProductSortField[] = [
+  "code",
+  "name",
+  "gender",
+  "isActive",
+];
+
+function isProductSortField(value: string): value is ProductSortField {
+  return (PRODUCT_SORT_FIELDS as readonly string[]).includes(value);
+}
 
 // 이 라우트는 app/erp/master/ 세그먼트 밖에 있어 requireAdmin() 하드 게이트가
 // 걸리지 않는다 — 상품 관리는 기존 user_menu_permissions + canAccessMenu()
@@ -22,6 +34,8 @@ type ProductsPageSearchParams = Promise<{
   gender?: string;
   isActive?: string;
   page?: string;
+  sortBy?: string;
+  sortDir?: string;
 }>;
 
 export default function ProductsPage({
@@ -56,6 +70,17 @@ async function ProductsContent({
       : params.isActive === "false"
         ? false
         : undefined;
+  const sortBy =
+    params.sortBy && isProductSortField(params.sortBy)
+      ? params.sortBy
+      : undefined;
+  // sortBy가 있는데 sortDir이 없으면 getProducts()의 기본값(오름차순)과
+  // 화면 표시(헤더 아이콘)를 맞추기 위해 "asc"로 명시한다.
+  const sortDir = sortBy
+    ? params.sortDir === "desc"
+      ? "desc"
+      : "asc"
+    : undefined;
 
   const [brands, subItems, result] = await Promise.all([
     getBrands(),
@@ -68,6 +93,8 @@ async function ProductsContent({
       isActive,
       page,
       pageSize: DEFAULT_PRODUCT_PAGE_SIZE,
+      sortBy,
+      sortDir,
     }),
   ]);
 
@@ -94,6 +121,8 @@ async function ProductsContent({
         total={result.total}
         page={page}
         pageSize={DEFAULT_PRODUCT_PAGE_SIZE}
+        sortBy={sortBy}
+        sortDir={sortDir}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { PageHeader } from "@/components/erp/page-header";
 import type { Company } from "@/lib/erp/master/types";
 import { MasterDeleteDialog } from "./master-delete-dialog";
@@ -65,7 +66,9 @@ export function CompanyManager({
         extraColumns={[
           {
             accessorKey: "createdAt",
-            header: "등록일",
+            header: ({ column }) => (
+              <DataTableColumnHeader column={column} title="등록일" />
+            ),
             cell: ({ row }) => (
               <span className="text-sm text-muted-foreground">
                 {formatDate(row.original.createdAt)}

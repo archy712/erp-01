@@ -348,6 +348,13 @@ function toIlikePattern(term: string): string {
   return `%${escaped}%`;
 }
 
+// 라인/컬러/사이즈명은 brand_lines/brand_colors/brand_gender_sizes를 embed한
+// 값이라 PostgREST의 참조 테이블 정렬(`order(..., { referencedTable })`)로
+// 상위(products) 행 순서를 바꿔보려 했으나 실제로는 반영되지 않는 것을 확인했다
+// (Playwright로 클릭 후 응답 행 순서가 DB의 `order by name`과 달랐음) — 그래서
+// products 테이블에 직접 저장된 4개 컬럼만 정렬 가능하게 한다.
+export type ProductSortField = "code" | "name" | "gender" | "isActive";
+
 export type ProductFilters = {
   /** 상품코드/상품명 부분 일치 검색 */
   search?: string;
@@ -358,6 +365,8 @@ export type ProductFilters = {
   /** 1부터 시작 */
   page?: number;
   pageSize?: number;
+  sortBy?: ProductSortField;
+  sortDir?: "asc" | "desc";
 };
 
 export type ProductListItem = {
@@ -418,10 +427,27 @@ export async function getProducts(
     query = query.eq("is_active", filters.isActive);
   }
 
-  query = query
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true })
-    .range(from, to);
+  const ascending = filters?.sortDir !== "desc";
+  switch (filters?.sortBy) {
+    case "code":
+      query = query.order("code", { ascending });
+      break;
+    case "name":
+      query = query.order("name", { ascending });
+      break;
+    case "gender":
+      query = query.order("gender", { ascending });
+      break;
+    case "isActive":
+      query = query.order("is_active", { ascending });
+      break;
+    default:
+      query = query
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+  }
+  // 정렬 기준값이 같은 행이 있어도 페이지네이션 순서가 흔들리지 않도록 id를 최종 tie-breaker로 둔다.
+  query = query.order("id", { ascending: true }).range(from, to);
 
   const { data, error, count } = await query;
   if (error) throw error;
