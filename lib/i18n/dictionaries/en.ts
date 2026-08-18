@@ -299,7 +299,12 @@ export const en: Dictionary = {
       levelLabel: "Level",
       nameLabel: "Menu Name",
       nameRequired: "Please enter a menu name.",
-      iconPreviewLabel: "Icon chosen automatically based on the menu name.",
+      iconPreviewLabel:
+        "Chosen automatically based on the menu name. Click to pick one yourself.",
+      iconPickerTrigger: "Choose icon",
+      iconSearchPlaceholder: "Search icons by name",
+      iconAutoOption: "Use automatic suggestion based on name",
+      iconSearchEmpty: "No matching icons.",
       sortOrderLabel: "Sort Order",
       useStatusLabel: "Active",
       cancelBtn: "Cancel",

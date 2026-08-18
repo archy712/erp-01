@@ -1,8 +1,9 @@
 "use client";
 
-import { createElement, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { MenuIconPicker } from "@/components/erp/admin/menu-icon-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,7 +28,6 @@ import {
   updateMenuAction,
   type MenuFormInput,
 } from "@/lib/erp/actions";
-import { getMenuIcon } from "@/lib/erp/menu-icons";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import type { MenuFlat, MenuLevel } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -49,23 +49,6 @@ function pathLabel(menus: MenuFlat[], id: string): string {
   const tree = buildMenuTree(menus);
   const path = getMenuBreadcrumb(tree, id);
   return path ? path.map((node) => node.name).join(" > ") : "";
-}
-
-// getMenuIcon()은 이름에 따라 매번 다른(그러나 항상 기존에 정의된 고정된)
-// lucide 아이콘 컴포넌트를 돌려준다. JSX(`<Icon/>`)로 쓰면 "렌더마다 새
-// 컴포넌트를 만드는 패턴"으로 오인해 react-hooks/static-components 규칙에
-// 걸리므로, createElement로 직접 엘리먼트를 만들어 그 정적 분석을 우회한다.
-function MenuIconPreview({
-  name,
-  hasChildren,
-}: {
-  name: string;
-  hasChildren: boolean;
-}) {
-  return createElement(getMenuIcon(name, hasChildren), {
-    className: "size-4 text-muted-foreground",
-    "aria-hidden": true,
-  });
 }
 
 // Dialog/DialogContent는 Radix Presence로 닫힘 애니메이션을 관리하므로 항상
@@ -137,6 +120,9 @@ function MenuFormFields({
   const [isActive, setIsActive] = useState(
     mode === "edit" ? menu.isActive : true,
   );
+  const [icon, setIcon] = useState<string | null>(
+    mode === "edit" ? menu.icon : null,
+  );
   const [nameError, setNameError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -178,6 +164,7 @@ function MenuFormFields({
       name: trimmedName,
       sortOrder,
       isActive,
+      icon,
     };
 
     startTransition(async () => {
@@ -187,6 +174,7 @@ function MenuFormFields({
               name: input.name,
               sortOrder: input.sortOrder,
               isActive: input.isActive,
+              icon: input.icon,
             })
           : await createMenuAction(input);
 
@@ -242,9 +230,13 @@ function MenuFormFields({
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="menu-name">{t.nameLabel}</Label>
           <div className="flex items-center gap-2">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/50">
-              <MenuIconPreview name={name.trim()} hasChildren={hasChildren} />
-            </span>
+            <MenuIconPicker
+              value={icon}
+              onChange={setIcon}
+              name={name.trim()}
+              hasChildren={hasChildren}
+              dict={dict}
+            />
             <Input
               id="menu-name"
               value={name}

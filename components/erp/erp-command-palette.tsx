@@ -23,7 +23,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { getMenuIcon } from "@/lib/erp/menu-icons";
+import { resolveMenuIcon } from "@/lib/erp/menu-icons";
 import { flattenMenuLeaves } from "@/lib/erp/menu-tree";
 import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -147,7 +147,7 @@ export function ErpCommandPalette({
             return (
               <CommandGroup key={category.id} heading={category.name}>
                 {items.map((leaf) => {
-                  const Icon = getMenuIcon(leaf.name, false);
+                  const Icon = resolveMenuIcon(leaf.icon, leaf.name, false);
                   const searchValue = [...leaf.breadcrumb, leaf.name].join(" ");
                   return (
                     <CommandItem

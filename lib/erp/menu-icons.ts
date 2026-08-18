@@ -39,16 +39,20 @@ import {
   Users,
   Wallet2,
   Warehouse,
+  icons,
 } from "lucide-react";
 
 /**
- * 메뉴명 → 아이콘 매핑의 단일 소스. `menus` 테이블에는 아이콘 컬럼이 없으므로
- * 대/중/소분류 이름을 보고 코드에서 아이콘을 고른다. 상단 Menubar
- * (components/erp/erp-menubar.tsx), 좌측 트리·모바일 내비게이션
+ * 메뉴명 → 아이콘 매핑의 단일 소스. `menus.icon`(관리자가 직접 고른
+ * lucide-react 컴포넌트 이름, nullable)이 있으면 그걸 최우선으로 쓰고,
+ * 없을 때만 대/중/소분류 이름을 보고 자동으로 아이콘을 고른다
+ * (resolveMenuIcon()이 그 판단을 전부 캡슐화). 상단 Menubar
+ * (components/erp/erp-category-rail.tsx), 좌측 트리·모바일 내비게이션
  * (lib/erp/menu-tree.ts), 관리자 메뉴 관리 트리(admin/menu-manager.tsx),
- * 메뉴 등록/수정 다이얼로그의 아이콘 미리보기(admin/menu-form-dialog.tsx)가
+ * 메뉴 등록/수정 다이얼로그의 아이콘 선택기(admin/menu-icon-picker.tsx)가
  * 모두 이 파일을 공유한다.
  *
+ * getMenuIcon()의 자동 추천 순서:
  * 1) EXACT_NAME_ICONS: 현재 DB에 있는 이름과 정확히 일치할 때 쓰는 아이콘.
  * 2) KEYWORD_ICONS: 관리자가 새 메뉴를 추가해 이름이 여기 없어도, 이름에
  *    포함된 업무 키워드로 그럴듯한 아이콘을 고르는 폴백.
@@ -158,4 +162,29 @@ export function getMenuIcon(name: string, hasChildren: boolean): LucideIcon {
   if (keyword) return keyword[1];
 
   return hasChildren ? Folder : FileText;
+}
+
+/** `icons`(lucide-react 전체 아이콘 맵, `/icons` 갤러리와 동일한 소스)에
+ * 실제로 존재하는 PascalCase 이름인지 검사한다. 관리자 아이콘 선택기가
+ * 고른 값만 저장하므로 평소엔 항상 true지만, Server Action
+ * (createMenuAction/updateMenuAction)이 저장 직전에 재검증할 때 쓴다. */
+export function isKnownIconName(name: string): name is keyof typeof icons {
+  return Object.hasOwn(icons, name);
+}
+
+/**
+ * 메뉴 아이콘 해석의 단일 진입점. `explicitIcon`(menus.icon)이 유효한
+ * lucide 이름이면 그 아이콘을, 아니면 getMenuIcon()의 이름 기반 자동
+ * 추천을 반환한다. Menubar/트리/커맨드 팔레트/관리자 트리가 모두 이
+ * 함수 하나로 통일해서 아이콘을 그린다.
+ */
+export function resolveMenuIcon(
+  explicitIcon: string | null | undefined,
+  name: string,
+  hasChildren: boolean,
+): LucideIcon {
+  if (explicitIcon && isKnownIconName(explicitIcon)) {
+    return icons[explicitIcon];
+  }
+  return getMenuIcon(name, hasChildren);
 }

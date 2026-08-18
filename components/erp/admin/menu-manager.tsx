@@ -26,7 +26,7 @@ import {
   setMenuActiveAction,
   type ActionResult,
 } from "@/lib/erp/actions";
-import { getMenuIcon } from "@/lib/erp/menu-icons";
+import { resolveMenuIcon } from "@/lib/erp/menu-icons";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import type { MenuFlat, MenuLevel, MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -46,7 +46,7 @@ function toTreeItems(
   return nodes.map((node) => ({
     id: node.id,
     name: node.name,
-    icon: getMenuIcon(node.name, node.children.length > 0),
+    icon: resolveMenuIcon(node.icon, node.name, node.children.length > 0),
     onClick: () => onSelect(node.id),
     children:
       node.children.length > 0

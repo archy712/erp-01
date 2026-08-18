@@ -7,6 +7,9 @@ export type MenuFlat = {
   name: string;
   sortOrder: number;
   isActive: boolean;
+  /** 관리자가 직접 고른 lucide-react 아이콘 이름. null이면 이름 기반
+   * 자동 추천(getMenuIcon)을 쓴다(lib/erp/menu-icons.ts). */
+  icon: string | null;
 };
 
 export type MenuNode = MenuFlat & {

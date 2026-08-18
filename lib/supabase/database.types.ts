@@ -621,6 +621,7 @@ export type Database = {
       menus: {
         Row: {
           created_at: string;
+          icon: string | null;
           id: string;
           is_active: boolean;
           level: number;
@@ -631,6 +632,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          icon?: string | null;
           id?: string;
           is_active?: boolean;
           level: number;
@@ -641,6 +643,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          icon?: string | null;
           id?: string;
           is_active?: boolean;
           level?: number;

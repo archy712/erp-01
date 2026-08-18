@@ -1,6 +1,6 @@
 import type { TreeDataItem } from "@/components/ui/tree-view";
 
-import { getMenuIcon } from "./menu-icons";
+import { resolveMenuIcon } from "./menu-icons";
 import type { MenuFlat, MenuNode } from "./types";
 
 function compareMenuNodes(a: MenuNode, b: MenuNode): number {
@@ -63,7 +63,7 @@ export function menuNodeToTreeItem(
     return {
       id: node.id,
       name: node.name,
-      icon: getMenuIcon(node.name, false),
+      icon: resolveMenuIcon(node.icon, node.name, false),
       onClick: () => onSelectLeaf(node.id, topCategoryId),
     };
   }
@@ -71,7 +71,7 @@ export function menuNodeToTreeItem(
   return {
     id: node.id,
     name: node.name,
-    icon: getMenuIcon(node.name, true),
+    icon: resolveMenuIcon(node.icon, node.name, true),
     children: node.children.map((child) =>
       menuNodeToTreeItem(child, topCategoryId, onSelectLeaf),
     ),
@@ -97,6 +97,7 @@ export type MenuLeafEntry = {
   id: string;
   topCategoryId: string;
   name: string;
+  icon: string | null;
   /** 최상위 대분류부터 자신 바로 위 부모까지의 이름 경로(자기 자신 제외) */
   breadcrumb: string[];
 };
@@ -117,6 +118,7 @@ export function flattenMenuLeaves(categories: MenuNode[]): MenuLeafEntry[] {
         id: node.id,
         topCategoryId,
         name: node.name,
+        icon: node.icon,
         breadcrumb: ancestors,
       });
       return;

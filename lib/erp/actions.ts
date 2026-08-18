@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { requireAdmin } from "./auth";
+import { isKnownIconName } from "./menu-icons";
 import { getUserPermissions } from "./queries";
 import type { MenuLevel } from "./types";
 
@@ -87,9 +88,21 @@ export type MenuFormInput = {
   name: string;
   sortOrder: number;
   isActive: boolean;
+  /** 관리자가 아이콘 선택기에서 고른 lucide 아이콘 이름. null이면 이름
+   * 기반 자동 추천을 쓴다(lib/erp/menu-icons.ts의 resolveMenuIcon). */
+  icon: string | null;
 };
 
 const MAX_MENU_LEVEL = 3;
+
+// 아이콘 선택기가 lucide-react의 실제 아이콘 목록에서만 값을 고르게 하므로
+// 평소엔 항상 유효하지만, Server Action은 클라이언트를 신뢰하지 않고 저장
+// 직전에 한 번 더 검증한다 — 알 수 없는 값이 오면 에러 대신 자동 추천으로
+// 조용히 폴백한다(사용자 입력이 아니라 픽커가 만든 값이라 굳이 저장을
+// 막을 이유가 없음).
+function sanitizeMenuIcon(icon: string | null): string | null {
+  return icon && isKnownIconName(icon) ? icon : null;
+}
 
 /**
  * 메뉴를 등록한다 (관리자 전용). `parentId`가 null이면 대분류(level 1)로
@@ -135,6 +148,7 @@ export async function createMenuAction(
     name,
     sort_order: input.sortOrder,
     is_active: input.isActive,
+    icon: sanitizeMenuIcon(input.icon),
   });
 
   if (error) {
@@ -146,13 +160,13 @@ export async function createMenuAction(
 }
 
 /**
- * 메뉴를 수정한다 (관리자 전용). 이름/정렬순서/사용여부만 다루며, 상위 메뉴
- * 재배치(re-parenting)는 하위 노드의 level을 재귀적으로 재계산해야 해 이
- * 화면 범위 밖이다 — 메뉴를 옮기려면 삭제 후 재등록한다.
+ * 메뉴를 수정한다 (관리자 전용). 이름/정렬순서/사용여부/아이콘만 다루며,
+ * 상위 메뉴 재배치(re-parenting)는 하위 노드의 level을 재귀적으로
+ * 재계산해야 해 이 화면 범위 밖이다 — 메뉴를 옮기려면 삭제 후 재등록한다.
  */
 export async function updateMenuAction(
   menuId: string,
-  input: Pick<MenuFormInput, "name" | "sortOrder" | "isActive">,
+  input: Pick<MenuFormInput, "name" | "sortOrder" | "isActive" | "icon">,
 ): Promise<ActionResult> {
   await requireAdmin();
   const messages = await getActionMessages();
@@ -165,7 +179,12 @@ export async function updateMenuAction(
   const supabase = await createClient();
   const { error } = await supabase
     .from("menus")
-    .update({ name, sort_order: input.sortOrder, is_active: input.isActive })
+    .update({
+      name,
+      sort_order: input.sortOrder,
+      is_active: input.isActive,
+      icon: sanitizeMenuIcon(input.icon),
+    })
     .eq("id", menuId);
 
   if (error) {

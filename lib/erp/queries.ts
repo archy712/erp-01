@@ -14,6 +14,7 @@ function toMenuFlat(row: Tables<"menus">): MenuFlat {
     name: row.name,
     sortOrder: row.sort_order,
     isActive: row.is_active,
+    icon: row.icon,
   };
 }
 

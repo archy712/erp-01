@@ -271,6 +271,10 @@ export interface Dictionary {
       nameLabel: string;
       nameRequired: string;
       iconPreviewLabel: string;
+      iconPickerTrigger: string;
+      iconSearchPlaceholder: string;
+      iconAutoOption: string;
+      iconSearchEmpty: string;
       sortOrderLabel: string;
       useStatusLabel: string;
       cancelBtn: string;

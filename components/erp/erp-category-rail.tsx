@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { ErpLinkPendingIndicator } from "@/components/erp/erp-link-pending-indicator";
-import { getMenuIcon } from "@/lib/erp/menu-icons";
+import { resolveMenuIcon } from "@/lib/erp/menu-icons";
 import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,11 @@ export function ErpCategoryRail({
       className="flex flex-col items-center gap-1 overflow-y-auto p-2"
     >
       {categories.map((category) => {
-        const Icon = getMenuIcon(category.name, category.children.length > 0);
+        const Icon = resolveMenuIcon(
+          category.icon,
+          category.name,
+          category.children.length > 0,
+        );
         const isLeafCategory = category.children.length === 0;
         const href = isLeafCategory
           ? `/erp/menu/${category.id}?cat=${category.id}`
@@ -65,7 +69,7 @@ export function ErpCategoryRail({
             {/* 클릭~내비게이션 완료 사이 pending 힌트. absolute라 아이콘/라벨
                 레이아웃에 영향을 주지 않는다(레일이 flex-col items-center라
                 인라인으로 넣으면 라벨 중앙 정렬이 흔들릴 수 있어 코너에 배치). */}
-            <ErpLinkPendingIndicator className="absolute right-2 top-1.5" />
+            <ErpLinkPendingIndicator className="absolute top-1.5 right-2" />
           </Link>
         );
       })}
