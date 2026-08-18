@@ -84,3 +84,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* useLinkStatus 기반 Link pending 힌트(components/erp/erp-link-pending-indicator.tsx).
+   next.js 문서(use-link-status.md)의 link-hint 패턴을 그대로 따른다: 항상
+   렌더링되는 고정 크기 점을 opacity/visibility로만 토글해 layout shift 없이
+   표시하고, 내비게이션이 실제로 지연될 때만(100ms 딜레이 후) 서서히
+   드러나도록 한다. background는 currentColor라 부모의 text 색상(예:
+   text-accent-foreground)을 그대로 따라간다. */
+.erp-link-hint {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.erp-link-hint.is-pending {
+  visibility: visible;
+  animation-name: erp-link-hint-fade-in, erp-link-hint-pulse;
+  animation-duration: 200ms, 1s;
+  animation-delay: 100ms, 100ms;
+  animation-timing-function: ease, ease-in-out;
+  animation-iteration-count: 1, infinite;
+  animation-fill-mode: forwards, none;
+}
+
+@keyframes erp-link-hint-fade-in {
+  to {
+    opacity: 0.6;
+  }
+}
+
+@keyframes erp-link-hint-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}

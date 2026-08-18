@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import { ErpLinkPendingIndicator } from "@/components/erp/erp-link-pending-indicator";
 import { getMenuIcon } from "@/lib/erp/menu-icons";
 import type { MenuNode } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -53,7 +54,7 @@ export function ErpCategoryRail({
             href={href}
             aria-current={isActive ? "true" : undefined}
             className={cn(
-              "flex w-full shrink-0 flex-col items-center gap-0.5 rounded-md px-1 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+              "relative flex w-full shrink-0 flex-col items-center gap-0.5 rounded-md px-1 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
               isActive && "bg-accent font-medium text-accent-foreground",
             )}
           >
@@ -61,6 +62,10 @@ export function ErpCategoryRail({
             <span className="line-clamp-2 text-center text-[10px] leading-tight break-keep">
               {category.name}
             </span>
+            {/* 클릭~내비게이션 완료 사이 pending 힌트. absolute라 아이콘/라벨
+                레이아웃에 영향을 주지 않는다(레일이 flex-col items-center라
+                인라인으로 넣으면 라벨 중앙 정렬이 흔들릴 수 있어 코너에 배치). */}
+            <ErpLinkPendingIndicator className="absolute right-2 top-1.5" />
           </Link>
         );
       })}

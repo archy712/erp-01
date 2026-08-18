@@ -7,6 +7,7 @@ import { ChannelRevenueChart } from "@/components/erp/dashboard/channel-revenue-
 import { CompanyAchievementChart } from "@/components/erp/dashboard/company-achievement-chart";
 import { CompanyRevenueCompositionChart } from "@/components/erp/dashboard/company-revenue-composition-chart";
 import { CustomerMetricsChart } from "@/components/erp/dashboard/customer-metrics-chart";
+import { DashboardSkeleton } from "@/components/erp/dashboard/dashboard-skeleton";
 import { GroupAchievementGauge } from "@/components/erp/dashboard/group-achievement-gauge";
 import { KpiSummary } from "@/components/erp/dashboard/kpi-summary";
 import { RevenueProfitChart } from "@/components/erp/dashboard/revenue-profit-chart";
@@ -22,7 +23,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 // 실제 데이터 연동은 이번 MVP 범위 밖이다(PRD 9절 비범위).
 export default function ErpHomePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <ErpHomeContent />
     </Suspense>
   );
