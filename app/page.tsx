@@ -5,6 +5,7 @@ import { ArrowRight, Languages, Moon, Smartphone } from "lucide-react";
 import { AuthButton } from "@/components/auth-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { SiteFooter } from "@/components/site-footer";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,28 +37,6 @@ async function HomeContent() {
     const { data } = await supabase.auth.getClaims();
     isLoggedIn = Boolean(data?.claims);
   }
-
-  const githubRepo = "https://github.com/archy712/erp-01/blob/main";
-  const footerLinks = [
-    {
-      label: dict.home.footer.projectIntro,
-      href: `${githubRepo}/README.md`,
-      external: true,
-    },
-    {
-      label: dict.home.footer.requirements,
-      href: `${githubRepo}/docs/prd/PRD_MASTER.md`,
-      external: true,
-    },
-    {
-      label: dict.home.footer.mvpTask,
-      href: `${githubRepo}/docs/prd/PRD_MVP.md`,
-      external: true,
-    },
-    { label: dict.home.footer.componentGallery, href: "/gallery" },
-    { label: dict.home.footer.iconGallery, href: "/icons" },
-    { label: dict.home.footer.techStack, href: "/tech-stack" },
-  ];
 
   const featureIcons = [Languages, Smartphone, Moon];
   const features = dict.home.features.map((feature, i) => ({
@@ -143,41 +122,7 @@ async function HomeContent() {
         </div>
       </main>
 
-      <footer className="flex w-full flex-col items-center gap-4 border-t py-8 text-center text-sm text-muted-foreground">
-        <nav className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-          {footerLinks.map((link, i) => (
-            <Fragment key={link.href}>
-              {i > 0 && <span aria-hidden="true">|</span>}
-              {link.external ? (
-                <a
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  {link.label}
-                </a>
-              ) : (
-                <Link
-                  href={link.href}
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  {link.label}
-                </Link>
-              )}
-            </Fragment>
-          ))}
-        </nav>
-        <p>
-          {dict.home.footer.developedBy}{" "}
-          <a
-            href="mailto:archy712@gmail.com"
-            className="font-medium underline-offset-4 hover:underline"
-          >
-            archy712@gmail.com
-          </a>
-        </p>
-      </footer>
+      <SiteFooter dict={dict} />
     </div>
   );
 }
