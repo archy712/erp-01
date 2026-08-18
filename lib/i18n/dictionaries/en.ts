@@ -458,7 +458,6 @@ export const en: Dictionary = {
   erp: {
     header: {
       homeAriaLabel: "Go to website home",
-      logoAriaLabel: "Go to ERP home",
       orgChartTriggerLabel: "Org Chart",
       orgChartTriggerAriaLabel: "View org chart",
     },

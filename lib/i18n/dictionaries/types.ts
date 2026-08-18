@@ -356,7 +356,6 @@ export interface Dictionary {
   erp: {
     header: {
       homeAriaLabel: string;
-      logoAriaLabel: string;
       orgChartTriggerLabel: string;
       orgChartTriggerAriaLabel: string;
     };

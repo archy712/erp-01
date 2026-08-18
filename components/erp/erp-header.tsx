@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
-import { Boxes, Home } from "lucide-react";
+import { Home } from "lucide-react";
 
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,9 @@ import { hasEnvVars } from "@/lib/utils";
 // 헤더만 가운데로 좁아지고 바로 아래 레일은 화면 맨 왼쪽에 붙는 어긋난 레이아웃이
 // 된다). 좌우 패딩은 본문 페이지들이 공통으로 쓰는 px-6과 맞춘다.
 //
-// 로고 아이콘과 타이틀 텍스트는 항상 같은 목적지(/erp)로 이동한다 — 이전에는
-// 아이콘은 /erp, 타이틀 텍스트는 공개 마케팅 홈(/)으로 서로 다른 곳을 가리켜,
-// 업무 중 타이틀을 로고로 착각해 클릭하면 ERP 밖으로 튕겨나가는 문제가 있었다.
+// 타이틀 텍스트는 /erp로 이동한다 — 이전에는 별도 로고 아이콘이 타이틀 옆에
+// 있었지만 목적지가 완전히 같아 중복이었고, 좌측은 이제 공개 웹사이트 메인(/)
+// 으로 가는 홈 아이콘 하나만 남긴다.
 //
 // 타이틀은 좌/우 영역 폭과 무관하게 항상 헤더 정중앙에 오도록 absolute로
 // 배치한다(좌측 햄버거 유무, 우측 계정 영역 폭이 로그인 상태에 따라 달라지므로
@@ -43,8 +43,7 @@ export function ErpHeader({
       <div className="relative flex h-full w-full items-center">
         <div className="flex flex-1 items-center gap-1">
           {/* 업무 중 공개 웹사이트 메인(/)으로 돌아갈 방법이 없었다 —
-              로고/타이틀은 의도적으로 둘 다 /erp만 가리키므로(위 주석 참고)
-              별도로 헤더 맨 왼쪽에 홈 아이콘을 둔다. */}
+              헤더 맨 왼쪽에 홈 아이콘을 둔다. */}
           <Button
             asChild
             size="icon"
@@ -57,19 +56,6 @@ export function ErpHeader({
             </Link>
           </Button>
           <div className="md:hidden">{mobileNav}</div>
-          {/* md 이상에서는 햄버거 대신 로고 아이콘을 노출한다 —
-              다른 메뉴 아이콘과 동일한 lucide-react 톤을 유지한다. */}
-          <Button
-            asChild
-            size="icon"
-            variant="ghost"
-            className="hidden shrink-0 md:flex"
-            aria-label={dict.erp.header.logoAriaLabel}
-          >
-            <Link href="/erp">
-              <Boxes className="size-5" />
-            </Link>
-          </Button>
         </div>
         <Link
           href="/erp"
