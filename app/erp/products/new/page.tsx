@@ -10,7 +10,9 @@ import { getCompanies } from "@/lib/erp/master/queries";
 export default function NewProductPage() {
   return (
     <Suspense
-      fallback={<ErpFormPageSkeleton showPageHeader showTabs fieldCount={5} />}
+      fallback={
+        <ErpFormPageSkeleton showPageHeader showSectionNav fieldCount={5} />
+      }
     >
       <NewProductContent />
     </Suspense>

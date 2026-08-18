@@ -31,7 +31,9 @@ export default function EditProductPage({
 }) {
   return (
     <Suspense
-      fallback={<ErpFormPageSkeleton showPageHeader showTabs fieldCount={5} />}
+      fallback={
+        <ErpFormPageSkeleton showPageHeader showSectionNav fieldCount={5} />
+      }
     >
       <EditProductContent params={params} />
     </Suspense>
