@@ -299,6 +299,7 @@ export const en: Dictionary = {
       levelLabel: "Level",
       nameLabel: "Menu Name",
       nameRequired: "Please enter a menu name.",
+      iconPreviewLabel: "Icon chosen automatically based on the menu name.",
       sortOrderLabel: "Sort Order",
       useStatusLabel: "Active",
       cancelBtn: "Cancel",

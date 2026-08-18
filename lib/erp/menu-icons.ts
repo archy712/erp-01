@@ -1,9 +1,14 @@
 import {
   BarChart3,
+  Bell,
   Boxes,
   Building2,
   Calculator,
+  CalendarDays,
+  Car,
+  ClipboardCheck,
   ClipboardList,
+  Clock,
   Contact,
   Database,
   FileEdit,
@@ -13,11 +18,14 @@ import {
   LayoutGrid,
   LineChart,
   type LucideIcon,
+  Mail,
   Menu,
+  MessageSquare,
   Newspaper,
   Package,
   PackageSearch,
   Palette,
+  Percent,
   Ruler,
   Settings,
   Shield,
@@ -30,13 +38,15 @@ import {
   Truck,
   Users,
   Wallet2,
+  Warehouse,
 } from "lucide-react";
 
 /**
  * 메뉴명 → 아이콘 매핑의 단일 소스. `menus` 테이블에는 아이콘 컬럼이 없으므로
  * 대/중/소분류 이름을 보고 코드에서 아이콘을 고른다. 상단 Menubar
  * (components/erp/erp-menubar.tsx), 좌측 트리·모바일 내비게이션
- * (lib/erp/menu-tree.ts), 관리자 메뉴 관리 트리(admin/menu-manager.tsx)가
+ * (lib/erp/menu-tree.ts), 관리자 메뉴 관리 트리(admin/menu-manager.tsx),
+ * 메뉴 등록/수정 다이얼로그의 아이콘 미리보기(admin/menu-form-dialog.tsx)가
  * 모두 이 파일을 공유한다.
  *
  * 1) EXACT_NAME_ICONS: 현재 DB에 있는 이름과 정확히 일치할 때 쓰는 아이콘.
@@ -110,6 +120,32 @@ const KEYWORD_ICONS: readonly [string, LucideIcon][] = [
   ["영업", TrendingUp],
   ["상품", Package],
   ["품목", Package],
+  ["인사", Users],
+  ["급여", Wallet2],
+  ["근태", Clock],
+  ["출근", Clock],
+  ["휴가", CalendarDays],
+  ["일정", CalendarDays],
+  ["캘린더", CalendarDays],
+  ["조직도", Building2],
+  ["부서", Building2],
+  ["알림", Bell],
+  ["이메일", Mail],
+  ["메일", Mail],
+  ["창고", Warehouse],
+  ["입고", Warehouse],
+  ["출고", Warehouse],
+  ["차량", Car],
+  ["배차", Car],
+  ["운송", Car],
+  ["할인", Percent],
+  ["프로모션", Percent],
+  ["쿠폰", Tag],
+  ["문의", MessageSquare],
+  ["채팅", MessageSquare],
+  ["승인", ClipboardCheck],
+  ["결재", ClipboardCheck],
+  ["발주", ClipboardList],
   ["설정", Settings],
   ["관리", Settings],
 ];

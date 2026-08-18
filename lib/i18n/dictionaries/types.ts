@@ -270,6 +270,7 @@ export interface Dictionary {
       levelLabel: string;
       nameLabel: string;
       nameRequired: string;
+      iconPreviewLabel: string;
       sortOrderLabel: string;
       useStatusLabel: string;
       cancelBtn: string;

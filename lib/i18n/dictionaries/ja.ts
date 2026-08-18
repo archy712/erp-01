@@ -299,6 +299,7 @@ export const ja: Dictionary = {
       levelLabel: "レベル",
       nameLabel: "メニュー名",
       nameRequired: "メニュー名を入力してください。",
+      iconPreviewLabel: "メニュー名に応じて自動選択されるアイコンです。",
       sortOrderLabel: "並び順",
       useStatusLabel: "使用状態",
       cancelBtn: "キャンセル",

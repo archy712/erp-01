@@ -283,6 +283,7 @@ export const zh: Dictionary = {
       levelLabel: "级别",
       nameLabel: "菜单名称",
       nameRequired: "请输入菜单名称。",
+      iconPreviewLabel: "根据菜单名称自动选择的图标。",
       sortOrderLabel: "排序",
       useStatusLabel: "启用状态",
       cancelBtn: "取消",

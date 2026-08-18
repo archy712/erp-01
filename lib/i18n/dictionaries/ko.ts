@@ -295,6 +295,7 @@ export const ko: Dictionary = {
       levelLabel: "레벨",
       nameLabel: "메뉴명",
       nameRequired: "메뉴명을 입력해주세요.",
+      iconPreviewLabel: "메뉴명에 따라 자동으로 선택되는 아이콘입니다.",
       sortOrderLabel: "정렬순서",
       useStatusLabel: "사용 여부",
       cancelBtn: "취소",

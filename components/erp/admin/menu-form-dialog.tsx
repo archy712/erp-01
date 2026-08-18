@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { createElement, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   updateMenuAction,
   type MenuFormInput,
 } from "@/lib/erp/actions";
+import { getMenuIcon } from "@/lib/erp/menu-icons";
 import { buildMenuTree, getMenuBreadcrumb } from "@/lib/erp/menu-tree";
 import type { MenuFlat, MenuLevel } from "@/lib/erp/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries/types";
@@ -48,6 +49,23 @@ function pathLabel(menus: MenuFlat[], id: string): string {
   const tree = buildMenuTree(menus);
   const path = getMenuBreadcrumb(tree, id);
   return path ? path.map((node) => node.name).join(" > ") : "";
+}
+
+// getMenuIcon()은 이름에 따라 매번 다른(그러나 항상 기존에 정의된 고정된)
+// lucide 아이콘 컴포넌트를 돌려준다. JSX(`<Icon/>`)로 쓰면 "렌더마다 새
+// 컴포넌트를 만드는 패턴"으로 오인해 react-hooks/static-components 규칙에
+// 걸리므로, createElement로 직접 엘리먼트를 만들어 그 정적 분석을 우회한다.
+function MenuIconPreview({
+  name,
+  hasChildren,
+}: {
+  name: string;
+  hasChildren: boolean;
+}) {
+  return createElement(getMenuIcon(name, hasChildren), {
+    className: "size-4 text-muted-foreground",
+    "aria-hidden": true,
+  });
 }
 
 // Dialog/DialogContent는 Radix Presence로 닫힘 애니메이션을 관리하므로 항상
@@ -133,6 +151,13 @@ function MenuFormFields({
     return parent ? ((parent.level + 1) as MenuLevel) : 1;
   }, [parentId, menus]);
 
+  // getMenuIcon()이 EXACT_NAME_ICONS/KEYWORD_ICONS로 못 찾으면 하위 메뉴
+  // 유무로 Folder/FileText를 가른다(lib/erp/menu-icons.ts) — 등록 모드는
+  // 아직 하위 메뉴가 없으므로 항상 false, 수정 모드는 실제 자식 존재 여부를
+  // 그대로 반영해 실제 렌더링 결과와 미리보기가 어긋나지 않게 한다.
+  const hasChildren =
+    mode === "edit" && menus.some((m) => m.parentId === menu.id);
+
   function handleParentChange(value: string) {
     const nextParentId = value === ROOT_VALUE ? null : value;
     setParentId(nextParentId);
@@ -216,15 +241,22 @@ function MenuFormFields({
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="menu-name">{t.nameLabel}</Label>
-          <Input
-            id="menu-name"
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              if (nameError) setNameError(null);
-            }}
-            aria-invalid={nameError ? true : undefined}
-          />
+          <div className="flex items-center gap-2">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/50">
+              <MenuIconPreview name={name.trim()} hasChildren={hasChildren} />
+            </span>
+            <Input
+              id="menu-name"
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (nameError) setNameError(null);
+              }}
+              aria-invalid={nameError ? true : undefined}
+              className="flex-1"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">{t.iconPreviewLabel}</p>
           {nameError ? (
             <p className="text-sm text-destructive">{nameError}</p>
           ) : null}
