@@ -20,7 +20,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 function SettingsSecuritySkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <ErpFormPageSkeleton fieldCount={2} />
+      <ErpFormPageSkeleton fieldCount={2} maxWidthClassName="w-full" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <Card key={index}>
@@ -67,9 +67,7 @@ async function SettingsSecurityContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="w-full max-w-md md:max-w-2xl lg:max-w-3xl">
-        <ChangePasswordForm dict={dict} />
-      </div>
+      <ChangePasswordForm dict={dict} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {upcoming.map((item) => (
